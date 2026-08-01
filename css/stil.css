@@ -12,6 +12,10 @@
   --block-rand: #a89e8b;
   --block-ruhe: #e6edea;
   --block-ruhe-rand: #8faaa3;
+  /* Genau ein Akzent. Er markiert, was gerade zusammengehoert, und die
+     eine Haupthandlung der Seite — sonst nichts. */
+  --akzent: #a8482a;
+  --akzent-flaeche: #f7e7de;
   --warnung: #8a2f1d;
   --warnung-flaeche: #fbeee9;
   --radius: 4px;
@@ -31,6 +35,8 @@
     --block-rand: #6b6359;
     --block-ruhe: #1f2b28;
     --block-ruhe-rand: #4e6b63;
+    --akzent: #e2916c;
+    --akzent-flaeche: #3b2820;
     --warnung: #e79c88;
     --warnung-flaeche: #2e211d;
   }
@@ -54,30 +60,45 @@ body {
 .rezept-kopf { margin-bottom: 2rem; }
 
 .rezept-kopf h1 {
-  margin: 0 0 .3rem;
-  font-size: 2.1rem;
+  margin: 0 0 .35rem;
+  font-size: clamp(2.1rem, 4.5vw, 2.9rem);
   font-weight: 600;
-  letter-spacing: -.01em;
+  line-height: 1.08;
+  letter-spacing: -.024em;
 }
 
 .untertitel {
-  margin: 0 0 1.2rem;
+  margin: 0 0 1.5rem;
+  max-width: 42rem;
   color: var(--gedaempft);
-  font-size: 1.05rem;
+  font-size: 1.08rem;
 }
 
 .meta {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: .15rem 1rem;
+  gap: .45rem 1.4rem;
+  align-items: baseline;
   margin: 0;
-  max-width: 30rem;
-  font-size: .9rem;
+  max-width: 32rem;
 }
 
-.meta dt { color: var(--gedaempft); }
-.meta dd { margin: 0; }
-.meta-portionen { margin-top: -.2rem !important; }
+/* Beschriftungen treten zurueck, die Werte stehen vorn. */
+.meta dt {
+  color: var(--gedaempft);
+  font-family: "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  font-size: .68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+}
+
+.meta dd {
+  margin: 0;
+  font-size: .95rem;
+}
+
+.meta-portionen { margin-top: -.25rem !important; }
 
 /* --- Portions-Umschaltung ------------------------------------------ */
 
@@ -105,9 +126,9 @@ body {
 .portionen-knopf:hover { border-color: var(--block-rand); color: var(--tinte); }
 
 .portionen-knopf.ist-aktiv {
-  border-color: var(--block-rand);
-  background: var(--block);
-  color: var(--tinte);
+  border-color: var(--akzent);
+  background: var(--akzent-flaeche);
+  color: var(--akzent);
   font-weight: 600;
 }
 
@@ -137,29 +158,39 @@ body {
   list-style: none;
 }
 
+/* Die einzige Haupthandlung der Seite — entsprechend die einzige
+   gefuellte Flaeche im Akzent. */
 .koch-start {
-  padding: .4rem .9rem;
-  border: 1px solid var(--block-rand);
+  padding: .5rem 1.1rem;
+  border: 1px solid var(--akzent);
   border-radius: 5px;
-  background: var(--block);
-  color: var(--tinte);
+  background: var(--akzent);
+  color: var(--papier);
   font: inherit;
-  font-family: system-ui, sans-serif;
+  font-family: "Avenir Next", "Segoe UI", system-ui, sans-serif;
   font-size: .85rem;
   font-weight: 600;
+  letter-spacing: .01em;
   cursor: pointer;
 }
 
-.koch-start:hover { border-color: var(--tinte); }
-.koch-start:focus-visible { outline: 2px solid var(--block-rand); outline-offset: 2px; }
+.koch-start:hover { filter: brightness(1.08); }
+.koch-start:focus-visible { outline: 2px solid var(--akzent); outline-offset: 2px; }
 
 .tags li {
-  padding: .1rem .55rem;
-  border: 1px solid var(--linie);
-  border-radius: 999px;
   color: var(--gedaempft);
-  font-size: .78rem;
-  font-family: system-ui, sans-serif;
+  font-family: "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  font-size: .68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+}
+
+/* Trennpunkte statt Pillen — ruhiger und passt zur Tabellensprache. */
+.tags li + li::before {
+  content: "·";
+  margin-right: .5rem;
+  color: var(--linie);
 }
 
 /* --- Grid ---------------------------------------------------------- */
@@ -176,7 +207,23 @@ body {
   font-size: .88rem;
 }
 
-.grid td { padding: .5rem .75rem; vertical-align: middle; }
+.grid td {
+  padding: .5rem .75rem;
+  vertical-align: middle;
+  transition: background-color .12s ease, border-color .12s ease;
+}
+
+/* Kopplung beim Ueberfahren: Stufe und ihre Zutaten leuchten gemeinsam. */
+.grid .gekoppelt { background: var(--akzent-flaeche); }
+.grid .schritt.gekoppelt { border-color: var(--akzent); }
+.grid .zutat.gekoppelt .zutat-name { color: var(--akzent); }
+
+@media (hover: none) {
+  /* Ohne Mauszeiger gibt es kein Ueberfahren — dann auch keine
+     haengengebliebene Hervorhebung. */
+  .grid .gekoppelt { background: none; }
+  .grid .zutat.gekoppelt .zutat-name { color: inherit; }
+}
 
 /* Zutatenblock: durchgehende Haarlinien ueber beide Spalten. */
 .menge,
@@ -390,14 +437,14 @@ body.kochmodus .koch-erledigt { opacity: .45; }
 
 body.kochmodus .koch-aktiv {
   opacity: 1;
-  border-color: var(--tinte);
-  box-shadow: 0 0 0 2px var(--tinte);
+  border-color: var(--akzent);
+  box-shadow: 0 0 0 2px var(--akzent);
 }
 
 /* Die Hervorhebung muss ueber beide Zutatenspalten laufen, sonst
    beginnt die helle Linie mitten in der Zeile. */
 body.kochmodus .menge.koch-neu,
-body.kochmodus .zutat.koch-neu { border-bottom-color: var(--tinte); }
+body.kochmodus .zutat.koch-neu { border-bottom-color: var(--akzent); }
 
 .koch-leiste {
   position: fixed;

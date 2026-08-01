@@ -19,13 +19,6 @@
 
 ## Backlog
 
-- **T-0017** Grid-Design gegen das Original abgleichen. Das Vorbild-Artifact
-  ("The Stew", URL in CLAUDE.md) laesst sich aus einer Claude-Session nicht
-  einsehen: die Seite rendert den Inhalt in einem iframe auf
-  `claudeusercontent.com`, und der verlangt Login. T-0016 wurde deshalb aus
-  Andres Beschreibung und der Chu-Konvention gebaut, nicht aus der Vorlage.
-  Braucht von Andre einen Screenshot oder den Artifact-Code; dann gezielt
-  angleichen (Linienstaerken, Spaltenbreiten, Typografie).
 - **T-0005** Zutaten-Abhaken per Klick (Einkauf / Mise en place).
 - **T-0008** Nicht-lineare Rezepte (parallele Straenge, z. B. Sauce separat):
   Konzept Teiltabellen/verschachtelte Spalten. Erst nach T-0002 stabil.
@@ -44,6 +37,20 @@
 
 ## Done
 
+- **T-0018** (2026-08-01) Zweiter Designdurchgang, diesmal ohne die Vorgabe
+  "wie das Original" — Andre hat ausdruecklich freie Hand gegeben. Richtung:
+  Kuechen-Spezifikation (technische Zeichnung auf warmem Papier). Genau ein
+  Akzent (`--akzent`, gebranntes Rot) fuer zweierlei: was gerade
+  zusammengehoert, und die eine Haupthandlung (Kochmodus). Beschriftungen im
+  Kopf als Versalien mit Sperrung, Werte gross; Tags von Pillen auf durch
+  Mittelpunkte getrennte Versalien.
+  Neu und mehr als Kosmetik: **Kopplung beim Ueberfahren** — faehrt man ueber
+  eine Stufe, leuchten ihre Zutaten mit, und umgekehrt. Das Grid behauptet,
+  dass diese Zutaten zu dieser Stufe gehoeren; die Hervorhebung macht die
+  Behauptung nachpruefbar, ohne die Treppenform mit dem Auge verfolgen zu
+  muessen. Im Kochmodus abgeschaltet (dort fuehrt die Stufennavigation), auf
+  Geraeten ohne Mauszeiger per `@media (hover: none)` neutralisiert.
+  T-0017 (Abgleich mit dem Original) ist damit hinfaellig.
 - **T-0016** (2026-08-01) Grid-Design ueberarbeitet, nachdem Andre die
   fehlenden horizontalen Linien bemaengelt hat. Drei Ursachen, alle in
   `css/stil.css`: `border-spacing: 3px` liess nichts sich beruehren, sodass

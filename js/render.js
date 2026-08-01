@@ -212,6 +212,54 @@
     });
   }
 
+  // Koppelt Schrittzelle und zugehoerige Zutaten beim Ueberfahren.
+  // Das Grid behauptet, dass diese Zutaten zu dieser Stufe gehoeren —
+  // die Hervorhebung macht die Behauptung nachpruefbar, ohne dass man
+  // die Treppenform mit dem Auge verfolgen muss.
+  function kopplungVerdrahten(modell, ziel) {
+    var schrittVonZeile = new Map();
+    modell.spalten.forEach(function (spalte) {
+      (spalte.eigeneZeilen || []).forEach(function (r) {
+        schrittVonZeile.set(r, spalte);
+      });
+    });
+
+    function umschalten(spalte, an) {
+      if (!spalte) return;
+      var td = ziel.querySelector('[data-schritt="' + spalte.schritt.id + '"]');
+      if (td) td.classList.toggle("gekoppelt", an);
+      (spalte.eigeneZeilen || []).forEach(function (r) {
+        Array.prototype.forEach.call(
+          ziel.querySelectorAll('[data-zeile="' + r + '"]'),
+          function (zelle) { zelle.classList.toggle("gekoppelt", an); }
+        );
+      });
+    }
+
+    // Im Kochmodus fuehrt die Stufennavigation, nicht der Mauszeiger.
+    function erlaubt() { return !document.body.classList.contains("kochmodus"); }
+
+    function koppeln(element, spalte) {
+      if (!element || !spalte) return;
+      element.addEventListener("mouseenter", function () {
+        if (erlaubt()) umschalten(spalte, true);
+      });
+      element.addEventListener("mouseleave", function () { umschalten(spalte, false); });
+    }
+
+    modell.spalten.forEach(function (spalte) {
+      koppeln(ziel.querySelector('[data-schritt="' + spalte.schritt.id + '"]'), spalte);
+    });
+
+    modell.zeilen.forEach(function (_, r) {
+      var spalte = schrittVonZeile.get(r);
+      Array.prototype.forEach.call(
+        ziel.querySelectorAll('[data-zeile="' + r + '"]'),
+        function (zelle) { koppeln(zelle, spalte); }
+      );
+    });
+  }
+
   // Rezept-Uebersicht (T-0006). Quelle ist das Manifest, weil es ohne
   // Server kein Verzeichnis-Listing gibt — dieselbe Liste, die auch der
   // file://-Ladeweg benutzt.
@@ -293,6 +341,7 @@
     var rahmen = el("div", "grid-rahmen");
     rahmen.appendChild(tabelleBauen(modell, portionen));
     ziel.appendChild(rahmen);
+    kopplungVerdrahten(modell, ziel);
 
     ziel.appendChild(schritteBauen(rezept));
     var hinweise = hinweiseBauen(rezept);

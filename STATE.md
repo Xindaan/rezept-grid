@@ -29,10 +29,12 @@ konvertiert.
 - Zwei Rezepte: `linsen-eintopf` und `eierkuchen`. `index.html` zeigt die
   Uebersicht, `?rezept=<id>` das Einzelrezept.
 - README vorhanden (Quickstart, Rezept hinzufuegen, Troubleshooting).
-- Grid-Design ueberarbeitet (T-0016): echtes Tabellenraster mit
-  durchgehenden Haarlinien statt schwebender Karten. **Ohne Vorlage
-  gebaut** — das Original-Artifact ist aus der Session nicht einsehbar
-  (Login), siehe T-0017.
+- Grid-Design ueberarbeitet (T-0016 + T-0018): echtes Tabellenraster mit
+  durchgehenden Haarlinien statt schwebender Karten, ein warmer Akzent fuer
+  Zusammengehoeriges und die Haupthandlung, Kopplung von Stufe und Zutaten
+  beim Ueberfahren. Bewusst nicht dem Original nachgebaut — Andre hat freie
+  Hand gegeben, und das Vorbild-Artifact ist aus der Session ohnehin nicht
+  einsehbar (Inhalt liegt hinter Login).
 - Pruefung: `node tools/pruefe-grid.js` (74/74 gruen) — laeuft ueber alle
   Rezepte und vergleicht zusaetzlich das Manifest gegen die JSON-Dateien.
 - Vorschau zum Testen: `python3 -m http.server 8412` im Projektordner,
@@ -40,8 +42,6 @@ konvertiert.
 
 ## Next actions
 
-- T-0017 Grid gegen das Original abgleichen — braucht Screenshot oder
-  Artifact-Code von Andre
 - T-0012 `file://`-Doppelklick-Test in echtem Browser — offen, braucht
   Andre; einziger unbestaetigter Architektur-Eckpfeiler
 - T-0007 `docs/konvertierung.md` (Anleitung + Prompt-Vorlage), jetzt mit
@@ -50,6 +50,7 @@ konvertiert.
 
 ## Letzte Done
 
+- T-0016 + T-0018 Grid-Design: Tabellenraster, Akzent, Kopplung (2026-08-01)
 - T-0006 Rezept-Uebersicht + T-0013 Manifest-Waechter + T-0015 README (2026-08-01)
 - T-0014 Zweites Rezept: Eierkuchen (2026-08-01)
 - T-0004 Kochmodus (2026-08-01)
