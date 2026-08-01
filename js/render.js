@@ -212,6 +212,55 @@
     });
   }
 
+  // Rezept-Uebersicht (T-0006). Quelle ist das Manifest, weil es ohne
+  // Server kein Verzeichnis-Listing gibt — dieselbe Liste, die auch der
+  // file://-Ladeweg benutzt.
+  function uebersichtRendern(rezepte, ziel) {
+    ziel.textContent = "";
+
+    var kopf = el("header", "rezept-kopf");
+    kopf.appendChild(el("h1", null, "Rezepte"));
+    kopf.appendChild(el("p", "untertitel",
+      rezepte.length === 1 ? "Ein Rezept" : rezepte.length + " Rezepte"));
+    ziel.appendChild(kopf);
+
+    if (!rezepte.length) {
+      var leer = el("section", "probleme");
+      leer.appendChild(el("h2", null, "Keine Rezepte gefunden"));
+      leer.appendChild(el("p", null,
+        "rezepte/manifest.js ist leer oder wurde nicht geladen. Erzeugen mit: node tools/build-manifest.js"));
+      ziel.appendChild(leer);
+      return;
+    }
+
+    var liste = el("ul", "rezept-liste");
+    rezepte.slice().sort(function (a, b) {
+      return a.titel.localeCompare(b.titel, "de");
+    }).forEach(function (r) {
+      var eintrag = el("li");
+      var link = el("a", "rezept-karte");
+      link.href = "?rezept=" + encodeURIComponent(r.id);
+
+      link.appendChild(el("span", "karte-titel", r.titel));
+      if (r.untertitel) link.appendChild(el("span", "karte-untertitel", r.untertitel));
+
+      var fakten = [];
+      if (r.zeit_gesamt_s) fakten.push(G.dauerFormatieren(r.zeit_gesamt_s));
+      fakten.push(r.portionen + " " + (r.portionen_einheit || "Portionen"));
+      fakten.push(r.schritte.length + " Schritte");
+      link.appendChild(el("span", "karte-fakten", fakten.join(" · ")));
+
+      if (r.tags && r.tags.length) {
+        var tags = el("span", "karte-tags", r.tags.join(", "));
+        link.appendChild(tags);
+      }
+
+      eintrag.appendChild(link);
+      liste.appendChild(eintrag);
+    });
+    ziel.appendChild(liste);
+  }
+
   // Rendert ein Rezept vollstaendig in `ziel`.
   function rezeptRendern(rezept, ziel) {
     var modell = G.gridModellBauen(rezept);
@@ -222,6 +271,10 @@
 
     var problemBox = problemeBauen(modell.probleme);
     if (problemBox) ziel.appendChild(problemBox);
+
+    var zurueck = el("a", "zurueck-link", "Alle Rezepte");
+    zurueck.href = "./";
+    ziel.appendChild(zurueck);
 
     // Der Kochmodus wird erst beim ersten Start gebaut — vorher steht das
     // Grid, auf das er sich bezieht, noch gar nicht im DOM.
@@ -252,6 +305,7 @@
 
   global.RezeptRender = {
     rezeptRendern: rezeptRendern,
+    uebersichtRendern: uebersichtRendern,
     tabelleBauen: tabelleBauen,
     mengenAktualisieren: mengenAktualisieren
   };

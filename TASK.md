@@ -13,25 +13,13 @@
   Chrome-Connector erzwingt ein `https://`-Praefix). Ueber http ist der
   Pfad gruen. Akzeptanz: Befund notiert; falls CSS oder Laden scheitert,
   Folge-Task.
-- **T-0006** Rezept-Uebersicht — braucht ein zweites Rezept, um sinnvoll
-  zu sein. Siehe Backlog-Eintrag.
+- **T-0007** `docs/konvertierung.md`: Arbeitsanleitung + Prompt-Vorlage fuer
+  Claude-Sessions. Jetzt mit Erfahrung aus zwei Konvertierungen schreibbar;
+  die Fallstricke stehen schon in `docs/schema.md` und im README.
 
 ## Backlog
 
 - **T-0005** Zutaten-Abhaken per Klick (Einkauf / Mise en place).
-- **T-0006** Rezept-Uebersicht: `index.html` listet alle Rezepte. Der
-  Ladeweg ist mit T-0002 entschieden (generiertes `rezepte/manifest.js`
-  fuer `file://`, direktes `fetch` ueber http) — offen ist nur noch die
-  Oberflaeche: Liste, Auswahl, Verlinkung per `?rezept=<id>`.
-- **T-0013** Veraltetes Manifest verhindern: `rezepte/manifest.js` wird von
-  Hand angestossen und laeuft auseinander, wenn jemand eine `.json` aendert
-  und `node tools/build-manifest.js` vergisst. Ueber http faellt das nicht
-  auf (dort gewinnt `fetch`), per `file://` zeigt die App dann stillschweigend
-  alte Daten. Idee: Pruefung in `tools/pruefe-grid.js`, die Manifest gegen
-  die JSON-Dateien vergleicht und bei Abweichung rot wird.
-- **T-0007** `docs/konvertierung.md`: Arbeitsanleitung + Prompt-Vorlage fuer
-  Claude-Sessions (Text/URL -> Schema-JSON, Umformulierungs-Pflicht,
-  Plausibilitaetscheck Mengen/Zeiten).
 - **T-0008** Nicht-lineare Rezepte (parallele Straenge, z. B. Sauce separat):
   Konzept Teiltabellen/verschachtelte Spalten. Erst nach T-0002 stabil.
 - **T-0009** Verteilung an Familie+Freunde (GitHub Pages o. ae.) inkl.
@@ -49,6 +37,21 @@
 
 ## Done
 
+- **T-0006** (2026-08-01) Rezept-Uebersicht: `index.html` ohne Parameter
+  listet alle Rezepte als Karten (Titel, Untertitel, Gesamtzeit, Portionen,
+  Schrittzahl, Tags), `?rezept=<id>` zeigt das Einzelrezept mit
+  Zurueck-Link. Unbekannte ID erzeugt eine Fehlermeldung mit Rueckweg statt
+  einer leeren Seite. Quelle der Liste ist `rezepte/manifest.js` — ohne
+  Server gibt es kein Verzeichnis-Listing, also auch ueber http.
+- **T-0013** (2026-08-01) Veraltetes Manifest verhindern: `pruefe-grid.js`
+  vergleicht `rezepte/manifest.js` gegen die JSON-Dateien und meldet
+  fehlende, abweichende und verwaiste Eintraege. Durch T-0006 wurde das
+  akut — ein vergessener `build-manifest.js`-Lauf liesse ein neues Rezept
+  in der Uebersicht schlicht fehlen. Der Waechter wurde gegengeprueft:
+  kuenstlich veraltetes Manifest -> Pruefung wird rot.
+- **T-0015** (2026-08-01) README angelegt: Quickstart, Nutzung, Rezept
+  hinzufuegen, Troubleshooting (die drei Fehlerbilder, die die App
+  tatsaechlich anzeigt), Development, Architektur.
 - **T-0014** (2026-08-01) Zweites Rezept konvertiert: `rezepte/eierkuchen.json`
   (7 Zutaten, 6 Schritte). Damit ist das Akzeptanzkriterium aus T-0001
   geprueft — mit einem Befund: das **Datenmodell** trug das Rezept

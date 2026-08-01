@@ -26,24 +26,25 @@ konvertiert.
   Pfeiltasten und Escape, Countdown mit Start/Pause, Grid dimmt alles weg
   ausser der aktuellen Stufe. Hervorgehoben werden die **neu**
   dazukommenden Zutaten, nicht der kumulative Block.
-- Zwei Rezepte: `linsen-eintopf` und `eierkuchen`. Erreichbar ueber
-  `index.html?rezept=<id>`; eine Uebersicht fehlt noch (T-0006), ohne sie
-  ist das zweite Rezept nur per Hand-URL zu oeffnen.
-- Pruefung: `node tools/pruefe-grid.js` (73/73 gruen) — laeuft ueber alle
-  Rezepte, nicht nur ueber eins.
+- Zwei Rezepte: `linsen-eintopf` und `eierkuchen`. `index.html` zeigt die
+  Uebersicht, `?rezept=<id>` das Einzelrezept.
+- README vorhanden (Quickstart, Rezept hinzufuegen, Troubleshooting).
+- Pruefung: `node tools/pruefe-grid.js` (74/74 gruen) — laeuft ueber alle
+  Rezepte und vergleicht zusaetzlich das Manifest gegen die JSON-Dateien.
 - Vorschau zum Testen: `python3 -m http.server 8412` im Projektordner,
   Konfiguration liegt in `.claude/launch.json`.
 
 ## Next actions
 
-- T-0006 Rezept-Uebersicht — jetzt faellig, sonst ist `eierkuchen` nur
-  ueber eine von Hand getippte URL erreichbar
 - T-0012 `file://`-Doppelklick-Test in echtem Browser — offen, braucht
   Andre; einziger unbestaetigter Architektur-Eckpfeiler
-- T-0013 Veraltetes Manifest verhindern (jetzt relevanter: zwei Rezepte)
+- T-0007 `docs/konvertierung.md` (Anleitung + Prompt-Vorlage), jetzt mit
+  Erfahrung aus zwei Konvertierungen schreibbar
+- T-0009 Verteilung an Familie+Freunde — sinnvoll, sobald T-0012 geklaert ist
 
 ## Letzte Done
 
+- T-0006 Rezept-Uebersicht + T-0013 Manifest-Waechter + T-0015 README (2026-08-01)
 - T-0014 Zweites Rezept: Eierkuchen (2026-08-01)
 - T-0004 Kochmodus (2026-08-01)
 - T-0003 Portions-Skalierung (2026-08-01)

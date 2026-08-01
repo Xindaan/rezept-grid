@@ -264,6 +264,69 @@ body {
 .probleme ul { margin: 0; padding-left: 1.2rem; }
 .probleme li { margin-bottom: .3rem; }
 
+/* --- Uebersicht ----------------------------------------------------- */
+
+.rezept-liste {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(19rem, 1fr));
+  gap: .8rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rezept-karte {
+  display: block;
+  height: 100%;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  color: inherit;
+  text-decoration: none;
+}
+
+.rezept-karte:hover {
+  border-color: var(--block-rand);
+  background: var(--block);
+}
+
+.rezept-karte:focus-visible { outline: 2px solid var(--block-rand); outline-offset: 2px; }
+
+.karte-titel { display: block; font-size: 1.2rem; font-weight: 600; }
+
+.karte-untertitel {
+  display: block;
+  margin-top: .15rem;
+  color: var(--gedaempft);
+  font-size: .92rem;
+}
+
+.karte-fakten,
+.karte-tags {
+  display: block;
+  margin-top: .5rem;
+  color: var(--gedaempft);
+  font-family: system-ui, sans-serif;
+  font-size: .78rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.karte-tags { margin-top: .2rem; opacity: .75; }
+
+.zurueck-link {
+  display: inline-block;
+  margin-bottom: 1.2rem;
+  color: var(--gedaempft);
+  font-family: system-ui, sans-serif;
+  font-size: .82rem;
+  text-decoration: none;
+}
+
+.zurueck-link::before { content: "← "; }
+.zurueck-link:hover { color: var(--tinte); }
+
+body.kochmodus .zurueck-link { visibility: hidden; }
+
 /* --- Kochmodus ------------------------------------------------------ */
 
 /* Im Kochmodus tritt alles zurueck, was gerade nicht dran ist. Gedimmt

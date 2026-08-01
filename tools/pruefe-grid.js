@@ -235,6 +235,32 @@ dateien.forEach(function (datei) {
   pruefe("Rezept " + datei, maengel, []);
 });
 
+// --- 5a. Manifest gegen die JSON-Dateien (T-0013) ---------------------
+// Das Manifest wird von Hand angestossen. Laeuft es auseinander, faellt
+// das ueber http nicht auf (dort gewinnt fetch), aber per file:// zeigt
+// die App alte Daten — und die Uebersicht ein Rezept gar nicht erst an.
+var manifestQuelle = fs.readFileSync(path.join(rezeptOrdner, "manifest.js"), "utf8");
+var fensterAttrappe = {};
+new Function("window", manifestQuelle)(fensterAttrappe);
+var imManifest = fensterAttrappe.REZEPTE || {};
+
+var manifestMaengel = [];
+dateien.forEach(function (datei) {
+  var id = datei.replace(".json", "");
+  if (!imManifest[id]) {
+    manifestMaengel.push(id + " fehlt im Manifest");
+    return;
+  }
+  var aufPlatte = fs.readFileSync(path.join(rezeptOrdner, datei), "utf8");
+  if (JSON.stringify(imManifest[id]) !== JSON.stringify(JSON.parse(aufPlatte))) {
+    manifestMaengel.push(id + " weicht vom Manifest ab");
+  }
+});
+Object.keys(imManifest).forEach(function (id) {
+  if (dateien.indexOf(id + ".json") === -1) manifestMaengel.push(id + " steht im Manifest, hat aber keine Datei");
+});
+pruefe("Manifest aktuell (sonst: node tools/build-manifest.js)", manifestMaengel, []);
+
 // --- 5b. Das zweite Rezept im Detail ----------------------------------
 var eier = JSON.parse(fs.readFileSync(path.join(rezeptOrdner, "eierkuchen.json"), "utf8"));
 var me = G.gridModellBauen(eier);
