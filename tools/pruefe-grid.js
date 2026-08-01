@@ -177,5 +177,87 @@ var mp = G.gridModellBauen(parallel);
 pruefe("nicht-linear: genau 1 Zusammenhangs-Problem",
   mp.probleme.filter(function (p) { return p.indexOf("zusammenhaengenden") > -1; }).length, 1);
 
+// --- 5. Alle Rezepte gegen die Schema-Regeln --------------------------
+// Laeuft ueber rezepte/*.json, nicht nur ueber das Beispiel. Damit faellt
+// auf, wenn ein neu konvertiertes Rezept das Schema verletzt (Teil von
+// T-0011).
+var rezeptOrdner = path.join(wurzel, "rezepte");
+var dateien = fs.readdirSync(rezeptOrdner).filter(function (d) { return d.endsWith(".json"); }).sort();
+pruefe("mindestens zwei Rezepte vorhanden", dateien.length >= 2, true);
+
+dateien.forEach(function (datei) {
+  var r = JSON.parse(fs.readFileSync(path.join(rezeptOrdner, datei), "utf8"));
+  var name = datei.replace(".json", "");
+  var maengel = [];
+
+  if (r.id !== name) maengel.push('id "' + r.id + '" passt nicht zum Dateinamen');
+  if (!r.portionen || r.portionen < 1) maengel.push("portionen fehlt oder ist < 1");
+
+  var ids = {};
+  r.zutaten.forEach(function (z) {
+    if (ids[z.id]) maengel.push('Zutaten-ID "' + z.id + '" doppelt');
+    ids[z.id] = true;
+    if ((z.menge === null || z.menge === undefined) && z.einheit) {
+      maengel.push('"' + z.id + '": ohne Menge, aber mit Einheit');
+    }
+    if (z.menge_bis !== undefined && z.menge_bis !== null) {
+      if (z.menge === null || z.menge === undefined) maengel.push('"' + z.id + '": menge_bis ohne menge');
+      else if (z.menge_bis <= z.menge) maengel.push('"' + z.id + '": menge_bis nicht groesser als menge');
+    }
+  });
+
+  var schrittIds = {};
+  r.schritte.forEach(function (s, i) {
+    if (schrittIds[s.id]) maengel.push('Schritt-ID "' + s.id + '" doppelt');
+    schrittIds[s.id] = true;
+    if (!s.titel) maengel.push('Schritt "' + s.id + '" ohne titel');
+    if (!("dauer_s" in s)) maengel.push('Schritt "' + s.id + '" ohne dauer_s');
+    (s.vorstufen || []).forEach(function (v) {
+      var davor = r.schritte.slice(0, i).some(function (x) { return x.id === v; });
+      if (!davor) maengel.push('Schritt "' + s.id + '": Vorstufe "' + v + '" steht nicht davor');
+    });
+  });
+
+  // Layout muss ohne Beanstandung durchlaufen.
+  var mm = G.gridModellBauen(r);
+  mm.probleme.forEach(function (p) { maengel.push("Layout: " + p); });
+
+  // Und jede Menge muss bei jeder waehlbaren Portionszahl sauber sein.
+  P.portionsOptionen(r.portionen).forEach(function (p) {
+    r.zutaten.forEach(function (z) {
+      var t = P.mengeFormatieren(z, p / r.portionen);
+      if (typeof t !== "string" || /NaN|undefined/.test(t)) {
+        maengel.push(p + " Portionen / " + z.id + " -> " + t);
+      }
+    });
+  });
+
+  pruefe("Rezept " + datei, maengel, []);
+});
+
+// --- 5b. Das zweite Rezept im Detail ----------------------------------
+var eier = JSON.parse(fs.readFileSync(path.join(rezeptOrdner, "eierkuchen.json"), "utf8"));
+var me = G.gridModellBauen(eier);
+pruefe("Eierkuchen: 7 Zeilen, 6 Spalten", [me.zeilen.length, me.spalten.length], [7, 6]);
+pruefe("Eierkuchen: Bloecke",
+  me.spalten.map(function (s) { return [s.von, s.bis]; }),
+  [[0,2],[0,3],[0,4],[0,5],[0,5],[0,6]]);
+// Dieselbe Zutat zweimal im Rezept: zwei Eintraege, zwei Zeilen.
+pruefe("Eierkuchen: Milch belegt zwei getrennte Zeilen",
+  me.zeilen.map(function (z) { return z.zutat.name; })
+    .reduce(function (n, name) { return name === "Milch" ? n + 1 : n; }, 0), 2);
+pruefe("Eierkuchen: Ruhestufe hat keine neuen Zutaten",
+  me.spalten[4].eigeneZeilen.length, 0);
+pruefe("Eierkuchen: Ruhestufe ist unbeaufsichtigt",
+  me.spalten[4].schritt.unbeaufsichtigt, true);
+// Reine Stueckzahl ohne Einheit.
+var eierZutat = eier.zutaten.find(function (z) { return z.id === "z-eier"; });
+pruefe("Eierkuchen: 4 Eier ohne Einheit", P.mengeFormatieren(eierZutat, 1), "4");
+pruefe("Eierkuchen: 8 Portionen -> 8 Eier", P.mengeFormatieren(eierZutat, 2), "8");
+pruefe("Stueckzahl ohne Einheit wird als Bruch gerundet",
+  P.mengeFormatieren({menge: 3, einheit: null}, 1.5), "4½");
+pruefe("Prise bleibt bei skalieren:false fix",
+  P.mengeFormatieren({menge: 1, einheit: "Prise", skalieren: false}, 3), "1 Prise");
+
 console.log(fehler === 0 ? "\nALLE PRUEFUNGEN GRUEN" : "\n" + fehler + " FEHLER");
 process.exit(fehler ? 1 : 0);

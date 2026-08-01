@@ -51,7 +51,7 @@ Alle Felder optional, aber wenn eine fremde Vorlage benutzt wurde, ist
 | `name` | string | ja | Anzeigename, z. B. `"Berglinsen"` |
 | `menge` | number\|null | ja | Zahl fuer `portionen` Portionen; `null` = mengenlos ("nach Geschmack", "zum Servieren") |
 | `menge_bis` | number\|null | nein | Obergrenze bei Spannen (`1`–`2 EL`); nur zusammen mit `menge` |
-| `einheit` | string\|null | ja | `"g"`, `"ml"`, `"EL"`, `"TL"`, `"Stueck"`, `"Zehe"`, `"Blatt"`, `"Bund"`, `"Prise"`; `null` wenn `menge` `null` ist |
+| `einheit` | string\|null | ja | `"g"`, `"ml"`, `"EL"`, `"TL"`, `"Zehe"`, `"Blatt"`, `"Bund"`, `"Prise"`, …; `null` in zwei Faellen: mengenlose Zutat (`menge` ist `null`) **oder** reine Stueckzahl (`4` + `"Eier"` — keine Einheit noetig) |
 | `notiz` | string\|null | nein | Zustand/Vorbereitung: `"fein gewuerfelt"`, `"zum Servieren"` |
 | `skalieren` | boolean | nein | Default `true`. `false` = Menge bleibt bei Portionswechsel fix (Lorbeer, Salzwasser) |
 
@@ -145,7 +145,9 @@ Feld vorerst nicht.
 - Jede Zutat wird von genau einem Schritt referenziert — keine
   unbenutzte, keine doppelt referenzierte.
 - Jede `vorstufen`-ID existiert und steht **vor** dem Schritt im Array.
-- `menge: null` <-> `einheit: null`.
+- `menge: null` erzwingt `einheit: null`. Umgekehrt gilt das **nicht**:
+  `einheit: null` mit gesetzter `menge` ist die reine Stueckzahl
+  ("4 Eier") und wird wie eine gezaehlte Einheit gerundet.
 - `menge_bis` nur mit `menge`, und `menge_bis > menge`.
 - Blockberechnung ergibt zusammenhaengende Bereiche (sonst ist das
   Rezept nicht linear -> T-0008).

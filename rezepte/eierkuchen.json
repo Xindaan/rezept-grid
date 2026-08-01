@@ -1,0 +1,121 @@
+{
+  "schema": 1,
+  "id": "eierkuchen",
+  "titel": "Eierkuchen",
+  "untertitel": "Grundteig 250 / 500 / 4 — Mehl, Milch, Eier",
+  "portionen": 4,
+  "portionen_einheit": "Portionen",
+  "zeit_aktiv_s": 1800,
+  "zeit_gesamt_s": 3600,
+  "gefaess": "Rührschüssel, beschichtete Pfanne 24 cm",
+  "tags": ["grundrezept", "süß", "schnell", "kinder"],
+  "quelle": null,
+  "zutaten": [
+    {
+      "id": "z-mehl",
+      "name": "Weizenmehl",
+      "menge": 250,
+      "einheit": "g",
+      "notiz": "Type 405"
+    },
+    {
+      "id": "z-zucker",
+      "name": "Zucker",
+      "menge": 1,
+      "einheit": "EL",
+      "notiz": null
+    },
+    {
+      "id": "z-salz",
+      "name": "Salz",
+      "menge": 1,
+      "einheit": "Prise",
+      "notiz": null,
+      "skalieren": false
+    },
+    {
+      "id": "z-milch-1",
+      "name": "Milch",
+      "menge": 250,
+      "einheit": "ml",
+      "notiz": "die Hälfte, zimmerwarm"
+    },
+    {
+      "id": "z-eier",
+      "name": "Eier",
+      "menge": 4,
+      "einheit": null,
+      "notiz": "Größe M"
+    },
+    {
+      "id": "z-milch-2",
+      "name": "Milch",
+      "menge": 250,
+      "einheit": "ml",
+      "notiz": "restliche Hälfte"
+    },
+    {
+      "id": "z-butterschmalz",
+      "name": "Butterschmalz",
+      "menge": null,
+      "einheit": null,
+      "notiz": "zum Ausbacken"
+    }
+  ],
+  "schritte": [
+    {
+      "id": "s-mischen",
+      "titel": "trocken mischen",
+      "anweisung": "Mehl, Zucker und Salz in der Schüssel verrühren.",
+      "dauer_s": 30,
+      "zutaten": ["z-mehl", "z-zucker", "z-salz"],
+      "vorstufen": []
+    },
+    {
+      "id": "s-anruehren",
+      "titel": "glatt rühren",
+      "anweisung": "Die halbe Milch zugießen und zu einem dicken, klumpenfreien Teig rühren. Ein zäher Teig lässt sich glatt rühren, ein dünner nicht — deshalb erst die Hälfte.",
+      "dauer_s": 120,
+      "zutaten": ["z-milch-1"],
+      "vorstufen": ["s-mischen"]
+    },
+    {
+      "id": "s-eier",
+      "titel": "Eier unterrühren",
+      "anweisung": "Eier einzeln unterrühren, bis der Teig wieder glatt ist.",
+      "dauer_s": 60,
+      "zutaten": ["z-eier"],
+      "vorstufen": ["s-anruehren"]
+    },
+    {
+      "id": "s-verduennen",
+      "titel": "verdünnen",
+      "anweisung": "Restliche Milch einrühren, bis der Teig dickflüssig vom Löffel läuft.",
+      "dauer_s": 60,
+      "zutaten": ["z-milch-2"],
+      "vorstufen": ["s-eier"]
+    },
+    {
+      "id": "s-ruhen",
+      "titel": "ruhen lassen",
+      "anweisung": "Zugedeckt bei Zimmertemperatur stehen lassen. Das Mehl quillt, der Teig wird geschmeidiger und reißt beim Wenden seltener.",
+      "dauer_s": 1800,
+      "unbeaufsichtigt": true,
+      "zutaten": [],
+      "vorstufen": ["s-verduennen"]
+    },
+    {
+      "id": "s-ausbacken",
+      "titel": "ausbacken",
+      "anweisung": "Pfanne mittelheiß, wenig Butterschmalz. Teig dünn einlaufen lassen, wenden sobald die Oberfläche matt ist. Ergibt etwa acht Eierkuchen.",
+      "dauer_s": 1500,
+      "zutaten": ["z-butterschmalz"],
+      "vorstufen": ["s-ruhen"]
+    }
+  ],
+  "hinweise": [
+    "Die Ruhezeit ist der Unterschied zwischen zäh und zart — sie lohnt sich mehr als jede Zutat.",
+    "Zu dicker Teig: schluckweise Milch zugeben, nie umgekehrt Mehl in dünnen Teig.",
+    "Herzhaft: Zucker weglassen, dafür Muskat oder gehackte Kräuter unterrühren."
+  ]
+}

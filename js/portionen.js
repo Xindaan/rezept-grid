@@ -29,7 +29,11 @@
     { wert: 1, zeichen: null } // null = auf die naechste ganze Zahl aufrunden
   ];
 
+  // Ohne Einheit ist die Menge eine reine Stueckzahl ("4 Eier") — die
+  // gehoert zu den gezaehlten, nicht zu den gewogenen Groessen.
+  // Sonst kaeme bei 3 Eiern und anderthalbfacher Menge "4,5 Eier" heraus.
   function istBruchEinheit(einheit) {
+    if (einheit === null || einheit === undefined || einheit === "") return true;
     return BRUCH_EINHEITEN.indexOf(einheit) > -1;
   }
 

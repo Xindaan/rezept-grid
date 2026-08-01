@@ -38,14 +38,30 @@
   kurzem Urheberrechts-Check der enthaltenen Rezepte.
 - **T-0010** Druck-Stylesheet (eine Seite, ohne Controls).
 - **T-0011** Schema-Checkscript fuer alle Dateien unter `rezepte/` (Node,
-  ohne Dependencies). Teilweise erledigt: `tools/pruefe-grid.js` prueft die
-  Layout-Berechnung und das Beispielrezept, `tools/build-manifest.js` prueft
-  JSON-Gueltigkeit und `id` == Dateiname. Offen: die uebrigen
-  Schema-Regeln aus `docs/schema.md` (Einheiten-Vokabular, `menge`/`einheit`
-  paarweise, `menge_bis > menge`) ueber alle Rezepte.
+  ohne Dependencies). Weitgehend erledigt: `tools/pruefe-grid.js` laeuft
+  jetzt ueber **alle** `rezepte/*.json` und prueft IDs, Dateinamen,
+  `menge`/`einheit`-Paarung, `menge_bis > menge`, Vorstufen-Reihenfolge,
+  fehlerfreies Layout und saubere Mengen bei jeder Portionszahl.
+  `tools/build-manifest.js` prueft JSON-Gueltigkeit und `id` == Dateiname.
+  Offen: Einheiten-Vokabular gegen eine feste Liste pruefen, damit Tippfehler
+  ("Zehen" statt "Zehe") auffallen statt still in die Dezimalrundung zu
+  laufen.
 
 ## Done
 
+- **T-0014** (2026-08-01) Zweites Rezept konvertiert: `rezepte/eierkuchen.json`
+  (7 Zutaten, 6 Schritte). Damit ist das Akzeptanzkriterium aus T-0001
+  geprueft — mit einem Befund: das **Datenmodell** trug das Rezept
+  unveraendert, aber eine Validierungsregel in `docs/schema.md` war zu
+  streng. Sie verbot `einheit: null` bei gesetzter Menge, was "4 Eier"
+  braucht; der Renderer konnte es laengst. Regel gelockert. Dabei fiel ein
+  latenter Fehler auf: Mengen ohne Einheit liefen in die Dezimalrundung,
+  "3 Eier" bei anderthalbfacher Menge waeren "4,5 Eier" geworden statt
+  "4½". In `js/portionen.js` behoben.
+  Quelle: Chefkoch-Link von Andre war fuer den Abruf gesperrt, daher das
+  Grundrezept eigenstaendig formuliert und `quelle: null` gesetzt statt
+  eine ungelesene Quelle einzutragen. Falls die Chefkoch-Mengen abweichen,
+  nachziehen.
 - **T-0004** (2026-08-01) Kochmodus in `js/kochmodus.js`: Stufen-Navigation
   (Knoepfe, Pfeiltasten, Escape), Countdown je Stufe mit Start/Pause, feste
   Bedienleiste unten, Rest des Grids gedimmt. Entscheidung beim Bauen:
