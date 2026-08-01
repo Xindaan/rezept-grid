@@ -1,0 +1,143 @@
+# Rezept-JSON-Schema
+
+Version 1 (2026-08-01). Jedes Rezept ist genau eine JSON-Datei unter
+`rezepte/`, Dateiname = `id` + `.json`, ASCII, kebab-case
+(`linsen-eintopf.json`). UTF-8 ohne BOM; Umlaute in nutzersichtbaren
+Strings sind erwuenscht (siehe CLAUDE.md, Sprach-Override).
+
+## Grundprinzip
+
+**Das Grid steht nicht in der Datei.** Die Datei beschreibt nur, welche
+Zutat in welchem Schritt zum ersten Mal auftaucht und welcher Schritt auf
+welchem aufbaut. Zeilenreihenfolge, `rowspan`s und Luecken berechnet der
+Renderer daraus (Algorithmus siehe unten). Handkodierte Layout-Angaben
+gibt es im Schema absichtlich nicht.
+
+## Top-Level
+
+| Feld | Typ | Pflicht | Bedeutung |
+|---|---|---|---|
+| `schema` | number | ja | Schema-Version, aktuell `1` |
+| `id` | string | ja | kebab-case ASCII, = Dateiname ohne `.json` |
+| `titel` | string | ja | Anzeigename |
+| `untertitel` | string | nein | eine Zeile Einordnung |
+| `portionen` | number | ja | **Basis-Portionszahl**, auf die sich alle `menge`-Werte beziehen |
+| `portionen_einheit` | string | nein | Default `"Portionen"`; z. B. `"Glaeser"`, `"Stueck"` |
+| `zeit_aktiv_s` | number\|null | ja | Arbeitszeit in Sekunden |
+| `zeit_gesamt_s` | number\|null | ja | Gesamtzeit inkl. Warten, in Sekunden |
+| `gefaess` | string | nein | z. B. `"Grosser Topf, min. 4 L"` |
+| `tags` | string[] | nein | frei, klein geschrieben |
+| `quelle` | object\|null | ja | siehe unten; `null` = Eigenkreation |
+| `zutaten` | object[] | ja | siehe unten, mind. 1 |
+| `schritte` | object[] | ja | siehe unten, mind. 1, **in Kochreihenfolge** |
+| `hinweise` | string[] | nein | Tipps, Varianten, Aufbewahrung |
+
+### `quelle`
+
+```json
+{ "titel": "Name des Rezepts/Buchs", "autor": "...", "url": "https://...",
+  "hinweis": "Schritte eigenstaendig formuliert" }
+```
+
+Alle Felder optional, aber wenn eine fremde Vorlage benutzt wurde, ist
+`quelle` nicht `null`. Woertliche Anleitungstexte werden nicht uebernommen
+(CLAUDE.md, Abschnitt Urheberrecht).
+
+## `zutaten[]`
+
+| Feld | Typ | Pflicht | Bedeutung |
+|---|---|---|---|
+| `id` | string | ja | kebab-case ASCII, eindeutig im Rezept, Praefix `z-` |
+| `name` | string | ja | Anzeigename, z. B. `"Berglinsen"` |
+| `menge` | number\|null | ja | Zahl fuer `portionen` Portionen; `null` = mengenlos ("nach Geschmack", "zum Servieren") |
+| `menge_bis` | number\|null | nein | Obergrenze bei Spannen (`1`–`2 EL`); nur zusammen mit `menge` |
+| `einheit` | string\|null | ja | `"g"`, `"ml"`, `"EL"`, `"TL"`, `"Stueck"`, `"Zehe"`, `"Blatt"`, `"Bund"`, `"Prise"`; `null` wenn `menge` `null` ist |
+| `notiz` | string\|null | nein | Zustand/Vorbereitung: `"fein gewuerfelt"`, `"zum Servieren"` |
+| `skalieren` | boolean | nein | Default `true`. `false` = Menge bleibt bei Portionswechsel fix (Lorbeer, Salzwasser) |
+
+**Die Reihenfolge im Array ist bedeutungslos** fuer die Anzeige — die
+Zeilenreihenfolge ergibt sich aus der Erstverwendung. Fuer die Lesbarkeit
+der Datei trotzdem grob in Kochreihenfolge halten.
+
+## `schritte[]`
+
+| Feld | Typ | Pflicht | Bedeutung |
+|---|---|---|---|
+| `id` | string | ja | kebab-case ASCII, eindeutig, Praefix `s-` |
+| `titel` | string | ja | **Kurzlabel fuer die Grid-Zelle**, 1–4 Woerter (`"anschwitzen"`) |
+| `anweisung` | string | ja | ein bis zwei Saetze fuer Detailansicht/Kochmodus |
+| `dauer_s` | number\|null | ja | Dauer **dieses** Schritts in Sekunden; `null` = ohne Zeit (Abschmecken, Servieren) |
+| `zutaten` | string[] | ja | IDs der hier **neu hinzukommenden** Zutaten, in gewuenschter Zeilenreihenfolge; darf leer sein |
+| `unbeaufsichtigt` | boolean | nein | Default `false`. `true` = laeuft ohne Zutun (koecheln, backen, ruhen) |
+| `vorstufen` | string[] | nein | IDs vorheriger Schritte, deren Ergebnis hier eingeht. Default: der unmittelbar vorhergehende Schritt (`[]` beim ersten). Fuer lineare Rezepte optional, wird der Klarheit halber trotzdem geschrieben |
+| `temperatur_c` | number\|null | nein | Ofen-/Zieltemperatur |
+
+**Zutaten-Referenz-Regel:** Jede Zutat wird in **genau einem** Schritt
+gelistet — dem, in dem sie zum ersten Mal in den Topf geht. Das ist die
+Zeile, in der sie im Grid steht. Wird eine Zutat spaeter erneut gebraucht
+(die zweite Haelfte der Butter), ist das eine **eigene Zutat** mit eigener
+`id` (`z-butter-2`, `name: "Butter"`, `notiz: "restliche Haelfte"`) — sonst
+laesst sich die Zeile nicht eindeutig platzieren.
+
+**Dauer-Regel:** `dauer_s` gehoert zum Schritt, nicht zur Zutat, und ist
+immer die Dauer *dieses einen* Schritts (nicht kumulativ). Die Grid-Zelle
+zeigt `titel` + formatierte Dauer (`"koecheln, 35 Min"`), der Kochmodus
+(T-0004) nimmt denselben Wert als Countdown. `null` heisst: keine Zeile,
+kein Timer.
+
+**`unbeaufsichtigt`** trennt Wartezeit von Arbeitszeit: `true` bei
+Schritten, die von allein laufen (koecheln, backen, ruhen, marinieren),
+`false` (Default) bei allem, wo man am Topf steht. Die Summe der
+`false`-Dauern ist die Untergrenze von `zeit_aktiv_s`; der Kochmodus kann
+bei `true` anbieten, die Zeit anderweitig zu nutzen. Das Grid nutzt das
+Feld vorerst nicht.
+
+## Grid-Berechnung (Renderer)
+
+1. **Zeilenreihenfolge:** Schritte in Array-Reihenfolge durchgehen, pro
+   Schritt dessen `zutaten` in Array-Reihenfolge anhaengen. Ergebnis ist
+   die Zeilenliste von oben nach unten.
+2. **Zeilenblock je Schritt:** `block(s)` = Vereinigung der Zeilen seiner
+   neuen Zutaten und der Bloecke aller `vorstufen`. Bei linearen Rezepten
+   ist das immer ein zusammenhaengender Bereich `[von, bis]`.
+3. **Spalten:** eine Spalte je Schritt, in Array-Reihenfolge. Die Zelle
+   des Schritts sitzt in seiner Spalte, beginnt bei `block.von` und hat
+   `rowspan = block.bis - block.von + 1`.
+4. **Luecken:** In Spalte *k* bleiben Zeilen ausserhalb von `block(s_k)`
+   leer — das sind die Zutaten, die erst spaeter dazukommen. Sie werden
+   als leere Zellen ohne Rahmen gerendert.
+
+## Edge Cases (muessen funktionieren)
+
+- **Schritt ohne neue Zutaten** (`zutaten: []`): Block = Block der
+  Vorstufe. Die Zelle hat denselben `rowspan` wie die vorherige Spalte —
+  eine reine Zeit-/Aktionsstufe (`"koecheln, 35 Min"`).
+- **Zutat ohne Menge** (`menge: null`): Zeile zeigt nur `name` und
+  `notiz` (`"Petersilie — zum Servieren"`), Mengenspalte bleibt leer.
+  Skalierung (T-0003) ueberspringt solche Zutaten.
+- **Letzte Stufe ohne Timer** (`dauer_s: null`): Zelle zeigt nur `titel`,
+  keine Zeitangabe; Kochmodus bietet dort keinen Countdown an.
+
+## Validierungsregeln (T-0011)
+
+- `id` eindeutig ueber Zutaten bzw. Schritte; Dateiname == `id`.
+- Jede Zutat wird von genau einem Schritt referenziert — keine
+  unbenutzte, keine doppelt referenzierte.
+- Jede `vorstufen`-ID existiert und steht **vor** dem Schritt im Array.
+- `menge: null` <-> `einheit: null`.
+- `menge_bis` nur mit `menge`, und `menge_bis > menge`.
+- Blockberechnung ergibt zusammenhaengende Bereiche (sonst ist das
+  Rezept nicht linear -> T-0008).
+
+## Bewusst noch nicht im Schema
+
+- **Portions-Skalierung (T-0003)** braucht kein neues Feld: `portionen`
+  als Basis und `skalieren` je Zutat reichen; die Rundungslogik ist
+  Renderer-Sache.
+- **Kochmodus (T-0004)** braucht kein neues Feld: `dauer_s`, `anweisung`
+  und die berechneten Bloecke (welche Zutaten gehoeren zur Stufe) sind
+  vorhanden.
+- **Nicht-lineare Rezepte (T-0008)** sind der Grund fuer `vorstufen`:
+  ein zweiter Strang ist ein Schritt mit `vorstufen: []` mitten im Array,
+  ein Zusammenfuehren ein Schritt mit zwei Eintraegen in `vorstufen`. Das
+  Schema kann das heute schon ausdruecken, der Renderer noch nicht.

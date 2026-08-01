@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>rezept-grid</title>
+<link rel="stylesheet" href="css/stil.css">
+</head>
+<body>
+
+<main id="rezept" class="rezept">
+  <p class="laedt">Rezept wird geladen …</p>
+</main>
+
+<footer class="fuss">
+  rezept-grid — Tabellen-Notation nach Michael Chu, „Cooking for Engineers“
+</footer>
+
+<!-- Fallback fuer file://, wo fetch auf lokale Dateien blockiert ist. -->
+<script src="rezepte/manifest.js"></script>
+<script src="js/grid.js"></script>
+<script src="js/render.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

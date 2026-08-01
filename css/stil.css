@@ -1,0 +1,206 @@
+/* stil.css — rezept-grid */
+
+:root {
+  --papier: #fbfaf7;
+  --tinte: #23211d;
+  --gedaempft: #6f6a61;
+  --linie: #ddd8ce;
+  --block: #efe9dd;
+  --block-rand: #cdc3b0;
+  --block-ruhe: #e4ecea;
+  --block-ruhe-rand: #b4c9c4;
+  --warnung: #8a2f1d;
+  --warnung-flaeche: #fbeee9;
+  --radius: 6px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --papier: #1a1917;
+    --tinte: #eae6de;
+    --gedaempft: #9c958a;
+    --linie: #34312c;
+    --block: #35302a;
+    --block-rand: #4e4740;
+    --block-ruhe: #26332f;
+    --block-ruhe-rand: #3d5049;
+    --warnung: #e79c88;
+    --warnung-flaeche: #2e211d;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 2.5rem 1.5rem 4rem;
+  background: var(--papier);
+  color: var(--tinte);
+  font: 16px/1.55 "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+}
+
+.rezept { max-width: 68rem; margin: 0 auto; }
+.laedt { color: var(--gedaempft); }
+
+/* --- Kopf ---------------------------------------------------------- */
+
+.rezept-kopf { margin-bottom: 2rem; }
+
+.rezept-kopf h1 {
+  margin: 0 0 .3rem;
+  font-size: 2.1rem;
+  font-weight: 600;
+  letter-spacing: -.01em;
+}
+
+.untertitel {
+  margin: 0 0 1.2rem;
+  color: var(--gedaempft);
+  font-size: 1.05rem;
+}
+
+.meta {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: .15rem 1rem;
+  margin: 0;
+  max-width: 30rem;
+  font-size: .9rem;
+}
+
+.meta dt { color: var(--gedaempft); }
+.meta dd { margin: 0; }
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem;
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tags li {
+  padding: .1rem .55rem;
+  border: 1px solid var(--linie);
+  border-radius: 999px;
+  color: var(--gedaempft);
+  font-size: .78rem;
+  font-family: system-ui, sans-serif;
+}
+
+/* --- Grid ---------------------------------------------------------- */
+
+.grid-rahmen { overflow-x: auto; margin: 0 -1.5rem 2.5rem; padding: 0 1.5rem; }
+
+.grid {
+  border-collapse: separate;
+  border-spacing: 3px;
+  width: 100%;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: .88rem;
+}
+
+.grid td { padding: .5rem .6rem; vertical-align: middle; }
+
+.menge {
+  width: 1%;
+  white-space: nowrap;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--tinte);
+}
+
+.menge-leer { padding: 0; }
+
+.zutat {
+  width: 1%;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--linie);
+}
+
+.zutat-notiz {
+  display: block;
+  color: var(--gedaempft);
+  font-size: .78rem;
+}
+
+.schritt {
+  min-width: 7.5rem;
+  border: 1px solid var(--block-rand);
+  border-radius: var(--radius);
+  background: var(--block);
+  text-align: center;
+}
+
+.schritt-titel { display: block; font-weight: 600; }
+
+.schritt-dauer,
+.schritt-temperatur {
+  display: block;
+  margin-top: .15rem;
+  color: var(--gedaempft);
+  font-size: .78rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Stufe ohne neue Zutaten: reine Zeit-/Aktionsstufe. */
+.schritt-unbeaufsichtigt {
+  background: var(--block-ruhe);
+  border-color: var(--block-ruhe-rand);
+}
+
+.leer { border: none; background: none; padding: 0; }
+
+/* --- Text unter dem Grid ------------------------------------------- */
+
+.anweisungen h2,
+.hinweise h2,
+.probleme h2 {
+  margin: 0 0 .6rem;
+  font-size: 1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--gedaempft);
+  font-family: system-ui, sans-serif;
+}
+
+.anweisungen { margin-bottom: 2rem; }
+.anweisungen ol { margin: 0; padding-left: 1.3rem; }
+.anweisungen li { margin-bottom: .5rem; }
+.anweisungen strong { margin-right: .4rem; }
+.anweisung-text { color: var(--tinte); }
+
+.hinweise ul { margin: 0; padding-left: 1.3rem; }
+.hinweise li { margin-bottom: .35rem; }
+
+.quelle {
+  margin-top: 2rem;
+  color: var(--gedaempft);
+  font-size: .85rem;
+}
+
+.quelle-hinweis::before { content: " — "; }
+
+.probleme {
+  margin-bottom: 2rem;
+  padding: .9rem 1.2rem;
+  border: 1px solid var(--warnung);
+  border-radius: var(--radius);
+  background: var(--warnung-flaeche);
+  color: var(--warnung);
+}
+
+.probleme h2 { color: var(--warnung); }
+.probleme ul { margin: 0; padding-left: 1.2rem; }
+.probleme li { margin-bottom: .3rem; }
+
+.fuss {
+  max-width: 68rem;
+  margin: 3rem auto 0;
+  padding-top: 1.2rem;
+  border-top: 1px solid var(--linie);
+  color: var(--gedaempft);
+  font-size: .8rem;
+}
