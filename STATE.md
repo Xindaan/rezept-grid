@@ -29,6 +29,10 @@ konvertiert.
 - Zwei Rezepte: `linsen-eintopf` und `eierkuchen`. `index.html` zeigt die
   Uebersicht, `?rezept=<id>` das Einzelrezept.
 - README vorhanden (Quickstart, Rezept hinzufuegen, Troubleshooting).
+- Grid-Design ueberarbeitet (T-0016): echtes Tabellenraster mit
+  durchgehenden Haarlinien statt schwebender Karten. **Ohne Vorlage
+  gebaut** — das Original-Artifact ist aus der Session nicht einsehbar
+  (Login), siehe T-0017.
 - Pruefung: `node tools/pruefe-grid.js` (74/74 gruen) — laeuft ueber alle
   Rezepte und vergleicht zusaetzlich das Manifest gegen die JSON-Dateien.
 - Vorschau zum Testen: `python3 -m http.server 8412` im Projektordner,
@@ -36,6 +40,8 @@ konvertiert.
 
 ## Next actions
 
+- T-0017 Grid gegen das Original abgleichen — braucht Screenshot oder
+  Artifact-Code von Andre
 - T-0012 `file://`-Doppelklick-Test in echtem Browser — offen, braucht
   Andre; einziger unbestaetigter Architektur-Eckpfeiler
 - T-0007 `docs/konvertierung.md` (Anleitung + Prompt-Vorlage), jetzt mit

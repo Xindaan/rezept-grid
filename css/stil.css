@@ -4,14 +4,20 @@
   --papier: #fbfaf7;
   --tinte: #23211d;
   --gedaempft: #6f6a61;
-  --linie: #ddd8ce;
-  --block: #efe9dd;
-  --block-rand: #cdc3b0;
-  --block-ruhe: #e4ecea;
-  --block-ruhe-rand: #b4c9c4;
+  /* Zwei Linienstaerken: Haarlinie trennt Zutatenzeilen, Gitterlinie
+     zeichnet die Struktur der Arbeitsschritte. */
+  --linie: #ded9cf;
+  --gitter: #a89e8b;
+  --block: #f2ede2;
+  --block-rand: #a89e8b;
+  --block-ruhe: #e6edea;
+  --block-ruhe-rand: #8faaa3;
   --warnung: #8a2f1d;
   --warnung-flaeche: #fbeee9;
-  --radius: 6px;
+  --radius: 4px;
+  /* Mengen und Zeiten in Tabellenziffern — das Rezept ist eine
+     Spezifikation, keine Erzaehlung. */
+  --zahlen: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -19,11 +25,12 @@
     --papier: #1a1917;
     --tinte: #eae6de;
     --gedaempft: #9c958a;
-    --linie: #34312c;
-    --block: #35302a;
-    --block-rand: #4e4740;
-    --block-ruhe: #26332f;
-    --block-ruhe-rand: #3d5049;
+    --linie: #383430;
+    --gitter: #6b6359;
+    --block: #262320;
+    --block-rand: #6b6359;
+    --block-ruhe: #1f2b28;
+    --block-ruhe-rand: #4e6b63;
     --warnung: #e79c88;
     --warnung-flaeche: #2e211d;
   }
@@ -89,7 +96,8 @@ body {
   background: transparent;
   color: var(--gedaempft);
   font: inherit;
-  font-size: .85rem;
+  font-family: var(--zahlen);
+  font-size: .82rem;
   font-variant-numeric: tabular-nums;
   cursor: pointer;
 }
@@ -158,25 +166,39 @@ body {
 
 .grid-rahmen { overflow-x: auto; margin: 0 -1.5rem 2.5rem; padding: 0 1.5rem; }
 
+/* Echtes Tabellenraster: die Zellen teilen sich ihre Kanten. Nur so
+   entsteht die Treppenform, die in der Chu-Notation die Information
+   traegt — mit Abstaenden dazwischen zerfaellt sie in Einzelkarten. */
 .grid {
-  border-collapse: separate;
-  border-spacing: 3px;
+  border-collapse: collapse;
   width: 100%;
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: "Avenir Next", "Segoe UI", system-ui, sans-serif;
   font-size: .88rem;
 }
 
-.grid td { padding: .5rem .6rem; vertical-align: middle; }
+.grid td { padding: .5rem .75rem; vertical-align: middle; }
+
+/* Zutatenblock: durchgehende Haarlinien ueber beide Spalten. */
+.menge,
+.zutat { border-bottom: 1px solid var(--linie); }
+
+.grid tbody tr:first-child .menge,
+.grid tbody tr:first-child .zutat { border-top: 1px solid var(--linie); }
 
 .menge {
   width: 1%;
   white-space: nowrap;
   text-align: right;
+  /* Schliesst den Zutatenblock nach links — sonst wirken die
+     Haarlinien wie freistehende Striche statt wie eine Tabelle. */
+  border-left: 1px solid var(--gitter);
+  padding-left: .9rem;
+  padding-right: 1rem;
+  font-family: var(--zahlen);
+  font-size: .82rem;
   font-variant-numeric: tabular-nums;
   color: var(--tinte);
 }
-
-.menge-leer { padding: 0; }
 
 /* Menge, die bewusst nicht mitskaliert (z. B. Lorbeer). */
 .menge-fix { color: var(--gedaempft); }
@@ -184,31 +206,42 @@ body {
 .zutat {
   width: 1%;
   white-space: nowrap;
-  border-bottom: 1px solid var(--linie);
+  padding-right: 1.6rem;
+  /* Senkrechte Achse zwischen Zutaten und Arbeitsschritten. */
+  border-right: 1px solid var(--gitter);
 }
 
 .zutat-notiz {
   display: block;
+  margin-top: .1rem;
   color: var(--gedaempft);
-  font-size: .78rem;
+  font-size: .76rem;
 }
 
 .schritt {
-  min-width: 7.5rem;
+  /* Schmal genug, dass ein Rezept mit sechs Stufen auf einen
+     Laptop-Bildschirm passt. Mehrzeilige Titel sind in der
+     Chu-Notation normal. */
+  min-width: 6.25rem;
+  padding: .5rem .55rem;
   border: 1px solid var(--block-rand);
-  border-radius: var(--radius);
   background: var(--block);
   text-align: center;
 }
 
-.schritt-titel { display: block; font-weight: 600; }
+.schritt-titel {
+  display: block;
+  font-weight: 600;
+  letter-spacing: .005em;
+}
 
 .schritt-dauer,
 .schritt-temperatur {
   display: block;
-  margin-top: .15rem;
+  margin-top: .25rem;
   color: var(--gedaempft);
-  font-size: .78rem;
+  font-family: var(--zahlen);
+  font-size: .74rem;
   font-variant-numeric: tabular-nums;
 }
 
@@ -301,14 +334,21 @@ body {
   font-size: .92rem;
 }
 
-.karte-fakten,
+.karte-fakten {
+  display: block;
+  margin-top: .5rem;
+  color: var(--gedaempft);
+  font-family: var(--zahlen);
+  font-size: .74rem;
+  font-variant-numeric: tabular-nums;
+}
+
 .karte-tags {
   display: block;
   margin-top: .5rem;
   color: var(--gedaempft);
-  font-family: system-ui, sans-serif;
+  font-family: "Avenir Next", "Segoe UI", system-ui, sans-serif;
   font-size: .78rem;
-  font-variant-numeric: tabular-nums;
 }
 
 .karte-tags { margin-top: .2rem; opacity: .75; }
@@ -354,6 +394,9 @@ body.kochmodus .koch-aktiv {
   box-shadow: 0 0 0 2px var(--tinte);
 }
 
+/* Die Hervorhebung muss ueber beide Zutatenspalten laufen, sonst
+   beginnt die helle Linie mitten in der Zeile. */
+body.kochmodus .menge.koch-neu,
 body.kochmodus .zutat.koch-neu { border-bottom-color: var(--tinte); }
 
 .koch-leiste {

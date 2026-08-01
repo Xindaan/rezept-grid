@@ -19,6 +19,13 @@
 
 ## Backlog
 
+- **T-0017** Grid-Design gegen das Original abgleichen. Das Vorbild-Artifact
+  ("The Stew", URL in CLAUDE.md) laesst sich aus einer Claude-Session nicht
+  einsehen: die Seite rendert den Inhalt in einem iframe auf
+  `claudeusercontent.com`, und der verlangt Login. T-0016 wurde deshalb aus
+  Andres Beschreibung und der Chu-Konvention gebaut, nicht aus der Vorlage.
+  Braucht von Andre einen Screenshot oder den Artifact-Code; dann gezielt
+  angleichen (Linienstaerken, Spaltenbreiten, Typografie).
 - **T-0005** Zutaten-Abhaken per Klick (Einkauf / Mise en place).
 - **T-0008** Nicht-lineare Rezepte (parallele Straenge, z. B. Sauce separat):
   Konzept Teiltabellen/verschachtelte Spalten. Erst nach T-0002 stabil.
@@ -37,6 +44,22 @@
 
 ## Done
 
+- **T-0016** (2026-08-01) Grid-Design ueberarbeitet, nachdem Andre die
+  fehlenden horizontalen Linien bemaengelt hat. Drei Ursachen, alle in
+  `css/stil.css`: `border-spacing: 3px` liess nichts sich beruehren, sodass
+  gar kein Raster entstand; die Haarlinie lag nur auf `.zutat`, nicht auf
+  `.menge`, lief also nur unter der halben Zeile; `border-radius` machte aus
+  den Schrittzellen Karten statt Tabellenfelder. Jetzt `border-collapse:
+  collapse`, durchgehende Haarlinien ueber beide Zutatenspalten, geschlossener
+  Zutatenblock mit senkrechter Achse, Schrittzellen ohne Rundung mit
+  sichtbarer Kante. Zwei Linienstaerken eingefuehrt (`--linie` fuer
+  Zeilentrennung, `--gitter` fuer Struktur), Fuellung zurueckgenommen — in
+  der Chu-Notation tragen die Linien die Information, nicht die Flaeche.
+  Mengen und Zeiten in Monospace mit Tabellenziffern (`--zahlen`).
+  `min-width` der Schrittzellen auf 6,25rem, damit ein Rezept mit sechs
+  Stufen auf einen Laptop-Bildschirm passt statt zu scrollen.
+  Nicht erreicht: das Original-Artifact als Vorlage — sein Inhalt liegt
+  hinter einem Login (siehe T-0017).
 - **T-0006** (2026-08-01) Rezept-Uebersicht: `index.html` ohne Parameter
   listet alle Rezepte als Karten (Titel, Untertitel, Gesamtzeit, Portionen,
   Schrittzahl, Tags), `?rezept=<id>` zeigt das Einzelrezept mit
