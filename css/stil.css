@@ -111,14 +111,39 @@ body {
   font-size: .85rem;
 }
 
+.kopf-leiste {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
 .tags {
   display: flex;
   flex-wrap: wrap;
   gap: .4rem;
-  margin: 1rem 0 0;
+  margin: 0;
   padding: 0;
   list-style: none;
 }
+
+.koch-start {
+  padding: .4rem .9rem;
+  border: 1px solid var(--block-rand);
+  border-radius: 5px;
+  background: var(--block);
+  color: var(--tinte);
+  font: inherit;
+  font-family: system-ui, sans-serif;
+  font-size: .85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.koch-start:hover { border-color: var(--tinte); }
+.koch-start:focus-visible { outline: 2px solid var(--block-rand); outline-offset: 2px; }
 
 .tags li {
   padding: .1rem .55rem;
@@ -238,6 +263,129 @@ body {
 .probleme h2 { color: var(--warnung); }
 .probleme ul { margin: 0; padding-left: 1.2rem; }
 .probleme li { margin-bottom: .3rem; }
+
+/* --- Kochmodus ------------------------------------------------------ */
+
+/* Im Kochmodus tritt alles zurueck, was gerade nicht dran ist. Gedimmt
+   werden gezielt die Zutaten- und Schrittzellen, nicht die Zeilen —
+   eine Zeile enthaelt wegen der rowspans auch fremde Schrittzellen. */
+body.kochmodus { padding-bottom: 11rem; }
+
+/* Der Startknopf waere im laufenden Kochmodus wirkungslos. */
+body.kochmodus .koch-start { visibility: hidden; }
+
+body.kochmodus .menge,
+body.kochmodus .zutat,
+body.kochmodus .schritt {
+  opacity: .28;
+  transition: opacity .15s;
+}
+
+body.kochmodus .koch-im-topf { opacity: .6; }
+body.kochmodus .koch-neu { opacity: 1; }
+body.kochmodus .koch-erledigt { opacity: .45; }
+
+body.kochmodus .koch-aktiv {
+  opacity: 1;
+  border-color: var(--tinte);
+  box-shadow: 0 0 0 2px var(--tinte);
+}
+
+body.kochmodus .zutat.koch-neu { border-bottom-color: var(--tinte); }
+
+.koch-leiste {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem 1.5rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--block-rand);
+  background: var(--papier);
+  box-shadow: 0 -6px 20px rgba(0, 0, 0, .12);
+  font-family: system-ui, sans-serif;
+}
+
+.koch-text { flex: 1 1 20rem; min-width: 0; }
+
+.koch-kopfzeile {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: .5rem;
+}
+
+.koch-zaehler {
+  color: var(--gedaempft);
+  font-size: .75rem;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+}
+
+.koch-titel { font-size: 1.05rem; }
+
+.koch-ruhe {
+  padding: .05rem .45rem;
+  border-radius: 999px;
+  background: var(--block-ruhe);
+  border: 1px solid var(--block-ruhe-rand);
+  color: var(--gedaempft);
+  font-size: .72rem;
+}
+
+.koch-anweisung {
+  margin: .25rem 0 0;
+  color: var(--gedaempft);
+  font-size: .88rem;
+}
+
+.koch-uhr-box { display: flex; align-items: center; gap: .6rem; }
+
+.koch-uhr {
+  min-width: 4.5rem;
+  color: var(--tinte);
+  font-size: 1.9rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.02em;
+}
+
+.koch-uhr.laeuft { font-weight: 600; }
+.koch-uhr.abgelaufen { color: var(--warnung); font-weight: 600; }
+
+.koch-steuerung { display: flex; gap: .4rem; }
+
+.koch-knopf {
+  padding: .45rem .9rem;
+  border: 1px solid var(--linie);
+  border-radius: 5px;
+  background: transparent;
+  color: var(--tinte);
+  font: inherit;
+  font-size: .88rem;
+  cursor: pointer;
+}
+
+.koch-knopf:hover:not(:disabled) { border-color: var(--block-rand); }
+.koch-knopf:focus-visible { outline: 2px solid var(--block-rand); outline-offset: 1px; }
+.koch-knopf:disabled { opacity: .35; cursor: default; }
+
+.koch-knopf-haupt {
+  border-color: var(--block-rand);
+  background: var(--block);
+  font-weight: 600;
+}
+
+.koch-knopf-aus { color: var(--gedaempft); }
+
+@media (max-width: 46rem) {
+  .koch-leiste { gap: .6rem 1rem; padding: .8rem 1rem; }
+  .koch-uhr { font-size: 1.5rem; }
+  .koch-anweisung { display: none; }
+}
 
 .fuss {
   max-width: 68rem;

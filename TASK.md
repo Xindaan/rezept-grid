@@ -13,10 +13,8 @@
   Chrome-Connector erzwingt ein `https://`-Praefix). Ueber http ist der
   Pfad gruen. Akzeptanz: Befund notiert; falls CSS oder Laden scheitert,
   Folge-Task.
-- **T-0004** Kochmodus: Stufen-Navigation (vor/zurueck/Exit), Countdown je
-  Schritt, Hervorhebung aktiver Schritt + beteiligte Zutaten, Rest dimmen.
-  Vorarbeit liegt: `unbeaufsichtigt` je Schritt im Schema, und das
-  Grid-Modell kennt pro Schritt seinen Zeilenblock (= beteiligte Zutaten).
+- **T-0006** Rezept-Uebersicht — braucht ein zweites Rezept, um sinnvoll
+  zu sein. Siehe Backlog-Eintrag.
 
 ## Backlog
 
@@ -48,6 +46,17 @@
 
 ## Done
 
+- **T-0004** (2026-08-01) Kochmodus in `js/kochmodus.js`: Stufen-Navigation
+  (Knoepfe, Pfeiltasten, Escape), Countdown je Stufe mit Start/Pause, feste
+  Bedienleiste unten, Rest des Grids gedimmt. Entscheidung beim Bauen:
+  hervorgehoben werden die Zutaten, die bei der Stufe **neu** dazukommen,
+  nicht ihr ganzer Zeilenblock — der waechst kumulativ und waere bei der
+  letzten Stufe das komplette Rezept. Dafuer weist `grid.js` jetzt
+  `eigeneZeilen` je Spalte aus, getrennt vom geerbten Block; im Grid sind
+  beide Ebenen unterschiedlich stark hervorgehoben (neu / schon im Topf).
+  Stufenwechsel setzt den Timer zurueck. Kreuzeffekt geprueft:
+  Portionswechsel im laufenden Kochmodus rechnet um, ohne die
+  Hervorhebung zu verlieren. 61/61 Pruefungen gruen.
 - **T-0003** (2026-08-01) Portions-Skalierung in `js/portionen.js` +
   Umschaltknoepfen im Rezeptkopf. Zwei Rundungsregeln statt einer:
   Gewicht/Volumen ab 10 ganzzahlig und darunter eine Nachkommastelle,

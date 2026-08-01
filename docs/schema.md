@@ -155,9 +155,14 @@ Feld vorerst nicht.
 - **Portions-Skalierung (T-0003)** ist umgesetzt und brauchte kein neues
   Feld: `portionen` als Basis und `skalieren` je Zutat reichen, die
   Rundungslogik liegt im Renderer (siehe oben).
-- **Kochmodus (T-0004)** braucht kein neues Feld: `dauer_s`, `anweisung`
-  und die berechneten Bloecke (welche Zutaten gehoeren zur Stufe) sind
-  vorhanden.
+- **Kochmodus (T-0004)** ist umgesetzt und brauchte kein neues Feld:
+  `dauer_s` treibt den Countdown, `anweisung` steht in der Bedienleiste,
+  `unbeaufsichtigt` erzeugt die Markierung "läuft von allein".
+  Hervorgehoben werden die Zutaten, die bei der Stufe **neu** dazukommen
+  (`eigeneZeilen` im Grid-Modell) — nicht der ganze Zeilenblock, der
+  waechst kumulativ und umfasst bei der letzten Stufe das ganze Rezept.
+  Fuer die Konvertierung heisst das: `titel` sollte die Handlung
+  benennen ("aufgießen"), weil er in der Leiste als Ueberschrift steht.
 - **Nicht-lineare Rezepte (T-0008)** sind der Grund fuer `vorstufen`:
   ein zweiter Strang ist ein Schritt mit `vorstufen: []` mitten im Array,
   ein Zusammenfuehren ein Schritt mit zwei Eintraegen in `vorstufen`. Das

@@ -29,6 +29,8 @@
       var tdMenge = el("td", "menge" + (mengeText ? "" : " menge-leer"), mengeText);
       // Marker fuer die spaetere Aktualisierung beim Portionswechsel.
       tdMenge.dataset.zutat = zutat.id;
+      // Zeilenindex fuer die Hervorhebung im Kochmodus (T-0004).
+      tdMenge.dataset.zeile = r;
       if (zutat.skalieren === false && zutat.menge !== null) {
         tdMenge.classList.add("menge-fix");
         tdMenge.title = "wird nicht mit den Portionen skaliert";
@@ -36,6 +38,7 @@
       tr.appendChild(tdMenge);
 
       var tdZutat = el("td", "zutat");
+      tdZutat.dataset.zeile = r;
       tdZutat.appendChild(el("span", "zutat-name", zutat.name));
       if (zutat.notiz) tdZutat.appendChild(el("span", "zutat-notiz", zutat.notiz));
       tr.appendChild(tdZutat);
@@ -66,6 +69,7 @@
     var td = el("td", klassen);
     td.rowSpan = spalte.hoehe;
     td.title = schritt.anweisung || "";
+    td.dataset.schritt = schritt.id;
     td.appendChild(el("span", "schritt-titel", schritt.titel));
 
     var dauer = G.dauerFormatieren(schritt.dauer_s);
@@ -102,7 +106,7 @@
     return wahl;
   }
 
-  function kopfBauen(rezept, portionen, beiWechsel) {
+  function kopfBauen(rezept, portionen, beiWechsel, beiKochstart) {
     var kopf = el("header", "rezept-kopf");
     kopf.appendChild(el("h1", null, rezept.titel));
     if (rezept.untertitel) kopf.appendChild(el("p", "untertitel", rezept.untertitel));
@@ -124,11 +128,22 @@
     metaZeile("Gefäß", rezept.gefaess);
     kopf.appendChild(meta);
 
+    var leiste = el("div", "kopf-leiste");
+
     if (rezept.tags && rezept.tags.length) {
       var tags = el("ul", "tags");
       rezept.tags.forEach(function (t) { tags.appendChild(el("li", null, t)); });
-      kopf.appendChild(tags);
+      leiste.appendChild(tags);
     }
+
+    if (beiKochstart) {
+      var kochen = el("button", "koch-start", "Kochmodus starten");
+      kochen.type = "button";
+      kochen.addEventListener("click", beiKochstart);
+      leiste.appendChild(kochen);
+    }
+
+    kopf.appendChild(leiste);
     return kopf;
   }
 
@@ -208,10 +223,19 @@
     var problemBox = problemeBauen(modell.probleme);
     if (problemBox) ziel.appendChild(problemBox);
 
+    // Der Kochmodus wird erst beim ersten Start gebaut — vorher steht das
+    // Grid, auf das er sich bezieht, noch gar nicht im DOM.
+    var kochmodus = null;
+    var beiKochstart = global.RezeptKochmodus ? function () {
+      if (!kochmodus) kochmodus = global.RezeptKochmodus.kochmodusBauen(modell, ziel);
+      if (kochmodus) kochmodus.starten();
+    } : null;
+    modell.kochmodus = function () { return kochmodus; };
+
     ziel.appendChild(kopfBauen(rezept, portionen, function (neu) {
       portionen = neu;
       mengenAktualisieren(ziel, modell, portionen);
-    }));
+    }, beiKochstart));
 
     var rahmen = el("div", "grid-rahmen");
     rahmen.appendChild(tabelleBauen(modell, portionen));

@@ -12,8 +12,10 @@ var fs = require("fs"), path = require("path");
 var wurzel = path.resolve(__dirname, "..");
 eval(fs.readFileSync(path.join(wurzel, "js/grid.js"), "utf8"));
 eval(fs.readFileSync(path.join(wurzel, "js/portionen.js"), "utf8"));
+eval(fs.readFileSync(path.join(wurzel, "js/kochmodus.js"), "utf8"));
 var G = globalThis.RezeptGrid;
 var P = globalThis.RezeptPortionen;
+var K = globalThis.RezeptKochmodus;
 
 var fehler = 0;
 function pruefe(name, ist, soll) {
@@ -116,6 +118,36 @@ P.portionsOptionen(rezept.portionen).forEach(function (p) {
   });
 });
 pruefe("alle Zutaten bei allen Portionszahlen sauber", schrott, []);
+
+// --- 2d. Kochmodus (T-0004), DOM-freier Teil --------------------------
+var stufen = K.kochSchritteBauen(m);
+pruefe("Kochmodus: eine Stufe je Schritt", stufen.length, 6);
+pruefe("Kochmodus: neue Zutaten je Stufe",
+  stufen.map(function (s) { return s.eigeneZeilen.length; }),
+  [3, 3, 1, 4, 0, 4]);
+pruefe("Kochmodus: Stufe 1 hebt genau ihre Zeilen hervor",
+  stufen[0].eigeneZeilen, [0, 1, 2]);
+pruefe("Kochmodus: Stufe 4 hebt nur die neuen hervor, nicht den ganzen Block",
+  [stufen[3].eigeneZeilen, stufen[3].imTopfZeilen],
+  [[7, 8, 9, 10], [0, 1, 2, 3, 4, 5, 6]]);
+// Der Schritt ohne neue Zutaten: nichts hervorzuheben, alles ist im Topf.
+pruefe("Kochmodus: Stufe ohne neue Zutaten",
+  [stufen[4].eigeneZeilen.length, stufen[4].imTopfZeilen.length], [0, 11]);
+// Letzte Stufe: neue Zutaten + alles davor, zusammen die vollen 15 Zeilen.
+pruefe("Kochmodus: letzte Stufe deckt alle Zeilen ab",
+  stufen[5].eigeneZeilen.length + stufen[5].imTopfZeilen.length, 15);
+// Keine Zeile darf gleichzeitig "neu" und "im Topf" sein.
+var doppelt = stufen.filter(function (s) {
+  return s.eigeneZeilen.some(function (r) { return s.imTopfZeilen.indexOf(r) > -1; });
+});
+pruefe("Kochmodus: neu und im-Topf ueberschneiden sich nie", doppelt.length, 0);
+
+pruefe("Uhr 35 Min", K.zeitFormatieren(2100), "35:00");
+pruefe("Uhr 6 Min", K.zeitFormatieren(360), "6:00");
+pruefe("Uhr unter einer Minute", K.zeitFormatieren(45), "0:45");
+pruefe("Uhr ueber einer Stunde", K.zeitFormatieren(3900), "1:05:00");
+pruefe("Uhr bei 0", K.zeitFormatieren(0), "0:00");
+pruefe("Uhr wird nicht negativ", K.zeitFormatieren(-5), "0:00");
 
 // --- 3. Fehlerfaelle werden gemeldet, nicht geworfen ------------------
 var kaputt = {

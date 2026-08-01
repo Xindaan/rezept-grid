@@ -65,10 +65,18 @@
       }
 
       var meine = new Set();
+      // Zeilen der Zutaten, die genau bei diesem Schritt dazukommen —
+      // getrennt vom geerbten Block, weil der Kochmodus (T-0004) nur die
+      // neuen hervorheben soll. Der Block waechst kumulativ; ihn komplett
+      // zu markieren waere beim letzten Schritt das ganze Rezept.
+      var eigeneZeilen = [];
 
       (schritt.zutaten || []).forEach(function (zid) {
         var r = zeileVonZutat.get(zid);
-        if (r !== undefined) meine.add(r);
+        if (r !== undefined) {
+          meine.add(r);
+          eigeneZeilen.push(r);
+        }
       });
 
       vorstufen.forEach(function (vid) {
@@ -105,6 +113,7 @@
         von: von,
         bis: bis,
         hoehe: bis - von + 1,
+        eigeneZeilen: eigeneZeilen.sort(function (a, b) { return a - b; }),
         neueZutaten: (schritt.zutaten || []).length
       });
     });

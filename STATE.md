@@ -22,19 +22,25 @@ konvertiert.
 - Portions-Umschaltung laeuft (`js/portionen.js`): Knoepfe im Kopf,
   zwei Rundungsregeln (Gewicht/Volumen dezimal, gezaehlte Einheiten als
   Kuechenbrueche), `skalieren: false` bleibt fix.
-- Pruefung: `node tools/pruefe-grid.js` (48/48 gruen).
+- Kochmodus laeuft (`js/kochmodus.js`): Stufen-Navigation per Knopf,
+  Pfeiltasten und Escape, Countdown mit Start/Pause, Grid dimmt alles weg
+  ausser der aktuellen Stufe. Hervorgehoben werden die **neu**
+  dazukommenden Zutaten, nicht der kumulative Block.
+- Pruefung: `node tools/pruefe-grid.js` (61/61 gruen).
 - Vorschau zum Testen: `python3 -m http.server 8412` im Projektordner,
   Konfiguration liegt in `.claude/launch.json`.
 
 ## Next actions
 
-- T-0012 `file://`-Doppelklick-Test in echtem Browser (kurz, blockiert
-  sonst nichts)
-- T-0004 Kochmodus
-- T-0006 Rezept-Uebersicht (braucht ein zweites Rezept, um sinnvoll zu sein)
+- T-0012 `file://`-Doppelklick-Test in echtem Browser — offen, braucht
+  Andre; einziger unbestaetigter Architektur-Eckpfeiler
+- Zweites Rezept konvertieren (Quelle von Andre) — loest zugleich das
+  Akzeptanzkriterium aus T-0001 ein und macht T-0006 sinnvoll
+- T-0006 Rezept-Uebersicht
 
 ## Letzte Done
 
+- T-0004 Kochmodus (2026-08-01)
 - T-0003 Portions-Skalierung (2026-08-01)
 - T-0001 Schema + Beispielrezept (2026-08-01)
 - T-0002 Grid-Renderer fuer lineare Rezepte (2026-08-01)
