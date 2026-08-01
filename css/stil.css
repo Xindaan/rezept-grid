@@ -70,6 +70,46 @@ body {
 
 .meta dt { color: var(--gedaempft); }
 .meta dd { margin: 0; }
+.meta-portionen { margin-top: -.2rem !important; }
+
+/* --- Portions-Umschaltung ------------------------------------------ */
+
+.portionen-wahl {
+  display: flex;
+  align-items: center;
+  gap: .3rem;
+  font-family: system-ui, sans-serif;
+}
+
+.portionen-knopf {
+  min-width: 2rem;
+  padding: .2rem .45rem;
+  border: 1px solid var(--linie);
+  border-radius: 5px;
+  background: transparent;
+  color: var(--gedaempft);
+  font: inherit;
+  font-size: .85rem;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.portionen-knopf:hover { border-color: var(--block-rand); color: var(--tinte); }
+
+.portionen-knopf.ist-aktiv {
+  border-color: var(--block-rand);
+  background: var(--block);
+  color: var(--tinte);
+  font-weight: 600;
+}
+
+.portionen-knopf:focus-visible { outline: 2px solid var(--block-rand); outline-offset: 1px; }
+
+.portionen-einheit {
+  margin-left: .25rem;
+  color: var(--gedaempft);
+  font-size: .85rem;
+}
 
 .tags {
   display: flex;
@@ -112,6 +152,9 @@ body {
 }
 
 .menge-leer { padding: 0; }
+
+/* Menge, die bewusst nicht mitskaliert (z. B. Lorbeer). */
+.menge-fix { color: var(--gedaempft); }
 
 .zutat {
   width: 1%;

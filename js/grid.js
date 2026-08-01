@@ -131,20 +131,12 @@
     return String(Math.round(wert * 100) / 100).replace(".", ",");
   }
 
-  // Menge + Einheit einer Zutat. Mengenlose Zutaten liefern "".
-  function mengeFormatieren(zutat) {
-    if (zutat.menge === null || zutat.menge === undefined) return "";
-    var text = zahlFormatieren(zutat.menge);
-    if (zutat.menge_bis !== null && zutat.menge_bis !== undefined) {
-      text += "–" + zahlFormatieren(zutat.menge_bis);
-    }
-    return zutat.einheit ? text + " " + zutat.einheit : text;
-  }
+  // Mengen-Formatierung liegt in portionen.js, weil sie vom
+  // Portionsfaktor und von der Einheit abhaengt (T-0003).
 
   global.RezeptGrid = {
     gridModellBauen: gridModellBauen,
     dauerFormatieren: dauerFormatieren,
-    zahlFormatieren: zahlFormatieren,
-    mengeFormatieren: mengeFormatieren
+    zahlFormatieren: zahlFormatieren
   };
 })(typeof window !== "undefined" ? window : globalThis);

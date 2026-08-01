@@ -55,6 +55,27 @@ Alle Felder optional, aber wenn eine fremde Vorlage benutzt wurde, ist
 | `notiz` | string\|null | nein | Zustand/Vorbereitung: `"fein gewuerfelt"`, `"zum Servieren"` |
 | `skalieren` | boolean | nein | Default `true`. `false` = Menge bleibt bei Portionswechsel fix (Lorbeer, Salzwasser) |
 
+**Skalierung und Rundung** (implementiert in `js/portionen.js`): Beim
+Portionswechsel wird `menge` (und `menge_bis`) mit
+`gewaehlte_portionen / portionen` multipliziert und dann je nach Einheit
+gerundet:
+
+- **Gewicht/Volumen** (`g`, `ml`, alles nicht unten Genannte): ab 10
+  ganzzahlig, darunter eine Nachkommastelle. `133,33 ml` -> `133 ml`,
+  `9,44 g` -> `9,4 g`.
+- **Stueck-artige Einheiten** (`EL`, `TL`, `Msp`, `Prise`, `Stueck`,
+  `Zehe`, `Blatt`, `Stiel`, `Zweig`, `Bund`, `Dose`, `Packung`,
+  `Scheibe`, `Handvoll`): auf gaengige Kuechenbrueche
+  (¼, ⅓, ½, ⅔, ¾). `1,5 TL` -> `1½ TL`, `2,25 TL` -> `2¼ TL`.
+  Werte knapp ueber 0 fallen nicht auf 0, sondern auf ¼.
+- `skalieren: false` haelt die Menge fest; sie wird gedaempft dargestellt
+  und traegt einen Hinweis-Tooltip.
+- Mengenlose Zutaten (`menge: null`) bleiben leer.
+
+Wer eine neue Einheit einfuehrt, muss sie in `BRUCH_EINHEITEN`
+(`js/portionen.js`) eintragen, wenn sie gezaehlt statt gewogen wird —
+sonst bekommt sie Nachkommastellen.
+
 **Die Reihenfolge im Array ist bedeutungslos** fuer die Anzeige — die
 Zeilenreihenfolge ergibt sich aus der Erstverwendung. Fuer die Lesbarkeit
 der Datei trotzdem grob in Kochreihenfolge halten.
@@ -131,9 +152,9 @@ Feld vorerst nicht.
 
 ## Bewusst noch nicht im Schema
 
-- **Portions-Skalierung (T-0003)** braucht kein neues Feld: `portionen`
-  als Basis und `skalieren` je Zutat reichen; die Rundungslogik ist
-  Renderer-Sache.
+- **Portions-Skalierung (T-0003)** ist umgesetzt und brauchte kein neues
+  Feld: `portionen` als Basis und `skalieren` je Zutat reichen, die
+  Rundungslogik liegt im Renderer (siehe oben).
 - **Kochmodus (T-0004)** braucht kein neues Feld: `dauer_s`, `anweisung`
   und die berechneten Bloecke (welche Zutaten gehoeren zur Stufe) sind
   vorhanden.

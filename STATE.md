@@ -19,7 +19,10 @@ konvertiert.
   lokale Dateien ist in allen Browsern blockiert, dafuer gibt es
   `rezepte/manifest.js` als Fallback, aber ein echter Doppelklick-Test
   war aus der Session heraus nicht moeglich.
-- Pruefung: `node tools/pruefe-grid.js` (18/18 gruen).
+- Portions-Umschaltung laeuft (`js/portionen.js`): Knoepfe im Kopf,
+  zwei Rundungsregeln (Gewicht/Volumen dezimal, gezaehlte Einheiten als
+  Kuechenbrueche), `skalieren: false` bleibt fix.
+- Pruefung: `node tools/pruefe-grid.js` (48/48 gruen).
 - Vorschau zum Testen: `python3 -m http.server 8412` im Projektordner,
   Konfiguration liegt in `.claude/launch.json`.
 
@@ -27,10 +30,11 @@ konvertiert.
 
 - T-0012 `file://`-Doppelklick-Test in echtem Browser (kurz, blockiert
   sonst nichts)
-- T-0003 Portions-Skalierung
 - T-0004 Kochmodus
+- T-0006 Rezept-Uebersicht (braucht ein zweites Rezept, um sinnvoll zu sein)
 
 ## Letzte Done
 
+- T-0003 Portions-Skalierung (2026-08-01)
 - T-0001 Schema + Beispielrezept (2026-08-01)
 - T-0002 Grid-Renderer fuer lineare Rezepte (2026-08-01)

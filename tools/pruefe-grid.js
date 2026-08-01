@@ -11,7 +11,9 @@
 var fs = require("fs"), path = require("path");
 var wurzel = path.resolve(__dirname, "..");
 eval(fs.readFileSync(path.join(wurzel, "js/grid.js"), "utf8"));
+eval(fs.readFileSync(path.join(wurzel, "js/portionen.js"), "utf8"));
 var G = globalThis.RezeptGrid;
+var P = globalThis.RezeptPortionen;
 
 var fehler = 0;
 function pruefe(name, ist, soll) {
@@ -62,9 +64,58 @@ pruefe("Dauer 2100 s", G.dauerFormatieren(2100), "35 Min");
 pruefe("Dauer 3900 s", G.dauerFormatieren(3900), "1 Std 5 Min");
 pruefe("Dauer 3600 s", G.dauerFormatieren(3600), "1 Std");
 pruefe("Dauer null = leer", G.dauerFormatieren(null), "");
-pruefe("Menge ohne Wert", G.mengeFormatieren({menge:null,einheit:null}), "");
-pruefe("Menge 1,5 TL", G.mengeFormatieren({menge:1.5,einheit:"TL"}), "1,5 TL");
-pruefe("Menge Spanne", G.mengeFormatieren({menge:1,menge_bis:2,einheit:"EL"}), "1–2 EL");
+pruefe("Menge ohne Wert", P.mengeFormatieren({menge:null,einheit:null}, 1), "");
+pruefe("Menge 1,5 TL wird zum Bruch", P.mengeFormatieren({menge:1.5,einheit:"TL"}, 1), "1½ TL");
+pruefe("Menge Spanne", P.mengeFormatieren({menge:1,menge_bis:2,einheit:"EL"}, 1), "1–2 EL");
+
+// --- 2b. Rundungsregeln aus T-0003 ------------------------------------
+pruefe("g/ml ab 10 ganzzahlig", P.dezimalRunden(133.333), 133);
+pruefe("g/ml unter 10 eine Nachkommastelle", P.dezimalRunden(9.44), 9.4);
+pruefe("g/ml Grenzfall 10", P.dezimalRunden(10), 10);
+pruefe("g/ml rundet ueber die Grenze", P.dezimalRunden(9.96), 10);
+pruefe("Bruch 1,5", P.bruchFormatieren(1.5), "1½");
+pruefe("Bruch 0,75", P.bruchFormatieren(0.75), "¾");
+pruefe("Bruch 2,25", P.bruchFormatieren(2.25), "2¼");
+pruefe("Bruch 1,333", P.bruchFormatieren(4/3), "1⅓");
+pruefe("Bruch ganze Zahl bleibt ganz", P.bruchFormatieren(3), "3");
+pruefe("Bruch rundet 0,9 auf 1 auf", P.bruchFormatieren(0.9), "1");
+pruefe("Bruch faellt nicht auf 0", P.bruchFormatieren(0.1), "¼");
+pruefe("Bruch 0 bleibt 0", P.bruchFormatieren(0), "0");
+pruefe("Einheiten-Klassifikation", [P.istBruchEinheit("EL"), P.istBruchEinheit("Zehe"), P.istBruchEinheit("g"), P.istBruchEinheit("ml")], [true, true, false, false]);
+pruefe("Portionsoptionen zu Basis 4", P.portionsOptionen(4), [2,4,6,8]);
+pruefe("Portionsoptionen zu Basis 6", P.portionsOptionen(6), [3,6,9,12]);
+pruefe("Portionsoptionen zu Basis 3 (keine halben)", P.portionsOptionen(3), [3,6]);
+pruefe("Portionsoptionen zu Basis 1", P.portionsOptionen(1), [1,2]);
+
+// --- 2c. Skalierung am echten Rezept ----------------------------------
+function menge(id, portionen) {
+  var z = rezept.zutaten.find(function (x) { return x.id === id; });
+  return P.mengeFormatieren(z, portionen / rezept.portionen);
+}
+pruefe("2 Portionen: Gewicht halbiert", menge("z-zwiebeln", 2), "100 g");
+pruefe("2 Portionen: Volumen halbiert", menge("z-bruehe", 2), "600 ml");
+pruefe("2 Portionen: TL als Bruch", menge("z-salz", 2), "¾ TL");
+pruefe("2 Portionen: Stueck-Einheit als Bruch", menge("z-thymian", 2), "1½ Stiel");
+pruefe("2 Portionen: Spanne skaliert mit", menge("z-essig", 2), "½–1 EL");
+pruefe("6 Portionen: TL als Bruch", menge("z-salz", 6), "2¼ TL");
+pruefe("6 Portionen: Volumen", menge("z-bruehe", 6), "1800 ml");
+pruefe("6 Portionen: Spanne", menge("z-essig", 6), "1½–3 EL");
+pruefe("8 Portionen: glatte Zehen", menge("z-knoblauch", 8), "4 Zehe");
+pruefe("skalieren:false bleibt fix (2)", menge("z-lorbeer", 2), "2 Blatt");
+pruefe("skalieren:false bleibt fix (8)", menge("z-lorbeer", 8), "2 Blatt");
+pruefe("mengenlose Zutat bleibt leer", menge("z-pfeffer", 8), "");
+
+// Keine Zutat darf bei irgendeiner Portionszahl NaN/undefined liefern.
+var schrott = [];
+P.portionsOptionen(rezept.portionen).forEach(function (p) {
+  rezept.zutaten.forEach(function (z) {
+    var t = P.mengeFormatieren(z, p / rezept.portionen);
+    if (typeof t !== "string" || t.indexOf("NaN") > -1 || t.indexOf("undefined") > -1) {
+      schrott.push(p + " Portionen / " + z.id + " -> " + t);
+    }
+  });
+});
+pruefe("alle Zutaten bei allen Portionszahlen sauber", schrott, []);
 
 // --- 3. Fehlerfaelle werden gemeldet, nicht geworfen ------------------
 var kaputt = {

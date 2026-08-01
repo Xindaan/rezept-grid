@@ -13,14 +13,13 @@
   Chrome-Connector erzwingt ein `https://`-Praefix). Ueber http ist der
   Pfad gruen. Akzeptanz: Befund notiert; falls CSS oder Laden scheitert,
   Folge-Task.
-- **T-0003** Portions-Skalierung mit sinnvoller metrischer Rundung
-  (g/mL ganzzahlig ab 10, sonst eine Nachkommastelle; Stueck-Angaben als
-  Bruch/gerundet). Akzeptanz: Umschalten 2/4/6 rechnet alle Mengen um.
+- **T-0004** Kochmodus: Stufen-Navigation (vor/zurueck/Exit), Countdown je
+  Schritt, Hervorhebung aktiver Schritt + beteiligte Zutaten, Rest dimmen.
+  Vorarbeit liegt: `unbeaufsichtigt` je Schritt im Schema, und das
+  Grid-Modell kennt pro Schritt seinen Zeilenblock (= beteiligte Zutaten).
 
 ## Backlog
 
-- **T-0004** Kochmodus: Stufen-Navigation (vor/zurueck/Exit), Countdown je
-  Schritt, Hervorhebung aktiver Schritt + beteiligte Zutaten, Rest dimmen.
 - **T-0005** Zutaten-Abhaken per Klick (Einkauf / Mise en place).
 - **T-0006** Rezept-Uebersicht: `index.html` listet alle Rezepte. Der
   Ladeweg ist mit T-0002 entschieden (generiertes `rezepte/manifest.js`
@@ -49,6 +48,16 @@
 
 ## Done
 
+- **T-0003** (2026-08-01) Portions-Skalierung in `js/portionen.js` +
+  Umschaltknoepfen im Rezeptkopf. Zwei Rundungsregeln statt einer:
+  Gewicht/Volumen ab 10 ganzzahlig und darunter eine Nachkommastelle,
+  gezaehlte/geloeffelte Einheiten dagegen auf Kuechenbrueche
+  (¼ ⅓ ½ ⅔ ¾) — "1,3 Zehen" ist keine ausfuehrbare Anweisung, "1⅓" schon.
+  Die Einheiten-Zuordnung steht in `BRUCH_EINHEITEN`; neue Einheiten
+  muessen dort eingetragen werden. `skalieren: false` bleibt fix und wird
+  gedaempft dargestellt. Beim Umschalten wird nur die Mengenspalte neu
+  geschrieben, das Grid bleibt strukturell stehen. Im Browser fuer
+  2/4/6/8 Portionen geklickt und zurueck; 48/48 Pruefungen gruen.
 - **T-0001** (2026-08-01) Rezept-JSON-Schema `docs/schema.md` + Beispielrezept
   `rezepte/linsen-eintopf.json`. Kernentscheidungen: ein Schritt listet nur
   die bei ihm **neu** hinzukommenden Zutaten (daraus faellt die

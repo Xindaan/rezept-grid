@@ -5,6 +5,7 @@
   "use strict";
 
   var G = global.RezeptGrid;
+  var P = global.RezeptPortionen;
 
   function el(tag, klasse, text) {
     var n = document.createElement(tag);
@@ -15,16 +16,23 @@
 
   // Baut die Chu-Tabelle. Links zwei Spalten (Menge, Zutat), rechts eine
   // Spalte je Schritt mit rowspan ueber seinen Zeilenblock.
-  function tabelleBauen(modell) {
+  function tabelleBauen(modell, portionen) {
     var tabelle = el("table", "grid");
     var koerper = el("tbody");
+    var faktor = portionen / modell.rezept.portionen;
 
     modell.zeilen.forEach(function (zeile, r) {
       var tr = el("tr");
       var zutat = zeile.zutat;
 
-      var mengeText = G.mengeFormatieren(zutat);
+      var mengeText = P.mengeFormatieren(zutat, faktor);
       var tdMenge = el("td", "menge" + (mengeText ? "" : " menge-leer"), mengeText);
+      // Marker fuer die spaetere Aktualisierung beim Portionswechsel.
+      tdMenge.dataset.zutat = zutat.id;
+      if (zutat.skalieren === false && zutat.menge !== null) {
+        tdMenge.classList.add("menge-fix");
+        tdMenge.title = "wird nicht mit den Portionen skaliert";
+      }
       tr.appendChild(tdMenge);
 
       var tdZutat = el("td", "zutat");
@@ -68,7 +76,33 @@
     return td;
   }
 
-  function kopfBauen(rezept) {
+  // Umschaltung der Portionszahl. `beiWechsel` bekommt den neuen Wert.
+  function portionsWahlBauen(rezept, portionen, beiWechsel) {
+    var wahl = el("div", "portionen-wahl");
+    var knoepfe = [];
+
+    P.portionsOptionen(rezept.portionen).forEach(function (wert) {
+      var knopf = el("button", "portionen-knopf", String(wert));
+      knopf.type = "button";
+      knopf.setAttribute("aria-pressed", String(wert === portionen));
+      if (wert === portionen) knopf.classList.add("ist-aktiv");
+      knopf.addEventListener("click", function () {
+        knoepfe.forEach(function (k) {
+          var aktiv = k === knopf;
+          k.classList.toggle("ist-aktiv", aktiv);
+          k.setAttribute("aria-pressed", String(aktiv));
+        });
+        beiWechsel(wert);
+      });
+      knoepfe.push(knopf);
+      wahl.appendChild(knopf);
+    });
+
+    wahl.appendChild(el("span", "portionen-einheit", rezept.portionen_einheit || "Portionen"));
+    return wahl;
+  }
+
+  function kopfBauen(rezept, portionen, beiWechsel) {
     var kopf = el("header", "rezept-kopf");
     kopf.appendChild(el("h1", null, rezept.titel));
     if (rezept.untertitel) kopf.appendChild(el("p", "untertitel", rezept.untertitel));
@@ -79,7 +113,12 @@
       meta.appendChild(el("dt", null, begriff));
       meta.appendChild(el("dd", null, wert));
     }
-    metaZeile("Ergibt", rezept.portionen + " " + (rezept.portionen_einheit || "Portionen"));
+
+    meta.appendChild(el("dt", null, "Ergibt"));
+    var ddPortionen = el("dd", "meta-portionen");
+    ddPortionen.appendChild(portionsWahlBauen(rezept, portionen, beiWechsel));
+    meta.appendChild(ddPortionen);
+
     metaZeile("Arbeitszeit", G.dauerFormatieren(rezept.zeit_aktiv_s));
     metaZeile("Gesamtzeit", G.dauerFormatieren(rezept.zeit_gesamt_s));
     metaZeile("Gefäß", rezept.gefaess);
@@ -145,18 +184,37 @@
     return box;
   }
 
+  // Schreibt die Mengenzellen fuer eine neue Portionszahl neu. Das Grid
+  // selbst bleibt stehen — die Zeilen und Bloecke aendern sich nicht.
+  function mengenAktualisieren(ziel, modell, portionen) {
+    var faktor = portionen / modell.rezept.portionen;
+    modell.zeilen.forEach(function (zeile) {
+      var td = ziel.querySelector('td.menge[data-zutat="' + zeile.zutat.id + '"]');
+      if (!td) return;
+      var text = P.mengeFormatieren(zeile.zutat, faktor);
+      td.textContent = text;
+      td.classList.toggle("menge-leer", !text);
+    });
+  }
+
   // Rendert ein Rezept vollstaendig in `ziel`.
   function rezeptRendern(rezept, ziel) {
     var modell = G.gridModellBauen(rezept);
+    var portionen = rezept.portionen;
+    modell.portionen = function () { return portionen; };
+
     ziel.textContent = "";
 
     var problemBox = problemeBauen(modell.probleme);
     if (problemBox) ziel.appendChild(problemBox);
 
-    ziel.appendChild(kopfBauen(rezept));
+    ziel.appendChild(kopfBauen(rezept, portionen, function (neu) {
+      portionen = neu;
+      mengenAktualisieren(ziel, modell, portionen);
+    }));
 
     var rahmen = el("div", "grid-rahmen");
-    rahmen.appendChild(tabelleBauen(modell));
+    rahmen.appendChild(tabelleBauen(modell, portionen));
     ziel.appendChild(rahmen);
 
     ziel.appendChild(schritteBauen(rezept));
@@ -168,5 +226,9 @@
     return modell;
   }
 
-  global.RezeptRender = { rezeptRendern: rezeptRendern, tabelleBauen: tabelleBauen };
+  global.RezeptRender = {
+    rezeptRendern: rezeptRendern,
+    tabelleBauen: tabelleBauen,
+    mengenAktualisieren: mengenAktualisieren
+  };
 })(window);
