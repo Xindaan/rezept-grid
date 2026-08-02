@@ -6,6 +6,17 @@
 
 ## Next
 
+- **T-0009** Verteilung ueber **Netlify** (Entscheidung 02.08.2026, weil
+  Andre es fuer beide Kicktipp-Repos bereits nutzt; Netlify liefert
+  ausserdem aus einem privaten Repo aus, GitHub Pages nur aus einem
+  oeffentlichen). Noetig: GitHub-Remote anlegen, `netlify.toml` mit
+  `publish = "."` — einfacher als die Kicktipp-Vorlage, da `index.html` in
+  der Wurzel liegt und es kein generiertes Verzeichnis gibt.
+  **Zu beachten:** Netlify veroeffentlicht den Inhalt unabhaengig von der
+  Repo-Sichtbarkeit. `TASK.md`, `STATE.md`, `docs/` und `tools/` waeren per
+  URL abrufbar — per `[[redirects]]` auf 404 legen.
+  Urheberrechts-Check der Rezepte: alle vier sind eigenstaendig
+  formuliert, `quelle: null`, also unkritisch.
 - **T-0012** `file://`-Smoke-Test in einem echten Browser bestaetigen:
   `index.html` doppelklicken, pruefen ob CSS greift und ob der
   Manifest-Fallback das Rezept laedt. In der Claude-Session nicht
@@ -15,25 +26,27 @@
   Folge-Task.
 ## Backlog
 
-- **T-0005** Zutaten-Abhaken per Klick (Einkauf / Mise en place).
-- **T-0008** Nicht-lineare Rezepte — **die Einschraenkung ist enger als
-  bisher angenommen.** Belegt an `rezepte/maultaschen.json` (T-0025):
-  parallele Straenge funktionieren bereits, wenn ihre Zutaten im Grid
-  hintereinander liegen. Teig belegt Zeile 0–3, Fuellung 4–15, beide Bloecke
-  zusammenhaengend, der Zusammenfuehrungsschritt umfasst 0–15 — der
-  Renderer meldet nichts und stellt es korrekt als zwei Klammern dar.
-  Offen ist nur der **verschraenkte** Fall: wenn zwei Straenge sich
-  abwechselnd Zutaten teilen, laegen fremde Zeilen im Block und die
-  Zusammenhangspruefung schlaegt an. Dafuer braeuchte es Teiltabellen oder
-  verschachtelte Spalten. Vorher pruefen, ob dieser Fall in echten Rezepten
-  ueberhaupt vorkommt — moeglicherweise reicht die Regel "Zutaten eines
-  Strangs zusammenhalten" als Konvention in `docs/konvertierung.md`.
-- **T-0009** Verteilung an Familie+Freunde (GitHub Pages o. ae.) inkl.
-  kurzem Urheberrechts-Check der enthaltenen Rezepte.
-- **T-0010** Druck-Stylesheet (eine Seite, ohne Controls).
-
+- **T-0005** Zutaten im Grid abhaken (Mise en place). Klick auf eine
+  Zutatenzeile streicht sie durch; Zustand nur in der Sitzung, nicht
+  gespeichert. Kleiner Eingriff, nutzt den vorhandenen DOM-Vertrag
+  (`data-zeile`).
+- **T-0026** Einkaufsliste als eigene Ansicht: Zutaten mehrerer Rezepte
+  zusammengefasst, auf die gewaehlten Portionen gerechnet, zum Abhaken.
+  Deutlich groesser als T-0005 — braucht Mengen-Addition ueber Rezepte
+  hinweg (gleiche Zutat, gleiche Einheit zusammenfassen; unterschiedliche
+  Einheiten nebeneinander stehen lassen statt umzurechnen).
 ## Done
 
+- **T-0008** (2026-08-02) **Entschieden: bleibt Konvention, kein Code.**
+  Parallele Straenge traegt der Renderer bereits (belegt an Maultaschen).
+  Der verschraenkte Fall — zwei Straenge, die sich abwechselnd Zutaten
+  teilen — wird nicht gebaut. Stattdessen gilt die Regel "Zutaten eines
+  Strangs in einem Schritt einfuehren" aus `docs/konvertierung.md`, die
+  bisher jedes Rezept getragen hat. Tritt der Fall doch auf, meldet der
+  Renderer ihn verstaendlich; dann mit echtem Anwendungsfall neu
+  entscheiden.
+- **T-0010** (2026-08-02) **Gestrichen.** Andre druckt keine Rezepte — in
+  der Kueche steht ein Bildschirm, dafuer gibt es den Kochmodus.
 - **T-0022** (2026-08-02) Kopf und Kochleiste neu. Kennzahlenstreifen mit
   drei Kacheln statt der Beschreibungsliste; "ohne Zutun" ist neu und
   rechnet sich aus den Stufen mit `unbeaufsichtigt: true` — die Zahl

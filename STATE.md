@@ -60,9 +60,10 @@ konvertiert.
 
 ## Next actions
 
-- T-0012 `file://`-Doppelklick-Test in echtem Browser — offen, braucht
-  Andre; einziger unbestaetigter Architektur-Eckpfeiler
-- T-0009 Verteilung an Familie+Freunde — sinnvoll, sobald T-0012 geklaert ist
+- T-0009 Verteilung ueber Netlify aufsetzen (Entscheidung liegt vor)
+- T-0012 `file://`-Doppelklick-Test — **nicht mehr blockierend**, seit die
+  Verteilung ueber Netlify laeuft (dort greift `fetch` per http). Nur noch
+  relevant, wenn die Sammlung ohne Netz dabei sein soll.
 
 ## Letzte Done
 
