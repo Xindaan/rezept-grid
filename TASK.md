@@ -24,6 +24,7 @@
   Bandbreite, 500 Builds/Monat) — ob dort ein PRIVATES GitHub-Repo im
   Gratis-Tarif verbunden werden darf, liess sich nicht belegen. Waere der
   einzige Weg mit nur einem Repo.
+
 ## Backlog
 
 - **T-0028** "ohne Zutun" bei ueberlappenden Wartezeiten. Die Kennzahl in
