@@ -37,6 +37,9 @@ konvertiert.
 - Zeitmass (T-0020): Spaltenbreite proportional zur Dauer, Zeitachse
   im Tabellenkopf, Vermerk wo die Breite die Dauer untertreibt.
   Rechnung in `js/zeitmass.js`, headless geprueft.
+- Kopf mit Kennzahlenstreifen und segmentierter Portionswahl (T-0022),
+  Zeitbalken in der Kochleiste, Zutatenspalten sticky (T-0023).
+- **Die Design-Uebergabe ist damit vollstaendig umgesetzt.**
 - Fuehrungslinien je Block (T-0021): die Unterkante jeder Stufe laeuft
   nach links bis zur Zutatenachse durch.
 - Grid-Design ueberarbeitet (T-0016 + T-0018): echtes Tabellenraster mit
@@ -57,7 +60,6 @@ konvertiert.
 
 ## Next actions
 
-- T-0022 (Kopf und Kochleiste) und T-0023 (sticky Zutatenspalten)
 - T-0012 `file://`-Doppelklick-Test in echtem Browser — offen, braucht
   Andre; einziger unbestaetigter Architektur-Eckpfeiler
 - T-0007 `docs/konvertierung.md` (Anleitung + Prompt-Vorlage), jetzt mit
@@ -66,6 +68,7 @@ konvertiert.
 
 ## Letzte Done
 
+- T-0022 Kopf und Kochleiste + T-0023 sticky Zutatenspalten (2026-08-02)
 - T-0020 Zeitmass (2026-08-02)
 - T-0021 Fuehrungslinie je Block (2026-08-02)
 - T-0019 Tokens und Typografie (2026-08-02)

@@ -99,17 +99,49 @@ body {
   font-size: 1.08rem;
 }
 
-.meta {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: .45rem 1.4rem;
-  align-items: baseline;
-  margin: 0;
-  max-width: 32rem;
+/* --- Kennzahlen und Portionswahl ----------------------------------- */
+
+.gefaess::before { content: " · "; }
+
+.kennzahlen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  margin: 0 0 1.2rem;
 }
 
-/* Beschriftungen treten zurueck, die Werte stehen vorn. */
-.meta dt {
+.kennzahl {
+  display: flex;
+  flex-direction: column;
+  gap: .1rem;
+  padding: .55rem .9rem;
+  min-width: 6.5rem;
+  border: 1px solid var(--achse);
+  border-radius: var(--radius-gross);
+  background: var(--karte);
+  box-shadow: var(--schatten-ruhe);
+}
+
+.kennzahl-wert {
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: -.022em;
+  font-variant-numeric: tabular-nums;
+}
+
+.kennzahl-label {
+  color: var(--gedaempft);
+  font-size: .7rem;
+}
+
+.ergibt {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .6rem;
+}
+
+.ergibt-label {
   color: var(--gedaempft);
   font-size: .68rem;
   font-weight: 600;
@@ -117,47 +149,42 @@ body {
   letter-spacing: .1em;
 }
 
-.meta dd {
-  margin: 0;
-  font-size: .95rem;
-}
-
-.meta-portionen { margin-top: -.25rem !important; }
-
-/* --- Portions-Umschaltung ------------------------------------------ */
-
-.portionen-wahl {
-  display: flex;
+/* Segmentierte Auswahl: eine Rille, ein gewaehltes Segment. */
+.portionen-segment {
+  display: inline-flex;
   align-items: center;
-  gap: .3rem;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--flaeche2);
 }
 
 .portionen-knopf {
-  min-width: 2rem;
-  padding: .2rem .45rem;
-  border: 1px solid var(--linie);
-  border-radius: 5px;
+  min-width: 2.4rem;
+  min-height: 34px;
+  padding: .25rem .7rem;
+  border: none;
+  border-radius: 999px;
   background: transparent;
   color: var(--gedaempft);
   font: inherit;
-  font-size: .82rem;
+  font-size: .85rem;
   font-variant-numeric: tabular-nums;
   cursor: pointer;
 }
 
-.portionen-knopf:hover { border-color: var(--gitter); color: var(--tinte); }
+.portionen-knopf:hover { color: var(--tinte); }
 
 .portionen-knopf.ist-aktiv {
-  border-color: var(--akzent);
-  background: var(--akzent-flaeche);
-  color: var(--akzent);
+  background: var(--karte);
+  color: var(--tinte);
   font-weight: 600;
+  box-shadow: var(--schatten-ruhe);
 }
 
-.portionen-knopf:focus-visible { outline: 2px solid var(--akzent); outline-offset: 1px; }
+.portionen-knopf:focus-visible { outline: 2px solid var(--akzent); outline-offset: 2px; }
 
 .portionen-einheit {
-  margin-left: .25rem;
   color: var(--gedaempft);
   font-size: .85rem;
 }
@@ -183,9 +210,10 @@ body {
 /* Die einzige Haupthandlung der Seite — entsprechend die einzige
    gefuellte Flaeche im Akzent. */
 .koch-start {
-  padding: .5rem 1.1rem;
+  min-height: 34px;
+  padding: .5rem 1.2rem;
   border: 1px solid var(--akzent);
-  border-radius: 5px;
+  border-radius: 999px;
   background: var(--akzent);
   color: var(--papier);
   font: inherit;
@@ -198,19 +226,16 @@ body {
 .koch-start:hover { filter: brightness(1.08); }
 .koch-start:focus-visible { outline: 2px solid var(--akzent); outline-offset: 2px; }
 
+/* Weiche Pillen: leise genug, um nicht mit der Haupthandlung zu
+   konkurrieren, aber als Marken erkennbar. */
 .tags li {
+  padding: .2rem .6rem;
+  border-radius: 999px;
+  background: var(--flaeche2);
   color: var(--gedaempft);
-  font-size: .68rem;
+  font-size: .7rem;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: .1em;
-}
-
-/* Trennpunkte statt Pillen — ruhiger und passt zur Tabellensprache. */
-.tags li + li::before {
-  content: "·";
-  margin-right: .5rem;
-  color: var(--linie);
+  letter-spacing: .02em;
 }
 
 /* --- Grid ---------------------------------------------------------- */
@@ -279,6 +304,8 @@ body {
 
 /* Kopplung beim Ueberfahren: Stufe und ihre Zutaten leuchten gemeinsam. */
 .grid .gekoppelt { background: var(--akzent-flaeche); }
+.grid .menge.gekoppelt,
+.grid .zutat.gekoppelt { background: var(--akzent-flaeche); }
 .grid .schritt.gekoppelt { border-color: var(--akzent); }
 .grid .zutat.gekoppelt .zutat-name { color: var(--akzent); }
 
@@ -289,19 +316,34 @@ body {
   .grid .zutat.gekoppelt .zutat-name { color: inherit; }
 }
 
-/* Zutatenblock: durchgehende Haarlinien ueber beide Spalten. */
+/* Zutatenblock: durchgehende Haarlinien ueber beide Spalten.
+   Gezeichnet als inset box-shadow statt als border — Chrome laesst die
+   Rahmen sticky-positionierter Zellen bei border-collapse: collapse
+   verschwinden, die Schatten bleiben. (T-0023) */
 .menge,
-.zutat { border-bottom: 1px solid var(--linie); }
+.zutat {
+  position: sticky;
+  z-index: 2;
+  background: var(--karte);
+  box-shadow: inset 0 -1px 0 var(--linie);
+}
 
-.grid tbody tr:first-child .menge,
-.grid tbody tr:first-child .zutat { border-top: 1px solid var(--linie); }
+/* Achse links und rechts des Blocks — ebenfalls als Schatten, sonst
+   verschwindet sie beim Scrollen mit. */
+.menge { left: 0; box-shadow: inset 0 -1px 0 var(--linie), inset 1px 0 0 var(--achse); }
+.zutat { box-shadow: inset 0 -1px 0 var(--linie), inset -1px 0 0 var(--achse); }
+.zutat { left: var(--zutat-links, 0); }
+
+.grid tbody tr:first-child .menge {
+  box-shadow: inset 0 -1px 0 var(--linie), inset 0 1px 0 var(--linie), inset 1px 0 0 var(--achse);
+}
+.grid tbody tr:first-child .zutat {
+  box-shadow: inset 0 -1px 0 var(--linie), inset 0 1px 0 var(--linie), inset -1px 0 0 var(--achse);
+}
 
 .menge {
   white-space: nowrap;
   text-align: right;
-  /* Schliesst den Zutatenblock nach links — sonst wirken die
-     Haarlinien wie freistehende Striche statt wie eine Tabelle. */
-  border-left: 1px solid var(--achse);
   padding-left: .9rem;
   padding-right: 1rem;
   font-size: .82rem;
@@ -332,8 +374,6 @@ body {
      unter table-layout: fixed ohnehin wirkungslos. */
   white-space: normal;
   padding-right: 1.6rem;
-  /* Senkrechte Achse zwischen Zutaten und Arbeitsschritten. */
-  border-right: 1px solid var(--achse);
 }
 
 .zutat-notiz {
@@ -513,7 +553,8 @@ body.kochmodus .zurueck-link { visibility: hidden; }
 /* Im Kochmodus tritt alles zurueck, was gerade nicht dran ist. Gedimmt
    werden gezielt die Zutaten- und Schrittzellen, nicht die Zeilen —
    eine Zeile enthaelt wegen der rowspans auch fremde Schrittzellen. */
-body.kochmodus { padding-bottom: 11rem; }
+/* Die Leiste ist mit dem Zeitbalken hoeher geworden. */
+body.kochmodus { padding-bottom: 12.5rem; }
 
 /* Der Startknopf waere im laufenden Kochmodus wirkungslos. */
 body.kochmodus .koch-start { visibility: hidden; }
@@ -588,6 +629,24 @@ body.kochmodus .zutat.koch-neu { border-bottom-color: var(--akzent); }
   margin: .25rem 0 0;
   color: var(--gedaempft);
   font-size: .88rem;
+}
+
+/* Zeitbalken: der Fortschritt der laufenden Stufe, ablesbar aus einem
+   Meter Abstand — bevor man die Ziffern entziffert. */
+.koch-zeitbalken {
+  margin-top: .55rem;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--flaeche2);
+  overflow: hidden;
+}
+
+.koch-zeitbalken-fuellung {
+  height: 100%;
+  width: 0;
+  border-radius: 999px;
+  background: var(--akzent);
+  transition: width 1s linear;
 }
 
 .koch-uhr-box { display: flex; align-items: center; gap: .6rem; }

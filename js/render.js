@@ -143,6 +143,11 @@
     tabelle.style.minWidth = noetig + "px";
     tabelle.style.width = "100%";
 
+    // Linker Rand der Zutatenspalte fuer position: sticky (T-0023).
+    // Waagerecht gescrollt wird nur, wenn die Tabelle auf ihrer
+    // Mindestbreite steht — genau dort stimmt dieser Wert exakt.
+    tabelle.style.setProperty("--zutat-links", Math.round(mass.zutaten[0] * noetig) + "px");
+
     var spalten = tabelle.querySelectorAll("colgroup col");
     spalten[0].style.width = (mass.zutaten[0] * 100).toFixed(3) + "%";
     spalten[1].style.width = (mass.zutaten[1] * 100).toFixed(3) + "%";
@@ -192,7 +197,10 @@
 
   // Umschaltung der Portionszahl. `beiWechsel` bekommt den neuen Wert.
   function portionsWahlBauen(rezept, portionen, beiWechsel) {
-    var wahl = el("div", "portionen-wahl");
+    // Segmentiert statt vier Einzelknoepfe: eine Rille, in der genau eine
+    // Zahl gewaehlt ist. Das liest sich als "eine Groesse von mehreren"
+    // statt als vier unabhaengige Schalter.
+    var wahl = el("div", "portionen-wahl portionen-segment");
     var knoepfe = [];
 
     P.portionsOptionen(rezept.portionen).forEach(function (wert) {
@@ -216,27 +224,50 @@
     return wahl;
   }
 
+  // Drei Kennzahlen: was man selbst am Topf steht, was von allein laeuft,
+  // und was das zusammen bedeutet. "ohne Zutun" ist neu und rechnet sich
+  // aus den Stufen mit unbeaufsichtigt: true — die Zahl beantwortet die
+  // Frage "kann ich nebenher etwas anderes machen".
+  function kennzahlenBauen(rezept) {
+    var ohneZutun = rezept.schritte.reduce(function (summe, s) {
+      return summe + (s.unbeaufsichtigt ? (s.dauer_s || 0) : 0);
+    }, 0);
+
+    var streifen = el("div", "kennzahlen");
+    [
+      ["Arbeit", rezept.zeit_aktiv_s],
+      ["ohne Zutun", ohneZutun],
+      ["gesamt", rezept.zeit_gesamt_s]
+    ].forEach(function (paar) {
+      if (!paar[1]) return;
+      var kachel = el("div", "kennzahl");
+      kachel.appendChild(el("span", "kennzahl-wert", G.dauerFormatieren(paar[1])));
+      kachel.appendChild(el("span", "kennzahl-label", paar[0]));
+      streifen.appendChild(kachel);
+    });
+    return streifen;
+  }
+
   function kopfBauen(rezept, portionen, beiWechsel, beiKochstart) {
     var kopf = el("header", "rezept-kopf");
     kopf.appendChild(el("h1", null, rezept.titel));
     if (rezept.untertitel) kopf.appendChild(el("p", "untertitel", rezept.untertitel));
 
-    var meta = el("dl", "meta");
-    function metaZeile(begriff, wert) {
-      if (!wert) return;
-      meta.appendChild(el("dt", null, begriff));
-      meta.appendChild(el("dd", null, wert));
+    if (rezept.gefaess) {
+      var geraet = kopf.querySelector(".untertitel");
+      if (geraet) {
+        geraet.appendChild(el("span", "gefaess", rezept.gefaess));
+      } else {
+        kopf.appendChild(el("p", "untertitel", rezept.gefaess));
+      }
     }
 
-    meta.appendChild(el("dt", null, "Ergibt"));
-    var ddPortionen = el("dd", "meta-portionen");
-    ddPortionen.appendChild(portionsWahlBauen(rezept, portionen, beiWechsel));
-    meta.appendChild(ddPortionen);
+    kopf.appendChild(kennzahlenBauen(rezept));
 
-    metaZeile("Arbeitszeit", G.dauerFormatieren(rezept.zeit_aktiv_s));
-    metaZeile("Gesamtzeit", G.dauerFormatieren(rezept.zeit_gesamt_s));
-    metaZeile("Gefäß", rezept.gefaess);
-    kopf.appendChild(meta);
+    var ergibt = el("div", "ergibt");
+    ergibt.appendChild(el("span", "ergibt-label", "Ergibt"));
+    ergibt.appendChild(portionsWahlBauen(rezept, portionen, beiWechsel));
+    kopf.appendChild(ergibt);
 
     var leiste = el("div", "kopf-leiste");
 

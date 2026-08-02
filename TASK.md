@@ -16,14 +16,6 @@
 - **T-0007** `docs/konvertierung.md`: Arbeitsanleitung + Prompt-Vorlage fuer
   Claude-Sessions. Jetzt mit Erfahrung aus zwei Konvertierungen schreibbar;
   die Fallstricke stehen schon in `docs/schema.md` und im README.
-- **T-0022** Kopf und Kochleiste neu (`js/render.js`, `css/stil.css`):
-  Kennzahlenstreifen, segmentierte Portionswahl, Zeitbalken in der Leiste,
-  `padding-bottom: 12.5rem`. Akzeptanz: Fuss wird nicht verdeckt, alle
-  Bedienziele >= 34 px.
-- **T-0023** Zutatenspalten `sticky` beim horizontalen Scrollen, Linien als
-  `box-shadow: inset`. Akzeptanz: in Chrome und Safari bleiben Menge und
-  Zutat mit sichtbarer Trennlinie stehen.
-
 ## Backlog
 
 - **T-0005** Zutaten-Abhaken per Klick (Einkauf / Mise en place).
@@ -54,6 +46,24 @@
 
 ## Done
 
+- **T-0022** (2026-08-02) Kopf und Kochleiste neu. Kennzahlenstreifen mit
+  drei Kacheln statt der Beschreibungsliste; "ohne Zutun" ist neu und
+  rechnet sich aus den Stufen mit `unbeaufsichtigt: true` — die Zahl
+  beantwortet die Frage, ob man nebenher etwas anderes machen kann.
+  Portionswahl segmentiert (eine Rille, ein gewaehltes Segment) statt vier
+  Einzelknoepfen, Tags als weiche Pillen, Hauptaktion als gefuellte Pille.
+  Bedienziele 34 px. In der Kochleiste ein Zeitbalken: der Fortschritt ist
+  aus einem Meter Abstand ablesbar, bevor man die Ziffern entziffert; bei
+  Stufen ohne Dauer wird er ausgeblendet. `padding-bottom` auf 12,5 rem —
+  gemessen: Leiste 104 px hoch, Polsterung 200 px, der Fuss bleibt frei.
+- **T-0023** (2026-08-02) Zutatenspalten bleiben beim waagerechten
+  Scrollen stehen. Ihre Linien sind auf `box-shadow: inset` umgestellt,
+  weil Chrome die Rahmen sticky-positionierter Zellen bei
+  `border-collapse: collapse` verschluckt. Der linke Rand der zweiten
+  Spalte kommt als `--zutat-links` aus der Breitenrechnung: gescrollt wird
+  nur, wenn die Tabelle auf ihrer Mindestbreite steht, und genau dort
+  stimmt der Wert exakt. Gemessen: bei 560 px Rahmen und 200 px Scroll
+  bleibt die Mengenspalte bei 21 px stehen, die Stufen wandern weg.
 - **T-0020** (2026-08-02) Zeitmass: Spaltenbreite aus `dauer_s`,
   Zeitachse als `thead`, Deckel bei 24 %. Rechnung in `js/zeitmass.js`
   (eigenes Modul, damit sie headless pruefbar ist statt nur im Browser

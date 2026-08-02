@@ -109,10 +109,17 @@
         felder.uhr.textContent = "ohne Zeit";
         felder.uhr.classList.remove("laeuft", "abgelaufen");
         felder.timerKnopf.hidden = true;
+        felder.balken.hidden = true;
         return;
       }
       felder.timerKnopf.hidden = false;
       felder.uhr.textContent = zeitFormatieren(verbleibend);
+      // Zeitbalken: aus einem Meter Abstand sieht man den Fortschritt,
+      // bevor man die Ziffern liest.
+      var gesamt = stufen[aktiv].schritt.dauer_s || 0;
+      var anteil = gesamt > 0 ? 1 - verbleibend / gesamt : 0;
+      felder.balken.hidden = false;
+      felder.balkenFuellung.style.width = (Math.min(1, Math.max(0, anteil)) * 100) + "%";
       felder.uhr.classList.toggle("laeuft", laeuft);
       felder.uhr.classList.toggle("abgelaufen", verbleibend === 0);
       felder.timerKnopf.textContent = laeuft ? "Pause" : (verbleibend === 0 ? "Neu" : "Start");
@@ -184,6 +191,11 @@
       kopfzeile.appendChild(felder.ruhe);
       text.appendChild(kopfzeile);
       text.appendChild(felder.anweisung);
+
+      felder.balken = el("div", "koch-zeitbalken");
+      felder.balkenFuellung = el("div", "koch-zeitbalken-fuellung");
+      felder.balken.appendChild(felder.balkenFuellung);
+      text.appendChild(felder.balken);
 
       var uhrBox = el("div", "koch-uhr-box");
       felder.uhr = el("span", "koch-uhr");
