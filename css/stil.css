@@ -376,6 +376,19 @@ body {
   padding-right: 1.6rem;
 }
 
+/* Abgehakt (T-0005): durchgestrichen UND gedaempft — Farbe allein wuerde
+   die Aussage nicht tragen. */
+.abgehakt { opacity: .4; }
+.abgehakt .zutat-name,
+.abgehakt .zutat-notiz { text-decoration: line-through; }
+.menge.abgehakt { text-decoration: line-through; }
+
+.zutat[role="button"] { cursor: pointer; }
+.zutat[role="button"]:focus-visible {
+  outline: 2px solid var(--akzent);
+  outline-offset: -2px;
+}
+
 .zutat-notiz {
   display: block;
   margin-top: .1rem;

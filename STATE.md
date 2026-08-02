@@ -41,6 +41,7 @@ konvertiert.
 - Kopf mit Kennzahlenstreifen und segmentierter Portionswahl (T-0022),
   Zeitbalken in der Kochleiste, Zutatenspalten sticky (T-0023).
 - **Die Design-Uebergabe ist damit vollstaendig umgesetzt.**
+- Zutaten lassen sich im Grid abhaken (T-0005).
 - Fuehrungslinien je Block (T-0021): die Unterkante jeder Stufe laeuft
   nach links bis zur Zutatenachse durch.
 - Grid-Design ueberarbeitet (T-0016 + T-0018): echtes Tabellenraster mit
@@ -69,6 +70,7 @@ konvertiert.
 
 ## Letzte Done
 
+- T-0005 Zutaten abhaken (2026-08-02)
 - T-0027 Zeitachse rechnet den kritischen Pfad (2026-08-02)
 - T-0007 Konvertierungsanleitung + T-0011 Einheiten-Pruefung (2026-08-02)
 - T-0022 Kopf und Kochleiste + T-0023 sticky Zutatenspalten (2026-08-02)

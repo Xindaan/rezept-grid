@@ -72,6 +72,7 @@
       // dass diese Menge beim Portionswechsel stehen bleibt.
       if (zeile.festeMenge) tdZutat.appendChild(el("span", "marke-fix", "fix"));
       if (zutat.notiz) tdZutat.appendChild(el("span", "zutat-notiz", zutat.notiz));
+      abhakenVerdrahten(tdMenge, tdZutat);
       tr.appendChild(tdZutat);
 
       modell.spalten.forEach(function (spalte, k) {
@@ -381,6 +382,35 @@
       var text = P.mengeFormatieren(zeile.zutat, faktor);
       td.textContent = text;
       td.classList.toggle("menge-leer", !text);
+    });
+  }
+
+  // Zutaten abhaken (T-0005), fuer Mise en place: ein Klick auf die Zeile
+  // streicht sie durch. Der Zustand lebt nur in der Sitzung — beim Kochen
+  // will man den Haken von gestern nicht wiedersehen.
+  //
+  // Die Zutatenzelle wird dafuer bedienbar gemacht statt einer eigenen
+  // Kontrollkaestchen-Spalte: eine dritte Spalte kostet Breite, die im
+  // Zeitmass fehlt, und die ganze Zeile ist das groessere Ziel fuer
+  // fettige Finger.
+  function abhakenVerdrahten(tdMenge, tdZutat) {
+    tdZutat.setAttribute("role", "button");
+    tdZutat.tabIndex = 0;
+    tdZutat.setAttribute("aria-pressed", "false");
+
+    function umschalten() {
+      var an = !tdZutat.classList.contains("abgehakt");
+      tdZutat.classList.toggle("abgehakt", an);
+      tdMenge.classList.toggle("abgehakt", an);
+      tdZutat.setAttribute("aria-pressed", String(an));
+    }
+
+    tdZutat.addEventListener("click", umschalten);
+    tdZutat.addEventListener("keydown", function (ereignis) {
+      if (ereignis.key === "Enter" || ereignis.key === " ") {
+        ereignis.preventDefault();
+        umschalten();
+      }
     });
   }
 

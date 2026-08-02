@@ -40,10 +40,6 @@
   ueberlappt keine Wartezeit, nachgeprueft. Richtig waere die Zeit, in der
   **keine** beaufsichtigte Stufe laeuft, nicht die Summe der
   unbeaufsichtigten. Erst bauen, wenn ein Rezept den Fall erzeugt.
-- **T-0005** Zutaten im Grid abhaken (Mise en place). Klick auf eine
-  Zutatenzeile streicht sie durch; Zustand nur in der Sitzung, nicht
-  gespeichert. Kleiner Eingriff, nutzt den vorhandenen DOM-Vertrag
-  (`data-zeile`).
 - **T-0026** Einkaufsliste als eigene Ansicht: Zutaten mehrerer Rezepte
   zusammengefasst, auf die gewaehlten Portionen gerechnet, zum Abhaken.
   Deutlich groesser als T-0005 — braucht Mengen-Addition ueber Rezepte
@@ -51,6 +47,24 @@
   Einheiten nebeneinander stehen lassen statt umzurechnen).
 ## Done
 
+- **T-0005** (2026-08-02) Zutaten im Grid abhaken (Mise en place). Klick
+  oder Enter auf eine Zutatenzeile streicht sie durch; der Zustand lebt
+  nur in der Sitzung — beim naechsten Kochen will man den Haken von
+  gestern nicht wiedersehen.
+  Bedienbar gemacht wurde die **Zutatenzelle**, nicht eine eigene
+  Kontrollkaestchen-Spalte: eine dritte Spalte kostet Breite, die dem
+  Zeitmass fehlt, und die ganze Zeile ist das groessere Ziel fuer fettige
+  Finger. Mit `role="button"`, `tabindex` und `aria-pressed`, damit es
+  auch ohne Maus geht.
+  Durchgestrichen **und** gedaempft — Farbe allein traegt die Aussage
+  nicht. Geprueft: ueberlebt den Portionswechsel, kollidiert weder mit
+  der Hover-Kopplung noch mit dem Kochmodus, und Escape raeumt nur die
+  Kochklassen ab.
+- **T-0007-Nachtrag** (2026-08-02) `docs/konvertierung.md` um den siebten
+  Fallstrick ergaenzt: `vorstufen` steuert die Form des Grids **und** die
+  Zeitrechnung. Ein falsch gesetztes Feld sieht nicht nur schief aus, es
+  produziert eine falsche Zahl — bei den Maultaschen 90 statt 75 Minuten.
+  Auch in der Prompt-Vorlage nachgezogen.
 - **T-0027** (2026-08-02) Zeitachse rechnet den kritischen Pfad statt
   stumpf zu addieren. Andre hat es an den Maultaschen gesehen: die Fuellung
   entsteht, waehrend der Teig ruht — die Achse zeigte trotzdem eine

@@ -33,7 +33,7 @@ Ist eine Seite technisch nicht abrufbar (chefkoch.de war es am
 von Hand hereingeben oder ein Grundrezept eigenständig formulieren und
 `quelle: null` setzen.
 
-## Die sechs Fallstricke
+## Die sieben Fallstricke
 
 Alle aus echten Konvertierungen, nicht ausgedacht.
 
@@ -77,13 +77,33 @@ Grid hintereinander stehen. Dafür den ganzen Strang in **einem** Schritt
 einführen, statt seine Zutaten über mehrere zu verteilen. Verschränkte
 Stränge meldet der Renderer als „kein zusammenhängender Zeilenblock".
 
+**7. `vorstufen` steuert zwei Dinge, nicht eines.**
+Das Feld bestimmt die Form des Grids **und** die Zeitrechnung. Eine Stufe
+beginnt, sobald ihre Vorstufen fertig sind; eine mit `vorstufen: []`
+beginnt bei null und läuft damit neben dem her, was links von ihr steht.
+
+Daraus folgt: Ein falsch gesetztes `vorstufen` sieht nicht nur schief
+aus, es produziert eine **falsche Zahl**. Bei den Maultaschen entsteht
+die Füllung während der Teig ruht — mit korrekten Vorstufen sind das
+75 Minuten, ohne sie hätte die Zeitachse 90 angezeigt.
+
+Zwei Faustregeln:
+
+- Eine Stufe, die *irgendwann während* einer anderen erledigt werden
+  kann, bekommt `vorstufen: []` (oder verweist auf ihre eigene Vorstufe
+  im selben Strang) — **nicht** auf die Stufe daneben.
+- `zeit_gesamt_s` ist der **kritische Pfad**, nicht die Summe der Dauern.
+  `pruefe-grid.js` meldet es, wenn beides auseinanderfällt.
+
 ## Plausibilität prüfen
 
 Vor dem Commit kurz gegenlesen:
 
 - Ergeben die Mengen die angegebene Portionszahl? 300 g Linsen für vier
   Personen ja, für zwölf nicht.
-- Passt `zeit_gesamt_s` zur Summe der `dauer_s` plus Vorbereitung?
+- Passt `zeit_gesamt_s` zum **kritischen Pfad** plus Vorbereitung? Bei
+  parallelen Strängen ist das weniger als die Summe der Dauern — das
+  Prüfskript meldet es, wenn die Stränge beim Addieren übersehen wurden.
 - Ist `zeit_aktiv_s` mindestens so groß wie die Summe der Stufen **ohne**
   `unbeaufsichtigt`?
 - Sind die Schritt-Titel Handlungen in ein bis vier Wörtern? Sie stehen
@@ -128,7 +148,15 @@ Regeln, die dabei zaehlen:
    seine Zutaten ueber mehrere zu verteilen. Sonst verschraenken sich die
    Straenge und der Renderer kann das Grid nicht bauen.
 
-7. Der Schritt-Titel ist ein Kurzlabel von ein bis vier Woertern
+7. vorstufen steuert die Form des Grids UND die Zeitrechnung. Eine Stufe
+   beginnt, sobald ihre Vorstufen fertig sind; eine mit vorstufen: []
+   beginnt bei null und laeuft neben dem her, was links von ihr steht.
+   Kann eine Stufe irgendwann waehrend einer anderen erledigt werden
+   (Fuellung mischen, waehrend der Teig ruht), verweist sie NICHT auf die
+   Stufe daneben. Setze zeit_gesamt_s auf den kritischen Pfad, nicht auf
+   die Summe der Dauern.
+
+8. Der Schritt-Titel ist ein Kurzlabel von ein bis vier Woertern
    ("aufgiessen", "Tomatenmark roesten"), die Anweisung der ganze Satz.
 
 Danach fuehre bitte aus:
