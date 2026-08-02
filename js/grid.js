@@ -110,6 +110,7 @@
 
       spalten.push({
         schritt: schritt,
+        vorstufen: vorstufen,
         von: von,
         bis: bis,
         hoehe: bis - von + 1,
@@ -118,7 +119,47 @@
       });
     });
 
-    return { rezept: rezept, zeilen: zeilen, spalten: spalten, probleme: probleme };
+    // --- 3. Spaltenzuordnung ------------------------------------------
+    // Nicht je Stufe eine Spalte: Stufen, deren Zeilenbloecke sich nicht
+    // ueberschneiden, teilen sich eine. Nur so stehen parallele Straenge
+    // nebeneinander statt hintereinander — bei den Maultaschen entsteht
+    // die Fuellung waehrend der Teig ruht, und das gehoert an dieselbe
+    // Stelle der Zeitachse.
+    //
+    // Zwei Bedingungen: eine Stufe steht rechts von allen ihren
+    // Vorstufen, und in ihrer Spalte darf keine andere Stufe dieselben
+    // Zeilen belegen. Bei linearen Rezepten faellt daraus wieder genau
+    // eine Spalte je Stufe.
+    var spalteNachId = {};
+    spalten.forEach(function (s) { spalteNachId[s.schritt.id] = s; });
+
+    var belegung = [];
+    spalten.forEach(function (s) {
+      var fruehestens = 0;
+      s.vorstufen.forEach(function (vid) {
+        var vor = spalteNachId[vid];
+        if (vor && vor.spalte !== undefined) {
+          fruehestens = Math.max(fruehestens, vor.spalte + 1);
+        }
+      });
+
+      var c = fruehestens;
+      while (belegung[c] && belegung[c].some(function (b) {
+        return !(s.bis < b.von || s.von > b.bis);
+      })) c++;
+
+      s.spalte = c;
+      belegung[c] = belegung[c] || [];
+      belegung[c].push({ von: s.von, bis: s.bis });
+    });
+
+    return {
+      rezept: rezept,
+      zeilen: zeilen,
+      spalten: spalten,
+      spaltenAnzahl: belegung.length,
+      probleme: probleme
+    };
   }
 
   // --- Formatierung ---------------------------------------------------

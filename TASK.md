@@ -42,6 +42,24 @@
 
 ## Done
 
+- **T-0030** (2026-08-02) Parallele Straenge stehen jetzt auch **im Bild**
+  nebeneinander, nicht nur in der Zeitrechnung. Andre hat es gemeldet:
+  nach T-0027 sagte die Zeitachse "0" fuer die Fuellung, die Spalte stand
+  aber weiter rechts von "Teig ruhen lassen" — Bild und Beschriftung
+  widersprachen sich, und die Rueckwaerts-Null sah aus wie ein Fehler.
+  Ursache: `grid.js` legte **eine Spalte je Schritt** an, streng von links
+  nach rechts. Jetzt teilen sich Stufen eine Spalte, wenn ihre
+  Zeilenbloecke sich nicht ueberschneiden. Zwei Bedingungen: eine Stufe
+  steht rechts von allen ihren Vorstufen, und in ihrer Spalte darf keine
+  andere dieselben Zeilen belegen.
+  Maultaschen: 5 Stufen auf 4 Spalten, "Fuellung mischen" landet in
+  Spalte 0 neben "Nudelteig kneten" — im Browser nachgemessen, beide bei
+  x = 222. Zeitachse laeuft wieder vorwaerts: 0 / 10 / 40 / 60 Min.
+  **Lineare Rezepte bleiben unveraendert** (jede Stufe bekommt wieder ihre
+  eigene Spalte), der Eingriff ist damit chirurgisch. `render.js` legt
+  Tabelle, Zeitachse und Breiten jetzt nach Spalten aus statt nach
+  Schritten; eine Spalte erbt als Start den fruehesten und als Dauer die
+  Spanne bis zum spaetesten Ende ihrer Stufen.
 - **T-0012** (2026-08-02) **Bestaetigt von Andre: der `file://`-Weg
   funktioniert.** Doppelklick auf `index.html` zeigt die Uebersicht mit
   allen vier Rezepten, gestaltet, und ein Klick auf eine Karte oeffnet das

@@ -21,16 +21,9 @@
     var koerper = el("tbody");
     var faktor = portionen / modell.rezept.portionen;
 
-    // Fuehrungslinie: die Unterkante eines Blocks laeuft nach links bis
-    // zur Zutatenachse durch. Die Strecke besteht aus den leeren Zellen
-    // der Spalten links davon — endet dort eine fruehere Stufe in
-    // derselben Zeile, zeichnet deren eigene Unterkante das Stueck.
-    // Die erste Stufe braucht keine (sie grenzt schon an die Zutaten),
-    // die letzte auch nicht (ihre Unterkante ist der Tabellenschluss).
-    // Welche Stufe laeuft neben der vorherigen her statt danach? Das
-    // entscheidet nicht die Reihenfolge im Grid, sondern die Zeitrechnung:
-    // eine Stufe ohne Vorstufen faengt bei null an, waehrend links davon
-    // noch etwas laeuft.
+    // Welche Stufe laeuft neben der vorherigen her statt danach? Eine
+    // Stufe ohne Vorstufen faengt bei null an, waehrend links davon noch
+    // etwas laeuft.
     var dauernAlle = modell.spalten.map(function (s) { return s.schritt.dauer_s; });
     var startsAlle = global.RezeptZeitmass.startzeiten(dauernAlle, vorstufenIndizes(modell));
     var laeuftParallel = startsAlle.map(function (start, i) {
@@ -39,12 +32,20 @@
       return start < endeDavor;
     });
 
-    var letzteSpalte = modell.spalten.length - 1;
+    var gruppen = nachSpalten(modell);
+
+    // Fuehrungslinie: die Unterkante eines Blocks laeuft nach links bis
+    // zur Zutatenachse durch. Die Strecke besteht aus den leeren Zellen
+    // der Spalten links davon — endet dort eine fruehere Stufe in
+    // derselben Zeile, zeichnet deren eigene Unterkante das Stueck.
+    // Spalte 0 braucht keine (sie grenzt an die Zutaten), die letzte auch
+    // nicht (ihre Unterkante ist der Tabellenschluss).
+    var letzteSpalte = modell.spaltenAnzahl - 1;
     var blockEnde = new Map(); // Zeile -> hoechster Spaltenindex, der dort endet
-    modell.spalten.forEach(function (spalte, k) {
-      if (k === 0 || k === letzteSpalte) return;
+    modell.spalten.forEach(function (spalte) {
+      if (spalte.spalte === 0 || spalte.spalte === letzteSpalte) return;
       var bisher = blockEnde.get(spalte.bis);
-      if (bisher === undefined || k > bisher) blockEnde.set(spalte.bis, k);
+      if (bisher === undefined || spalte.spalte > bisher) blockEnde.set(spalte.bis, spalte.spalte);
     });
 
     modell.zeilen.forEach(function (zeile, r) {
@@ -75,10 +76,16 @@
       abhakenVerdrahten(tdMenge, tdZutat);
       tr.appendChild(tdZutat);
 
-      modell.spalten.forEach(function (spalte, k) {
-        if (spalte.von === r) {
-          tr.appendChild(schrittZelleBauen(spalte, laeuftParallel[k]));
-        } else if (r > spalte.von && r <= spalte.bis) {
+      gruppen.forEach(function (stufen, c) {
+        var beginnt = null, verdeckt = false;
+        stufen.forEach(function (s) {
+          if (s.von === r) beginnt = s;
+          else if (r > s.von && r <= s.bis) verdeckt = true;
+        });
+
+        if (beginnt) {
+          tr.appendChild(schrittZelleBauen(beginnt, laeuftParallel[modell.spalten.indexOf(beginnt)]));
+        } else if (verdeckt) {
           // von der rowspan-Zelle darueber abgedeckt — nichts einfuegen
         } else {
           var leer = el("td", "leer");
@@ -86,7 +93,7 @@
           // dieser Zeile endet? Dann traegt sie ein Stueck seiner
           // Fuehrungslinie.
           var endetHier = blockEnde.get(r);
-          if (endetHier !== undefined && endetHier > k) leer.classList.add("fuehrungslinie");
+          if (endetHier !== undefined && endetHier > c) leer.classList.add("fuehrungslinie");
           tr.appendChild(leer);
         }
       });
@@ -99,7 +106,7 @@
     // Stufenzelle wegen der rowspans spaeter — eine Breite auf der Zelle
     // wuerde still verworfen. Das colgroup gilt dagegen fuer die Spalte.
     var gruppe = document.createElement("colgroup");
-    for (var c = 0; c < modell.spalten.length + 2; c++) {
+    for (var c = 0; c < modell.spaltenAnzahl + 2; c++) {
       gruppe.appendChild(document.createElement("col"));
     }
     // Reihenfolge im Markup: colgroup, thead, tbody.
@@ -109,17 +116,46 @@
     return tabelle;
   }
 
-  // Vorstufen als Spaltenindizes. Fehlt das Feld, gilt die lineare Kette
-  // — dieselbe Vorgabe wie in grid.js und docs/schema.md.
+  // Vorstufen als Stufen-Indizes (nicht Spalten — mehrere Stufen koennen
+  // sich seit der Parallelisierung eine Spalte teilen).
   function vorstufenIndizes(modell) {
     var nachId = {};
     modell.spalten.forEach(function (s, i) { nachId[s.schritt.id] = i; });
-    return modell.spalten.map(function (s, i) {
-      var vs = s.schritt.vorstufen;
-      if (vs === undefined || vs === null) return i > 0 ? [i - 1] : [];
-      return vs.map(function (id) { return nachId[id]; })
-               .filter(function (j) { return j !== undefined; });
+    return modell.spalten.map(function (s) {
+      return (s.vorstufen || []).map(function (id) { return nachId[id]; })
+                                .filter(function (j) { return j !== undefined; });
     });
+  }
+
+  // Stufen nach Spalte gruppiert. Eine Spalte kann mehrere Stufen tragen,
+  // wenn sie verschiedene Zeilen belegen (paralleler Strang).
+  function nachSpalten(modell) {
+    var gruppen = [];
+    for (var c = 0; c < modell.spaltenAnzahl; c++) gruppen[c] = [];
+    modell.spalten.forEach(function (s) { gruppen[s.spalte].push(s); });
+    return gruppen;
+  }
+
+  // Start und Dauer je SPALTE: Beginn ist der frueheste Start ihrer
+  // Stufen, Dauer die Spanne bis zum spaetesten Ende. Bei einer Spalte
+  // mit nur einer Stufe ist das genau deren Dauer.
+  function spaltenZeiten(modell) {
+    var dauernStufen = modell.spalten.map(function (s) { return s.schritt.dauer_s; });
+    var startsStufen = global.RezeptZeitmass.startzeiten(dauernStufen, vorstufenIndizes(modell));
+    var gruppen = nachSpalten(modell);
+
+    var starts = [], dauern = [];
+    gruppen.forEach(function (stufen, c) {
+      var von = Infinity, bis = 0;
+      stufen.forEach(function (s) {
+        var i = modell.spalten.indexOf(s);
+        von = Math.min(von, startsStufen[i]);
+        bis = Math.max(bis, startsStufen[i] + (dauernStufen[i] || 0));
+      });
+      starts[c] = von === Infinity ? 0 : von;
+      dauern[c] = Math.max(0, bis - starts[c]);
+    });
+    return { starts: starts, dauern: dauern, stufenStarts: startsStufen };
   }
 
   // Kopfzeile mit den Startzeitpunkten der Stufen.
@@ -131,11 +167,10 @@
     beschriftung.scope = "row";
     tr.appendChild(beschriftung);
 
-    var dauern = modell.spalten.map(function (s) { return s.schritt.dauer_s; });
-    var starts = global.RezeptZeitmass.startzeiten(dauern, vorstufenIndizes(modell));
-    starts.forEach(function (sekunden, i) {
+    var zeiten = spaltenZeiten(modell);
+    zeiten.starts.forEach(function (sekunden, c) {
       var minuten = Math.round(sekunden / 60);
-      var letzte = i === starts.length - 1;
+      var letzte = c === zeiten.starts.length - 1;
       var th = el("th", "zeitachse-marke", letzte ? minuten + " Min" : String(minuten));
       th.scope = "col";
       tr.appendChild(th);
@@ -152,7 +187,8 @@
     var rahmen = tabelle.parentElement;
     if (!rahmen) return;
 
-    var dauern = modell.spalten.map(function (s) { return s.schritt.dauer_s; });
+    var zeiten = spaltenZeiten(modell);
+    var dauern = zeiten.dauern;
     var noetig = Z.noetigeBreite(dauern.length);
 
     // Bewusst an der MINDESTbreite gerechnet, nicht an der verfuegbaren.
@@ -183,15 +219,16 @@
 
     // Gedeckelte Stufen sagen, dass ihre Achse gekuerzt wurde — sonst
     // liest man eine Breite ab, die nicht der Dauer entspricht.
-    modell.spalten.forEach(function (spalte, i) {
+    modell.spalten.forEach(function (spalte) {
+      var c = spalte.spalte;
       var td = tabelle.querySelector('[data-schritt="' + spalte.schritt.id + '"]');
       if (!td) return;
       var alt = td.querySelector(".kuerzung");
       if (alt) alt.remove();
-      td.classList.toggle("ist-gekuerzt", !!mass.gekuerzt[i]);
-      if (mass.gekuerzt[i]) {
-        var zeit = Math.round(mass.zeitanteil[i] * 100);
-        var breit = Math.round(mass.stufen[i] * 100);
+      td.classList.toggle("ist-gekuerzt", !!mass.gekuerzt[c]);
+      if (mass.gekuerzt[c]) {
+        var zeit = Math.round(mass.zeitanteil[c] * 100);
+        var breit = Math.round(mass.stufen[c] * 100);
         td.appendChild(el("span", "kuerzung", "∕∕ Achse gekürzt, " + zeit + " % → " + breit + " %"));
       }
     });

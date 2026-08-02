@@ -19,7 +19,9 @@ konvertiert.
   Zeitmass (Spaltenbreite proportional zur Dauer, Zeitachse auf dem
   kritischen Pfad), Fuehrungslinien, Kennzahlenstreifen, sticky
   Zutatenspalten.
-- Pruefung: `node tools/pruefe-grid.js` — **89/89 gruen**. Laeuft ueber
+- Parallele Straenge stehen im Grid nebeneinander (T-0030): Stufen
+  teilen sich eine Spalte, wenn ihre Zeilen sich nicht ueberschneiden.
+- Pruefung: `node tools/pruefe-grid.js` — **92/92 gruen**. Laeuft ueber
   alle Rezepte, prueft Schema, Layout, Zeitmass und Manifest-Aktualitaet.
 - Nach jeder Rezeptaenderung noetig: `node tools/build-manifest.js`.
 - Vorschau: `python3 -m http.server 8412`, Konfiguration in
@@ -36,6 +38,7 @@ konvertiert.
 
 ## Letzte Done
 
+- T-0030 Parallele Straenge im Grid nebeneinander (2026-08-02)
 - T-0012 file://-Weg bestaetigt + T-0029 Zurueck-Link (2026-08-02)
 - T-0005 Zutaten abhaken (2026-08-02)
 - T-0027 Zeitachse auf dem kritischen Pfad (2026-08-02)

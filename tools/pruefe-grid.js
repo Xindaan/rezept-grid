@@ -151,6 +151,53 @@ pruefe("Uhr ueber einer Stunde", K.zeitFormatieren(3900), "1:05:00");
 pruefe("Uhr bei 0", K.zeitFormatieren(0), "0:00");
 pruefe("Uhr wird nicht negativ", K.zeitFormatieren(-5), "0:00");
 
+// --- 2d2. Spaltenzuordnung (T-0030) -----------------------------------
+// Stufen teilen sich eine Spalte, wenn ihre Zeilenbloecke sich nicht
+// ueberschneiden — so stehen parallele Straenge nebeneinander.
+function spaltenPruefen(name, rezept, erwarteteSpalten) {
+  var m = G.gridModellBauen(rezept);
+  var maengel = [];
+
+  if (m.spaltenAnzahl !== erwarteteSpalten) {
+    maengel.push(m.spaltenAnzahl + " Spalten statt " + erwarteteSpalten);
+  }
+
+  var nachId = {};
+  m.spalten.forEach(function (s) { nachId[s.schritt.id] = s; });
+
+  m.spalten.forEach(function (s) {
+    // Eine Stufe steht rechts von allen ihren Vorstufen.
+    (s.vorstufen || []).forEach(function (vid) {
+      var vor = nachId[vid];
+      if (vor && vor.spalte >= s.spalte) {
+        maengel.push(s.schritt.id + " steht nicht rechts von " + vid);
+      }
+    });
+    // In derselben Spalte darf sich kein Zeilenblock ueberschneiden.
+    m.spalten.forEach(function (t) {
+      if (t === s || t.spalte !== s.spalte) return;
+      if (!(s.bis < t.von || s.von > t.bis)) {
+        maengel.push(s.schritt.id + " und " + t.schritt.id + " ueberschneiden sich in Spalte " + s.spalte);
+      }
+    });
+  });
+
+  pruefe("Spalten " + name, maengel, []);
+}
+
+// Lineare Rezepte: jede Stufe behaelt ihre eigene Spalte.
+spaltenPruefen("linear (Linsen-Eintopf)", rezept, 6);
+// Paralleler Strang: Fuellung teilt sich Spalte 0 mit dem Teig.
+var maultaschen = JSON.parse(fs.readFileSync(path.join(wurzel, "rezepte/maultaschen.json"), "utf8"));
+spaltenPruefen("parallel (Maultaschen)", maultaschen, 4);
+pruefe("Maultaschen: Fuellung teilt Spalte 0 mit dem Teig",
+  (function () {
+    var m = G.gridModellBauen(maultaschen);
+    var f = m.spalten.find(function (s) { return s.schritt.id === "s-fuellung"; });
+    var t = m.spalten.find(function (s) { return s.schritt.id === "s-teig"; });
+    return [f.spalte, t.spalte];
+  })(), [0, 0]);
+
 // --- 2e. Zeitmass (T-0020) --------------------------------------------
 // Die Spaltenbreiten sind Prozentwerte an der Mindestbreite. Drei
 // Eigenschaften muessen fuer JEDES Rezept gelten, sonst ist entweder eine
