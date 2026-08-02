@@ -364,6 +364,10 @@ body {
 
 .leer { border: none; background: none; padding: 0; }
 
+/* Fuehrungslinie: setzt die Unterkante eines Blocks nach links fort, bis
+   zur Zutatenachse. Ohne sie muss das Auge die Treppenstufe raten. */
+.grid .leer.fuehrungslinie { border-bottom: 1px solid var(--fuehrung); }
+
 /* --- Text unter dem Grid ------------------------------------------- */
 
 .anweisungen h2,
@@ -486,7 +490,8 @@ body.kochmodus .koch-start { visibility: hidden; }
 
 body.kochmodus .menge,
 body.kochmodus .zutat,
-body.kochmodus .schritt {
+body.kochmodus .schritt,
+body.kochmodus .leer.fuehrungslinie {
   opacity: .28;
   transition: opacity .15s;
 }

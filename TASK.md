@@ -40,9 +40,6 @@
   zehnstufiges Rezept scrollt horizontal, ohne dass eine Spalte unter
   4,5 rem faellt. (Der Linsen-Eintopf ist kein Rezept mehr, sondern
   Testvorlage — siehe T-0025.)
-- **T-0021** Fuehrungslinie je Block (`css/stil.css` + Breite aus T-0020).
-  Akzeptanz: die Unterkante jeder Stufe laeuft bis zur Zutatenspalte durch,
-  ohne Beschriftungen zu ueberschreiben.
 - **T-0022** Kopf und Kochleiste neu (`js/render.js`, `css/stil.css`):
   Kennzahlenstreifen, segmentierte Portionswahl, Zeitbalken in der Leiste,
   `padding-bottom: 12.5rem`. Akzeptanz: Fuss wird nicht verdeckt, alle
@@ -81,6 +78,20 @@
 
 ## Done
 
+- **T-0021** (2026-08-02) Fuehrungslinie je Block. Andre hat sie im Entwurf
+  vermisst — sie macht sichtbar, auf welcher Hoehe eine Stufe endet, ohne
+  dass das Auge die Treppe verfolgen muss.
+  **Ohne die Kopplung an T-0020 gebaut.** Die Uebergabe schlaegt ein
+  `::after` mit `right: 100%` und einer aus den Spaltenbreiten gerechneten
+  Laenge vor. Noetig ist das nicht: Unter jedem Block liegen in seiner
+  Endzeile genau die leeren Zellen der Spalten links davon, lueckenlos bis
+  zur Zutatenachse — nachgerechnet fuer alle vier Rezepte. Die Linie ist
+  daher ein `border-bottom` auf diesen Zellen. Kein Messen, kein
+  ResizeObserver, und sie ueberlebt jede spaetere Aenderung der
+  Spaltenbreiten durch T-0020.
+  Endet eine fruehere Stufe in derselben Zeile, zeichnet deren eigene
+  Unterkante das Stueck — die Linie bleibt trotzdem durchgehend. Erste und
+  letzte Stufe bekommen keine, wie in der Uebergabe vorgesehen.
 - **T-0019** (2026-08-02) Tokens und Typografie auf die Kicktipp-Linie
   umgestellt. Ein Schriftstack fuer alles, `font-variant-numeric:
   tabular-nums` global — `--zahlen` (Monospace) ist damit ersatzlos

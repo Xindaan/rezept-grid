@@ -21,6 +21,20 @@
     var koerper = el("tbody");
     var faktor = portionen / modell.rezept.portionen;
 
+    // Fuehrungslinie: die Unterkante eines Blocks laeuft nach links bis
+    // zur Zutatenachse durch. Die Strecke besteht aus den leeren Zellen
+    // der Spalten links davon — endet dort eine fruehere Stufe in
+    // derselben Zeile, zeichnet deren eigene Unterkante das Stueck.
+    // Die erste Stufe braucht keine (sie grenzt schon an die Zutaten),
+    // die letzte auch nicht (ihre Unterkante ist der Tabellenschluss).
+    var letzteSpalte = modell.spalten.length - 1;
+    var blockEnde = new Map(); // Zeile -> hoechster Spaltenindex, der dort endet
+    modell.spalten.forEach(function (spalte, k) {
+      if (k === 0 || k === letzteSpalte) return;
+      var bisher = blockEnde.get(spalte.bis);
+      if (bisher === undefined || k > bisher) blockEnde.set(spalte.bis, k);
+    });
+
     modell.zeilen.forEach(function (zeile, r) {
       var tr = el("tr");
       var zutat = zeile.zutat;
@@ -48,13 +62,19 @@
       if (zutat.notiz) tdZutat.appendChild(el("span", "zutat-notiz", zutat.notiz));
       tr.appendChild(tdZutat);
 
-      modell.spalten.forEach(function (spalte) {
+      modell.spalten.forEach(function (spalte, k) {
         if (spalte.von === r) {
           tr.appendChild(schrittZelleBauen(spalte));
         } else if (r > spalte.von && r <= spalte.bis) {
           // von der rowspan-Zelle darueber abgedeckt — nichts einfuegen
         } else {
-          tr.appendChild(el("td", "leer"));
+          var leer = el("td", "leer");
+          // Liegt rechts von dieser leeren Zelle ein Block, der genau in
+          // dieser Zeile endet? Dann traegt sie ein Stueck seiner
+          // Fuehrungslinie.
+          var endetHier = blockEnde.get(r);
+          if (endetHier !== undefined && endetHier > k) leer.classList.add("fuehrungslinie");
+          tr.appendChild(leer);
         }
       });
 
