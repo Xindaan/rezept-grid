@@ -44,7 +44,8 @@
     p.textContent = fehler.message;
     var zurueck = document.createElement("a");
     zurueck.className = "zurueck-link";
-    zurueck.href = "./";
+    // Siehe render.js: "./" oeffnet per file:// den Finder.
+    zurueck.href = "index.html";
     zurueck.textContent = "Alle Rezepte";
     box.appendChild(h);
     box.appendChild(p);

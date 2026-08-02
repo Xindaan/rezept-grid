@@ -24,14 +24,6 @@
   Bandbreite, 500 Builds/Monat) — ob dort ein PRIVATES GitHub-Repo im
   Gratis-Tarif verbunden werden darf, liess sich nicht belegen. Waere der
   einzige Weg mit nur einem Repo.
-- **T-0012** `file://`-Smoke-Test in einem echten Browser bestaetigen:
-  `index.html` doppelklicken, pruefen ob CSS greift und ob der
-  Manifest-Fallback das Rezept laedt. In der Claude-Session nicht
-  verifizierbar (Preview-Pane ist kein echter `file://`-Origin, der
-  Chrome-Connector erzwingt ein `https://`-Praefix). Ueber http ist der
-  Pfad gruen. Akzeptanz: Befund notiert; falls CSS oder Laden scheitert,
-  Folge-Task.
-
 ## Backlog
 
 - **T-0028** "ohne Zutun" bei ueberlappenden Wartezeiten. Die Kennzahl in
@@ -49,6 +41,21 @@
 
 ## Done
 
+- **T-0012** (2026-08-02) **Bestaetigt von Andre: der `file://`-Weg
+  funktioniert.** Doppelklick auf `index.html` zeigt die Uebersicht mit
+  allen vier Rezepten, gestaltet, und ein Klick auf eine Karte oeffnet das
+  Rezept. Der Manifest-Fallback traegt also — der einzige Pfad, den ich
+  aus der Session nie ausfuehren konnte.
+- **T-0029** (2026-08-02) Zurueck-Link oeffnete per `file://` den Finder
+  statt der Uebersicht. Von Andre beim Doppelklick-Test gefunden.
+  Ursache: `href = "./"` ist ein **Verzeichnis**-URL. Ueber http liefert
+  der Server dort die `index.html` aus, deshalb war es unsichtbar; per
+  `file://` reicht macOS ein Verzeichnis an den Finder weiter. Beide
+  Stellen (`js/render.js`, `js/app.js`) auf `index.html` umgestellt, das
+  funktioniert auf beiden Wegen.
+  Isomorphie-Check: die uebrigen erzeugten Links sind Karten-Links
+  (`?rezept=<id>`, haengen an der Datei, nicht am Verzeichnis) und die
+  externe Quellen-URL — beide nicht betroffen.
 - **T-0005** (2026-08-02) Zutaten im Grid abhaken (Mise en place). Klick
   oder Enter auf eine Zutatenzeile streicht sie durch; der Zustand lebt
   nur in der Sitzung — beim naechsten Kochen will man den Haken von

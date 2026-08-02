@@ -10,7 +10,8 @@ konvertiert.
 
 ## Status
 
-- **Funktional fertig.** Vier Rezepte (`eierkuchen`, `pfannkuchen`,
+- **Funktional fertig**, auch per Doppelklick ohne Server (T-0012 von
+  Andre bestaetigt). Vier Rezepte (`eierkuchen`, `pfannkuchen`,
   `spaetzle`, `maultaschen`), Uebersicht, Portions-Skalierung, Kochmodus
   mit Countdown, Zutaten abhaken.
 - **Design-Uebergabe aus Claude Design vollstaendig umgesetzt**
@@ -31,12 +32,11 @@ konvertiert.
   Empfehlung: oeffentlicher Ableger via `public-mirror`-Skill, Pages
   darauf. Offen sind sein Go und die zwei Kommentare, die das private
   Kicktipp-Repo nennen.
-- **T-0012 `file://`-Doppelklick-Test** — nicht blockierend. Nur relevant,
-  wenn die Sammlung ohne Netz dabei sein soll.
 - **T-0026 Einkaufsliste** — gewuenscht, noch nicht begonnen.
 
 ## Letzte Done
 
+- T-0012 file://-Weg bestaetigt + T-0029 Zurueck-Link (2026-08-02)
 - T-0005 Zutaten abhaken (2026-08-02)
 - T-0027 Zeitachse auf dem kritischen Pfad (2026-08-02)
 - T-0007 Konvertierungsanleitung + T-0011 Einheiten-Pruefung (2026-08-02)

@@ -523,7 +523,11 @@
     if (problemBox) ziel.appendChild(problemBox);
 
     var zurueck = el("a", "zurueck-link", "Alle Rezepte");
-    zurueck.href = "./";
+    // Nicht "./": das ist ein Verzeichnis-URL, und den reicht macOS beim
+    // Oeffnen per file:// an den Finder weiter statt die Seite zu laden.
+    // Ueber http faellt das nicht auf, weil der Server dort die
+    // index.html ausliefert.
+    zurueck.href = "index.html";
     ziel.appendChild(zurueck);
 
     // Der Kochmodus wird erst beim ersten Start gebaut — vorher steht das
