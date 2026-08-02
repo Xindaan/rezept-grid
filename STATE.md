@@ -60,7 +60,8 @@ konvertiert.
 
 ## Next actions
 
-- T-0009 Verteilung ueber Netlify aufsetzen (Entscheidung liegt vor)
+- T-0009 Verteilung: Netlify entfaellt (kostet), GitHub Pages nur
+  oeffentlich — Empfehlung oeffentlicher Ableger via `public-mirror`
 - T-0012 `file://`-Doppelklick-Test — **nicht mehr blockierend**, seit die
   Verteilung ueber Netlify laeuft (dort greift `fetch` per http). Nur noch
   relevant, wenn die Sammlung ohne Netz dabei sein soll.

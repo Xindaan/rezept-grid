@@ -6,17 +6,24 @@
 
 ## Next
 
-- **T-0009** Verteilung ueber **Netlify** (Entscheidung 02.08.2026, weil
-  Andre es fuer beide Kicktipp-Repos bereits nutzt; Netlify liefert
-  ausserdem aus einem privaten Repo aus, GitHub Pages nur aus einem
-  oeffentlichen). Noetig: GitHub-Remote anlegen, `netlify.toml` mit
-  `publish = "."` — einfacher als die Kicktipp-Vorlage, da `index.html` in
-  der Wurzel liegt und es kein generiertes Verzeichnis gibt.
-  **Zu beachten:** Netlify veroeffentlicht den Inhalt unabhaengig von der
-  Repo-Sichtbarkeit. `TASK.md`, `STATE.md`, `docs/` und `tools/` waeren per
-  URL abrufbar — per `[[redirects]]` auf 404 legen.
-  Urheberrechts-Check der Rezepte: alle vier sind eigenstaendig
-  formuliert, `quelle: null`, also unkritisch.
+- **T-0009** Verteilung — **Netlify ist raus** (Abo gekuendigt, soll kein
+  Geld kosten; Eintrag vom 02.08. damit ueberholt). GitHub Pages ist
+  kostenlos **nur fuer oeffentliche Repos**, fuer private braucht es
+  GitHub Pro — also derselbe Fehler nochmal.
+  Empfehlung: **oeffentlicher Ableger** nach dem Muster, das Andre schon
+  fahrt (`WM-2026-Kicktipp` -> `poisson-dor`, dafuer gibt es den
+  `public-mirror`-Skill mit Leak-Gate). Das private Repo behaelt
+  `TASK.md`, `STATE.md`, `CLAUDE.md` und `docs/` — dort steckt der
+  Personenbezug —, der Ableger bekommt nur die App: `index.html`, `css/`,
+  `js/`, `rezepte/`. GitHub Pages auf dem Ableger, kostenlos.
+  **Vor dem ersten Push zu bereinigen:** zwei Kommentare nennen das
+  private Kicktipp-Repo beim Namen (`css/stil.css` Kopf, `js/zeitmass.js`
+  bzw. der Verweis in `docs/`). Entweder umformulieren oder bewusst
+  stehen lassen.
+  Ungeklaert als Alternative: Cloudflare Pages (kostenlos, unbegrenzte
+  Bandbreite, 500 Builds/Monat) — ob dort ein PRIVATES GitHub-Repo im
+  Gratis-Tarif verbunden werden darf, liess sich nicht belegen. Waere der
+  einzige Weg mit nur einem Repo.
 - **T-0012** `file://`-Smoke-Test in einem echten Browser bestaetigen:
   `index.html` doppelklicken, pruefen ob CSS greift und ob der
   Manifest-Fallback das Rezept laedt. In der Claude-Session nicht
