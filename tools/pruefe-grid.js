@@ -257,8 +257,19 @@ dateien.forEach(function (datei) {
   if (r.id !== name) maengel.push('id "' + r.id + '" passt nicht zum Dateinamen');
   if (!r.portionen || r.portionen < 1) maengel.push("portionen fehlt oder ist < 1");
 
+  // Einheiten gegen ein festes Vokabular. Ein Tippfehler wie "Zehen"
+  // statt "Zehe" faellt sonst nirgends auf: die Einheit ist dann keine
+  // Bruch-Einheit mehr und die Menge laeuft still in die Dezimalrundung —
+  // aus "1½ Zehe" wird "1,5 Zehen".
+  var ERLAUBTE_EINHEITEN = ["g", "kg", "ml", "l", "EL", "TL", "Msp", "Prise",
+    "Stueck", "Stück", "Zehe", "Blatt", "Stiel", "Zweig", "Bund", "Dose",
+    "Packung", "Scheibe", "Handvoll"];
+
   var ids = {};
   r.zutaten.forEach(function (z) {
+    if (z.einheit && ERLAUBTE_EINHEITEN.indexOf(z.einheit) === -1) {
+      maengel.push('"' + z.id + '": Einheit "' + z.einheit + '" steht nicht im Vokabular');
+    }
     if (ids[z.id]) maengel.push('Zutaten-ID "' + z.id + '" doppelt');
     ids[z.id] = true;
     if ((z.menge === null || z.menge === undefined) && z.einheit) {

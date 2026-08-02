@@ -62,12 +62,11 @@ konvertiert.
 
 - T-0012 `file://`-Doppelklick-Test in echtem Browser — offen, braucht
   Andre; einziger unbestaetigter Architektur-Eckpfeiler
-- T-0007 `docs/konvertierung.md` (Anleitung + Prompt-Vorlage), jetzt mit
-  Erfahrung aus zwei Konvertierungen schreibbar
 - T-0009 Verteilung an Familie+Freunde — sinnvoll, sobald T-0012 geklaert ist
 
 ## Letzte Done
 
+- T-0007 Konvertierungsanleitung + T-0011 Einheiten-Pruefung (2026-08-02)
 - T-0022 Kopf und Kochleiste + T-0023 sticky Zutatenspalten (2026-08-02)
 - T-0020 Zeitmass (2026-08-02)
 - T-0021 Fuehrungslinie je Block (2026-08-02)

@@ -13,9 +13,6 @@
   Chrome-Connector erzwingt ein `https://`-Praefix). Ueber http ist der
   Pfad gruen. Akzeptanz: Befund notiert; falls CSS oder Laden scheitert,
   Folge-Task.
-- **T-0007** `docs/konvertierung.md`: Arbeitsanleitung + Prompt-Vorlage fuer
-  Claude-Sessions. Jetzt mit Erfahrung aus zwei Konvertierungen schreibbar;
-  die Fallstricke stehen schon in `docs/schema.md` und im README.
 ## Backlog
 
 - **T-0005** Zutaten-Abhaken per Klick (Einkauf / Mise en place).
@@ -34,15 +31,6 @@
 - **T-0009** Verteilung an Familie+Freunde (GitHub Pages o. ae.) inkl.
   kurzem Urheberrechts-Check der enthaltenen Rezepte.
 - **T-0010** Druck-Stylesheet (eine Seite, ohne Controls).
-- **T-0011** Schema-Checkscript fuer alle Dateien unter `rezepte/` (Node,
-  ohne Dependencies). Weitgehend erledigt: `tools/pruefe-grid.js` laeuft
-  jetzt ueber **alle** `rezepte/*.json` und prueft IDs, Dateinamen,
-  `menge`/`einheit`-Paarung, `menge_bis > menge`, Vorstufen-Reihenfolge,
-  fehlerfreies Layout und saubere Mengen bei jeder Portionszahl.
-  `tools/build-manifest.js` prueft JSON-Gueltigkeit und `id` == Dateiname.
-  Offen: Einheiten-Vokabular gegen eine feste Liste pruefen, damit Tippfehler
-  ("Zehen" statt "Zehe") auffallen statt still in die Dezimalrundung zu
-  laufen.
 
 ## Done
 
