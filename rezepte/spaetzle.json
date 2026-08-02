@@ -1,0 +1,121 @@
+{
+  "schema": 1,
+  "id": "spaetzle",
+  "titel": "Spätzle",
+  "untertitel": "Vom Brett geschabt — vier Zutaten, der Rest ist Armkraft",
+  "portionen": 4,
+  "portionen_einheit": "Portionen",
+  "zeit_aktiv_s": 1500,
+  "zeit_gesamt_s": 3600,
+  "gefaess": "Rührschüssel, weiter Topf, Spätzlebrett und Palette",
+  "tags": ["schwäbisch", "beilage", "grundrezept", "vegetarisch"],
+  "quelle": null,
+  "zutaten": [
+    {
+      "id": "z-mehl",
+      "name": "Spätzlemehl",
+      "menge": 400,
+      "einheit": "g",
+      "notiz": "griffig, ersatzweise Type 405"
+    },
+    {
+      "id": "z-eier",
+      "name": "Eier",
+      "menge": 4,
+      "einheit": null,
+      "notiz": "Größe M"
+    },
+    {
+      "id": "z-wasser",
+      "name": "Wasser",
+      "menge": 100,
+      "einheit": "ml",
+      "notiz": "kalt, nach Bedarf"
+    },
+    {
+      "id": "z-salz",
+      "name": "Salz",
+      "menge": 1,
+      "einheit": "TL",
+      "notiz": null
+    },
+    {
+      "id": "z-muskat",
+      "name": "Muskatnuss",
+      "menge": null,
+      "einheit": null,
+      "notiz": "frisch gerieben"
+    },
+    {
+      "id": "z-kochwasser",
+      "name": "Wasser",
+      "menge": 4,
+      "einheit": "l",
+      "notiz": "zum Kochen",
+      "skalieren": false
+    },
+    {
+      "id": "z-kochsalz",
+      "name": "Salz",
+      "menge": 1,
+      "einheit": "EL",
+      "notiz": "für das Kochwasser",
+      "skalieren": false
+    },
+    {
+      "id": "z-butter",
+      "name": "Butter",
+      "menge": 30,
+      "einheit": "g",
+      "notiz": "zum Schwenken"
+    }
+  ],
+  "schritte": [
+    {
+      "id": "s-teig",
+      "titel": "Teig schlagen",
+      "anweisung": "Alles verrühren und dann kräftig schlagen, bis der Teig Blasen wirft und zäh vom Löffel reißt. Das Schlagen ist der ganze Trick — zu dünner Teig zerfällt im Wasser.",
+      "dauer_s": 480,
+      "zutaten": ["z-mehl", "z-eier", "z-wasser", "z-salz", "z-muskat"],
+      "vorstufen": []
+    },
+    {
+      "id": "s-ruhen",
+      "titel": "ruhen lassen",
+      "anweisung": "Zugedeckt stehen lassen. Der Teig entspannt sich und lässt sich danach sauber schaben.",
+      "dauer_s": 1800,
+      "unbeaufsichtigt": true,
+      "zutaten": [],
+      "vorstufen": ["s-teig"]
+    },
+    {
+      "id": "s-wasser",
+      "titel": "Wasser aufsetzen",
+      "anweisung": "Reichlich Wasser salzen und aufkochen. Danach die Hitze zurücknehmen, es soll sieden und nicht sprudeln.",
+      "dauer_s": 600,
+      "zutaten": ["z-kochwasser", "z-kochsalz"],
+      "vorstufen": ["s-ruhen"]
+    },
+    {
+      "id": "s-schaben",
+      "titel": "schaben und garen",
+      "anweisung": "Teig dünn auf das nasse Brett streichen und in schmalen Streifen ins Wasser schaben. Sobald sie oben schwimmen, abschöpfen und kalt abschrecken.",
+      "dauer_s": 480,
+      "zutaten": [],
+      "vorstufen": ["s-wasser"]
+    },
+    {
+      "id": "s-schwenken",
+      "titel": "schwenken",
+      "anweisung": "In brauner Butter schwenken und sofort auf den Tisch.",
+      "dauer_s": 120,
+      "zutaten": ["z-butter"],
+      "vorstufen": ["s-schaben"]
+    }
+  ],
+  "hinweise": [
+    "Brett und Palette immer wieder ins kochende Wasser tauchen, dann klebt nichts.",
+    "Wer presst statt schabt, bekommt Spätzle mit rundem Querschnitt. Schmeckt gleich, sieht anders aus, und in Gärtringen fällt es auf.",
+    "Als Käsespätzle: lagenweise mit geriebenem Bergkäse schichten und mit gerösteten Zwiebeln belegen."
+  ]
+}

@@ -1,0 +1,186 @@
+{
+  "schema": 1,
+  "id": "maultaschen",
+  "titel": "Maultaschen",
+  "untertitel": "Zwei Stränge, die erst am Schluss zusammenlaufen: Teig und Füllung",
+  "portionen": 4,
+  "portionen_einheit": "Portionen",
+  "zeit_aktiv_s": 3600,
+  "zeit_gesamt_s": 6300,
+  "gefaess": "Zwei Schüsseln, Nudelholz oder Maschine, weiter Topf",
+  "tags": ["schwäbisch", "hauptgericht", "vorkochen", "aufwendig"],
+  "quelle": null,
+  "zutaten": [
+    {
+      "id": "z-mehl",
+      "name": "Weizenmehl",
+      "menge": 400,
+      "einheit": "g",
+      "notiz": "Type 405"
+    },
+    {
+      "id": "z-eier-teig",
+      "name": "Eier",
+      "menge": 4,
+      "einheit": null,
+      "notiz": "für den Teig"
+    },
+    {
+      "id": "z-oel",
+      "name": "Olivenöl",
+      "menge": 1,
+      "einheit": "EL",
+      "notiz": null
+    },
+    {
+      "id": "z-salz-teig",
+      "name": "Salz",
+      "menge": 1,
+      "einheit": "TL",
+      "notiz": "für den Teig"
+    },
+    {
+      "id": "z-broetchen",
+      "name": "Brötchen",
+      "menge": 2,
+      "einheit": null,
+      "notiz": "altbacken, gewürfelt"
+    },
+    {
+      "id": "z-milch",
+      "name": "Milch",
+      "menge": 150,
+      "einheit": "ml",
+      "notiz": "lauwarm"
+    },
+    {
+      "id": "z-zwiebel",
+      "name": "Zwiebel",
+      "menge": 1,
+      "einheit": null,
+      "notiz": "fein gewürfelt"
+    },
+    {
+      "id": "z-butter",
+      "name": "Butter",
+      "menge": 20,
+      "einheit": "g",
+      "notiz": "zum Anschwitzen"
+    },
+    {
+      "id": "z-spinat",
+      "name": "Blattspinat",
+      "menge": 300,
+      "einheit": "g",
+      "notiz": "aufgetaut und gut ausgedrückt"
+    },
+    {
+      "id": "z-hack",
+      "name": "Hackfleisch",
+      "menge": 300,
+      "einheit": "g",
+      "notiz": "gemischt"
+    },
+    {
+      "id": "z-braet",
+      "name": "Bratwurstbrät",
+      "menge": 200,
+      "einheit": "g",
+      "notiz": null
+    },
+    {
+      "id": "z-ei-fuellung",
+      "name": "Ei",
+      "menge": 1,
+      "einheit": null,
+      "notiz": "für die Füllung"
+    },
+    {
+      "id": "z-petersilie",
+      "name": "Petersilie",
+      "menge": 4,
+      "einheit": "Stiel",
+      "notiz": "fein gehackt"
+    },
+    {
+      "id": "z-muskat",
+      "name": "Muskatnuss",
+      "menge": null,
+      "einheit": null,
+      "notiz": "frisch gerieben"
+    },
+    {
+      "id": "z-salz-fuellung",
+      "name": "Salz",
+      "menge": null,
+      "einheit": null,
+      "notiz": "für die Füllung, kräftig"
+    },
+    {
+      "id": "z-pfeffer",
+      "name": "Schwarzer Pfeffer",
+      "menge": null,
+      "einheit": null,
+      "notiz": "frisch gemahlen"
+    },
+    {
+      "id": "z-bruehe",
+      "name": "Fleischbrühe",
+      "menge": 2,
+      "einheit": "l",
+      "notiz": "kräftig"
+    }
+  ],
+  "schritte": [
+    {
+      "id": "s-teig",
+      "titel": "Nudelteig kneten",
+      "anweisung": "Zu einem festen, glatten Teig kneten. Er soll deutlich fester sein als Spätzleteig, sonst reißt er beim Ausrollen.",
+      "dauer_s": 600,
+      "zutaten": ["z-mehl", "z-eier-teig", "z-oel", "z-salz-teig"],
+      "vorstufen": []
+    },
+    {
+      "id": "s-teig-ruhen",
+      "titel": "Teig ruhen lassen",
+      "anweisung": "In Folie gewickelt kühl ruhen lassen. Ohne Ruhe zieht sich der Teig beim Ausrollen wieder zusammen.",
+      "dauer_s": 1800,
+      "unbeaufsichtigt": true,
+      "zutaten": [],
+      "vorstufen": ["s-teig"]
+    },
+    {
+      "id": "s-fuellung",
+      "titel": "Füllung mischen",
+      "anweisung": "Brötchenwürfel in der Milch einweichen und ausdrücken. Zwiebel in der Butter glasig dünsten und abkühlen lassen. Alles mit Spinat, Hack, Brät, Ei und Petersilie verkneten und kräftig abschmecken — die Füllung muss überwürzt schmecken, der Teig nimmt viel weg.",
+      "dauer_s": 900,
+      "zutaten": [
+        "z-broetchen", "z-milch", "z-zwiebel", "z-butter", "z-spinat",
+        "z-hack", "z-braet", "z-ei-fuellung", "z-petersilie",
+        "z-muskat", "z-salz-fuellung", "z-pfeffer"
+      ],
+      "vorstufen": []
+    },
+    {
+      "id": "s-fuellen",
+      "titel": "füllen und formen",
+      "anweisung": "Teig dünn ausrollen, Füllung aufstreichen, einrollen und in Stücke abteilen. Ränder gut andrücken, sonst öffnen sie sich in der Brühe.",
+      "dauer_s": 1200,
+      "zutaten": [],
+      "vorstufen": ["s-teig-ruhen", "s-fuellung"]
+    },
+    {
+      "id": "s-ziehen",
+      "titel": "in Brühe ziehen",
+      "anweisung": "In siedender, nicht kochender Brühe ziehen lassen, bis sie oben schwimmen. Sprudelndes Wasser reißt sie auf.",
+      "dauer_s": 900,
+      "zutaten": ["z-bruehe"],
+      "vorstufen": ["s-fuellen"]
+    }
+  ],
+  "hinweise": [
+    "Dieses Rezept ist der erste Fall in der Sammlung mit zwei parallelen Strängen: Teig und Füllung entstehen unabhängig voneinander und treffen sich erst beim Formen. Im Grid sind das zwei getrennte Klammern, die zusammenlaufen.",
+    "Übrige Maultaschen am nächsten Tag in Scheiben mit Ei in der Pfanne braten. In Gärtringen gilt das nicht als Resteverwertung, sondern als eigenes Gericht.",
+    "Wer sie einfriert, tut das roh und gart sie später direkt aus dem Gefrierfach."
+  ]
+}

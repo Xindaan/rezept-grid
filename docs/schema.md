@@ -2,8 +2,12 @@
 
 Version 1 (2026-08-01). Jedes Rezept ist genau eine JSON-Datei unter
 `rezepte/`, Dateiname = `id` + `.json`, ASCII, kebab-case
-(`linsen-eintopf.json`). UTF-8 ohne BOM; Umlaute in nutzersichtbaren
-Strings sind erwuenscht (siehe CLAUDE.md, Sprach-Override).
+(`eierkuchen.json`, `maultaschen.json`). UTF-8 ohne BOM; Umlaute in
+nutzersichtbaren Strings sind erwuenscht (siehe CLAUDE.md, Sprach-Override).
+
+Nicht unter `rezepte/` gehoeren Testdaten — alles dort landet ueber das
+Manifest in der Uebersicht. Vorlagen fuer Pruefungen liegen in
+`tools/testdaten/`.
 
 ## Grundprinzip
 

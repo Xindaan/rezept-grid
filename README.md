@@ -65,8 +65,12 @@ Eine Zutat belegt genau eine Zeile; mehrfach verwendete Zutaten brauchen
 je einen eigenen Eintrag mit eigener `id`.
 
 **"umfasst keinen zusammenhängenden Zeilenblock".**
-Das Rezept ist nicht linear (parallele Stränge, z. B. eine Sauce
-nebenher). Der Renderer kann das noch nicht — siehe T-0008 in `TASK.md`.
+Zwei Stränge des Rezepts sind ineinander verschachtelt. Parallele Stränge
+an sich sind kein Problem — `maultaschen.json` hat zwei (Teig und Füllung)
+und rendert sauber als zwei Klammern, die zusammenlaufen. Die Meldung kommt
+erst, wenn die Zutaten der Stränge sich im Grid abwechseln. Abhilfe: die
+Zutaten eines Strangs zusammenhalten, also den Strang in einem Schritt
+einführen statt verteilt. Siehe T-0008 in `TASK.md`.
 
 ## Development
 

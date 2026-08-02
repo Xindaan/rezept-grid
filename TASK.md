@@ -24,6 +24,10 @@
   Pruefungen laufen headless ueber `grid.js`/`portionen.js` und fassen
   weder CSS noch `render.js` an; sie bleiben auch dann gruen, wenn die
   Oberflaeche zerlegt ist. Nachweis ist der Browser.
+  **Entschieden (Andre, 02.08.):** Dunkelmodus wird gebaut. Die Werte sind
+  aus Apple-Systemfarben abgeleitet, nicht aus Kicktipp uebernommen — dort
+  gibt es keine einzige `prefers-color-scheme`-Regel. Kontraste vor dem
+  Festschreiben nachmessen, besonders `--ruhe-tinte` auf `--block-ruhe`.
 - **T-0020** Zeitmass: Spaltenbreite aus `dauer_s`, Zeitachse als `thead`,
   Deckel mit Kuerzungsvermerk (`js/render.js`).
   **Zwei Korrekturen an der Vorlage, beide nachgemessen:**
@@ -37,9 +41,17 @@
   halten, das ist unter `table-layout: fixed` wirkungslos (gemessen: 16 px
   statt 72 px). Die Untergrenze muss beim Rechnen der Prozentwerte geklemmt
   und der Rest neu normiert werden.
-  Akzeptanz: Linsen-Eintopf zeigt koecheln als breiteste Spalte; ein
+  **Entschieden (Andre, 02.08.):** Deckel bleibt bei 24 %. Die Breiten sind
+  qualitativ, niemand misst sie nach — Lesbarkeit der kurzen Stufen schlaegt
+  Massstabstreue.
+  **Offen geblieben und selbst festgelegt:** Stufen mit `dauer_s: null`
+  (z. B. "abschmecken") bekommen die Mindestbreite. Die Uebergabe sagt dazu
+  nichts; ohne Regel rechnet jemand mit `null` und bekommt `NaN` in einer
+  Prozentangabe.
+  Akzeptanz: Pfannkuchen zeigt "gehen lassen" als breiteste Spalte; ein
   zehnstufiges Rezept scrollt horizontal, ohne dass eine Spalte unter
-  4,5 rem faellt.
+  4,5 rem faellt. (Der Linsen-Eintopf ist kein Rezept mehr, sondern
+  Testvorlage — siehe T-0025.)
 - **T-0021** Fuehrungslinie je Block (`css/stil.css` + Breite aus T-0020).
   Akzeptanz: die Unterkante jeder Stufe laeuft bis zur Zutatenspalte durch,
   ohne Beschriftungen zu ueberschreiben.
@@ -53,17 +65,19 @@
 
 ## Backlog
 
-- **T-0024** Gulasch als Rezept aufnehmen — **erst nach Quellenklaerung**.
-  Die 20-Zutaten-Fassung aus der Belastungsprobe (2b) ist Prueflast: Mengen
-  aus essen-und-trinken.de (Rezept 40504), chefkoch.de war nicht abrufbar.
-  Vor einer Datei unter `rezepte/` muss `quelle` auf die tatsaechlich
-  benutzte Vorlage gesetzt und die Schritte neu formuliert sein. Solange
-  nicht geklaert, darf die Datei nicht unter `rezepte/` liegen: der
-  Manifest-Waechter und `pruefe-grid.js` ziehen sie sonst sofort in die
-  Uebersicht und damit zu Familie und Freunden.
 - **T-0005** Zutaten-Abhaken per Klick (Einkauf / Mise en place).
-- **T-0008** Nicht-lineare Rezepte (parallele Straenge, z. B. Sauce separat):
-  Konzept Teiltabellen/verschachtelte Spalten. Erst nach T-0002 stabil.
+- **T-0008** Nicht-lineare Rezepte — **die Einschraenkung ist enger als
+  bisher angenommen.** Belegt an `rezepte/maultaschen.json` (T-0025):
+  parallele Straenge funktionieren bereits, wenn ihre Zutaten im Grid
+  hintereinander liegen. Teig belegt Zeile 0–3, Fuellung 4–15, beide Bloecke
+  zusammenhaengend, der Zusammenfuehrungsschritt umfasst 0–15 — der
+  Renderer meldet nichts und stellt es korrekt als zwei Klammern dar.
+  Offen ist nur der **verschraenkte** Fall: wenn zwei Straenge sich
+  abwechselnd Zutaten teilen, laegen fremde Zeilen im Block und die
+  Zusammenhangspruefung schlaegt an. Dafuer braeuchte es Teiltabellen oder
+  verschachtelte Spalten. Vorher pruefen, ob dieser Fall in echten Rezepten
+  ueberhaupt vorkommt — moeglicherweise reicht die Regel "Zutaten eines
+  Strangs zusammenhalten" als Konvention in `docs/konvertierung.md`.
 - **T-0009** Verteilung an Familie+Freunde (GitHub Pages o. ae.) inkl.
   kurzem Urheberrechts-Check der enthaltenen Rezepte.
 - **T-0010** Druck-Stylesheet (eine Seite, ohne Controls).
@@ -79,6 +93,17 @@
 
 ## Done
 
+- **T-0025** (2026-08-02) Rezeptbestand ausgetauscht. Linsen-Eintopf und
+  Gulasch waren Prueflast, keine Rezepte, die jemand kochen will. Der
+  Linsen-Eintopf ist **nicht geloescht**, sondern nach
+  `tools/testdaten/linsen-eintopf.json` gewandert: sieben Detailpruefungen
+  in `pruefe-grid.js` haengen an seinen konkreten Bloecken und rowspans
+  (3/6/7/11/11/15), die waeren sonst als Regressionsbasis verloren. Er
+  taucht dort nicht mehr im Manifest und damit nicht in der Uebersicht auf.
+  Neu: `pfannkuchen` (Berliner Lesart, Hefeteig mit Konfitüre — bewusst
+  neben `eierkuchen` gestellt, damit der Namensstreit dokumentiert ist),
+  `spaetzle` und `maultaschen` (Gaertringer Seite der Familie).
+  Alle drei eigenstaendig formuliert, `quelle: null`. 76/76 gruen.
 - **T-0018** (2026-08-01) Zweiter Designdurchgang, diesmal ohne die Vorgabe
   "wie das Original" — Andre hat ausdruecklich freie Hand gegeben. Richtung:
   Kuechen-Spezifikation (technische Zeichnung auf warmem Papier). Genau ein

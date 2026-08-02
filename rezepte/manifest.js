@@ -151,216 +151,564 @@ window.REZEPTE["eierkuchen"] = {
   ]
 };
 
-window.REZEPTE["linsen-eintopf"] = {
+window.REZEPTE["maultaschen"] = {
   "schema": 1,
-  "id": "linsen-eintopf",
-  "titel": "Linsen-Eintopf mit Wurzelgemüse",
-  "untertitel": "Ein Topf, 50 Minuten, hält sich drei Tage im Kühlschrank",
+  "id": "maultaschen",
+  "titel": "Maultaschen",
+  "untertitel": "Zwei Stränge, die erst am Schluss zusammenlaufen: Teig und Füllung",
   "portionen": 4,
   "portionen_einheit": "Portionen",
-  "zeit_aktiv_s": 1200,
-  "zeit_gesamt_s": 3900,
-  "gefaess": "Großer Topf, mindestens 4 Liter",
+  "zeit_aktiv_s": 3600,
+  "zeit_gesamt_s": 6300,
+  "gefaess": "Zwei Schüsseln, Nudelholz oder Maschine, weiter Topf",
   "tags": [
-    "eintopf",
-    "vegetarisch",
+    "schwäbisch",
+    "hauptgericht",
     "vorkochen",
-    "herbst"
+    "aufwendig"
   ],
   "quelle": null,
   "zutaten": [
     {
-      "id": "z-olivenoel",
-      "name": "Olivenöl",
-      "menge": 2,
-      "einheit": "EL",
-      "notiz": null
-    },
-    {
-      "id": "z-zwiebeln",
-      "name": "Zwiebeln",
-      "menge": 200,
-      "einheit": "g",
-      "notiz": "fein gewürfelt, ca. 2 mittelgroße"
-    },
-    {
-      "id": "z-knoblauch",
-      "name": "Knoblauch",
-      "menge": 2,
-      "einheit": "Zehe",
-      "notiz": "in Scheiben"
-    },
-    {
-      "id": "z-karotten",
-      "name": "Karotten",
-      "menge": 250,
-      "einheit": "g",
-      "notiz": "in 1 cm Würfeln"
-    },
-    {
-      "id": "z-sellerie",
-      "name": "Knollensellerie",
-      "menge": 150,
-      "einheit": "g",
-      "notiz": "in 1 cm Würfeln"
-    },
-    {
-      "id": "z-kartoffeln",
-      "name": "Kartoffeln",
+      "id": "z-mehl",
+      "name": "Weizenmehl",
       "menge": 400,
       "einheit": "g",
-      "notiz": "festkochend, in 2 cm Würfeln"
+      "notiz": "Type 405"
     },
     {
-      "id": "z-tomatenmark",
-      "name": "Tomatenmark",
-      "menge": 30,
-      "einheit": "g",
-      "notiz": null
+      "id": "z-eier-teig",
+      "name": "Eier",
+      "menge": 4,
+      "einheit": null,
+      "notiz": "für den Teig"
     },
     {
-      "id": "z-linsen",
-      "name": "Berglinsen",
-      "menge": 300,
-      "einheit": "g",
-      "notiz": "trocken, abgespült"
-    },
-    {
-      "id": "z-bruehe",
-      "name": "Gemüsebrühe",
-      "menge": 1200,
-      "einheit": "ml",
-      "notiz": "heiß"
-    },
-    {
-      "id": "z-lorbeer",
-      "name": "Lorbeerblatt",
-      "menge": 2,
-      "einheit": "Blatt",
-      "notiz": null,
-      "skalieren": false
-    },
-    {
-      "id": "z-thymian",
-      "name": "Thymian",
-      "menge": 3,
-      "einheit": "Stiel",
-      "notiz": "frisch"
-    },
-    {
-      "id": "z-essig",
-      "name": "Rotweinessig",
+      "id": "z-oel",
+      "name": "Olivenöl",
       "menge": 1,
-      "menge_bis": 2,
       "einheit": "EL",
       "notiz": null
     },
     {
-      "id": "z-salz",
+      "id": "z-salz-teig",
       "name": "Salz",
-      "menge": 1.5,
+      "menge": 1,
       "einheit": "TL",
+      "notiz": "für den Teig"
+    },
+    {
+      "id": "z-broetchen",
+      "name": "Brötchen",
+      "menge": 2,
+      "einheit": null,
+      "notiz": "altbacken, gewürfelt"
+    },
+    {
+      "id": "z-milch",
+      "name": "Milch",
+      "menge": 150,
+      "einheit": "ml",
+      "notiz": "lauwarm"
+    },
+    {
+      "id": "z-zwiebel",
+      "name": "Zwiebel",
+      "menge": 1,
+      "einheit": null,
+      "notiz": "fein gewürfelt"
+    },
+    {
+      "id": "z-butter",
+      "name": "Butter",
+      "menge": 20,
+      "einheit": "g",
+      "notiz": "zum Anschwitzen"
+    },
+    {
+      "id": "z-spinat",
+      "name": "Blattspinat",
+      "menge": 300,
+      "einheit": "g",
+      "notiz": "aufgetaut und gut ausgedrückt"
+    },
+    {
+      "id": "z-hack",
+      "name": "Hackfleisch",
+      "menge": 300,
+      "einheit": "g",
+      "notiz": "gemischt"
+    },
+    {
+      "id": "z-braet",
+      "name": "Bratwurstbrät",
+      "menge": 200,
+      "einheit": "g",
       "notiz": null
+    },
+    {
+      "id": "z-ei-fuellung",
+      "name": "Ei",
+      "menge": 1,
+      "einheit": null,
+      "notiz": "für die Füllung"
+    },
+    {
+      "id": "z-petersilie",
+      "name": "Petersilie",
+      "menge": 4,
+      "einheit": "Stiel",
+      "notiz": "fein gehackt"
+    },
+    {
+      "id": "z-muskat",
+      "name": "Muskatnuss",
+      "menge": null,
+      "einheit": null,
+      "notiz": "frisch gerieben"
+    },
+    {
+      "id": "z-salz-fuellung",
+      "name": "Salz",
+      "menge": null,
+      "einheit": null,
+      "notiz": "für die Füllung, kräftig"
     },
     {
       "id": "z-pfeffer",
       "name": "Schwarzer Pfeffer",
       "menge": null,
       "einheit": null,
-      "notiz": "frisch gemahlen, nach Geschmack"
+      "notiz": "frisch gemahlen"
     },
     {
-      "id": "z-petersilie",
-      "name": "Petersilie",
-      "menge": null,
-      "einheit": null,
-      "notiz": "grob gehackt, zum Servieren"
+      "id": "z-bruehe",
+      "name": "Fleischbrühe",
+      "menge": 2,
+      "einheit": "l",
+      "notiz": "kräftig"
     }
   ],
   "schritte": [
     {
-      "id": "s-anschwitzen",
-      "titel": "anschwitzen",
-      "anweisung": "Öl im Topf erhitzen, Zwiebeln bei mittlerer Hitze weich dünsten, Knoblauch in der letzten Minute zugeben.",
-      "dauer_s": 360,
+      "id": "s-teig",
+      "titel": "Nudelteig kneten",
+      "anweisung": "Zu einem festen, glatten Teig kneten. Er soll deutlich fester sein als Spätzleteig, sonst reißt er beim Ausrollen.",
+      "dauer_s": 600,
       "zutaten": [
-        "z-olivenoel",
-        "z-zwiebeln",
-        "z-knoblauch"
+        "z-mehl",
+        "z-eier-teig",
+        "z-oel",
+        "z-salz-teig"
       ],
       "vorstufen": []
     },
     {
-      "id": "s-wurzelgemuese",
-      "titel": "mitbraten",
-      "anweisung": "Karotten, Sellerie und Kartoffeln zugeben und unter Rühren anbraten, bis die Kanten Farbe nehmen.",
-      "dauer_s": 300,
-      "zutaten": [
-        "z-karotten",
-        "z-sellerie",
-        "z-kartoffeln"
-      ],
-      "vorstufen": [
-        "s-anschwitzen"
-      ]
-    },
-    {
-      "id": "s-tomatenmark",
-      "titel": "Tomatenmark rösten",
-      "anweisung": "Tomatenmark einrühren und kurz mitrösten, bis es dunkler wird und nicht mehr säuerlich riecht.",
-      "dauer_s": 60,
-      "zutaten": [
-        "z-tomatenmark"
-      ],
-      "vorstufen": [
-        "s-wurzelgemuese"
-      ]
-    },
-    {
-      "id": "s-abloeschen",
-      "titel": "aufgießen",
-      "anweisung": "Linsen zugeben, mit der heißen Brühe ablöschen, Lorbeer und Thymian einlegen und aufkochen lassen.",
-      "dauer_s": 180,
-      "zutaten": [
-        "z-linsen",
-        "z-bruehe",
-        "z-lorbeer",
-        "z-thymian"
-      ],
-      "vorstufen": [
-        "s-tomatenmark"
-      ]
-    },
-    {
-      "id": "s-koecheln",
-      "titel": "köcheln",
-      "anweisung": "Zugedeckt bei kleiner Hitze köcheln, bis Linsen und Kartoffeln weich sind. Gelegentlich umrühren.",
-      "dauer_s": 2100,
+      "id": "s-teig-ruhen",
+      "titel": "Teig ruhen lassen",
+      "anweisung": "In Folie gewickelt kühl ruhen lassen. Ohne Ruhe zieht sich der Teig beim Ausrollen wieder zusammen.",
+      "dauer_s": 1800,
       "unbeaufsichtigt": true,
       "zutaten": [],
       "vorstufen": [
-        "s-abloeschen"
+        "s-teig"
       ]
     },
     {
-      "id": "s-abschmecken",
-      "titel": "abschmecken",
-      "anweisung": "Lorbeer und Thymianstiele entfernen. Mit Essig, Salz und Pfeffer abschmecken, mit Petersilie bestreut servieren.",
-      "dauer_s": null,
+      "id": "s-fuellung",
+      "titel": "Füllung mischen",
+      "anweisung": "Brötchenwürfel in der Milch einweichen und ausdrücken. Zwiebel in der Butter glasig dünsten und abkühlen lassen. Alles mit Spinat, Hack, Brät, Ei und Petersilie verkneten und kräftig abschmecken — die Füllung muss überwürzt schmecken, der Teig nimmt viel weg.",
+      "dauer_s": 900,
       "zutaten": [
-        "z-essig",
-        "z-salz",
-        "z-pfeffer",
-        "z-petersilie"
+        "z-broetchen",
+        "z-milch",
+        "z-zwiebel",
+        "z-butter",
+        "z-spinat",
+        "z-hack",
+        "z-braet",
+        "z-ei-fuellung",
+        "z-petersilie",
+        "z-muskat",
+        "z-salz-fuellung",
+        "z-pfeffer"
+      ],
+      "vorstufen": []
+    },
+    {
+      "id": "s-fuellen",
+      "titel": "füllen und formen",
+      "anweisung": "Teig dünn ausrollen, Füllung aufstreichen, einrollen und in Stücke abteilen. Ränder gut andrücken, sonst öffnen sie sich in der Brühe.",
+      "dauer_s": 1200,
+      "zutaten": [],
+      "vorstufen": [
+        "s-teig-ruhen",
+        "s-fuellung"
+      ]
+    },
+    {
+      "id": "s-ziehen",
+      "titel": "in Brühe ziehen",
+      "anweisung": "In siedender, nicht kochender Brühe ziehen lassen, bis sie oben schwimmen. Sprudelndes Wasser reißt sie auf.",
+      "dauer_s": 900,
+      "zutaten": [
+        "z-bruehe"
       ],
       "vorstufen": [
-        "s-koecheln"
+        "s-fuellen"
       ]
     }
   ],
   "hinweise": [
-    "Der Essig am Schluss ist kein Deko-Schritt: ohne Säure schmeckt der Eintopf flach.",
-    "Am zweiten Tag besser. Beim Aufwärmen einen Schuss Wasser zugeben, die Linsen ziehen nach.",
-    "Für eine kräftigere Variante 150 g geräucherten Speck vor dem Öl auslassen."
+    "Dieses Rezept ist der erste Fall in der Sammlung mit zwei parallelen Strängen: Teig und Füllung entstehen unabhängig voneinander und treffen sich erst beim Formen. Im Grid sind das zwei getrennte Klammern, die zusammenlaufen.",
+    "Übrige Maultaschen am nächsten Tag in Scheiben mit Ei in der Pfanne braten. In Gärtringen gilt das nicht als Resteverwertung, sondern als eigenes Gericht.",
+    "Wer sie einfriert, tut das roh und gart sie später direkt aus dem Gefrierfach."
+  ]
+};
+
+window.REZEPTE["pfannkuchen"] = {
+  "schema": 1,
+  "id": "pfannkuchen",
+  "titel": "Pfannkuchen",
+  "untertitel": "Berliner Lesart: Hefeteig, ausgebacken, mit Konfitüre gefüllt — nicht zu verwechseln mit Eierkuchen",
+  "portionen": 12,
+  "portionen_einheit": "Stück",
+  "zeit_aktiv_s": 2700,
+  "zeit_gesamt_s": 10800,
+  "gefaess": "Rührschüssel, weiter Topf mit hohem Rand, Spritzbeutel",
+  "tags": [
+    "hefeteig",
+    "süß",
+    "berlin",
+    "silvester"
+  ],
+  "quelle": null,
+  "zutaten": [
+    {
+      "id": "z-milch",
+      "name": "Milch",
+      "menge": 250,
+      "einheit": "ml",
+      "notiz": "lauwarm, höchstens 37 °C"
+    },
+    {
+      "id": "z-hefe",
+      "name": "Frische Hefe",
+      "menge": 21,
+      "einheit": "g",
+      "notiz": "ein halber Würfel"
+    },
+    {
+      "id": "z-zucker-hefe",
+      "name": "Zucker",
+      "menge": 1,
+      "einheit": "TL",
+      "notiz": "für die Hefe",
+      "skalieren": false
+    },
+    {
+      "id": "z-mehl",
+      "name": "Weizenmehl",
+      "menge": 500,
+      "einheit": "g",
+      "notiz": "Type 550"
+    },
+    {
+      "id": "z-zucker",
+      "name": "Zucker",
+      "menge": 60,
+      "einheit": "g",
+      "notiz": "für den Teig"
+    },
+    {
+      "id": "z-eier",
+      "name": "Eier",
+      "menge": 2,
+      "einheit": null,
+      "notiz": "Größe M"
+    },
+    {
+      "id": "z-eigelb",
+      "name": "Eigelb",
+      "menge": 2,
+      "einheit": null,
+      "notiz": null
+    },
+    {
+      "id": "z-butter",
+      "name": "Butter",
+      "menge": 75,
+      "einheit": "g",
+      "notiz": "weich"
+    },
+    {
+      "id": "z-zitrone",
+      "name": "Bio-Zitrone",
+      "menge": 1,
+      "einheit": null,
+      "notiz": "nur die abgeriebene Schale"
+    },
+    {
+      "id": "z-salz",
+      "name": "Salz",
+      "menge": 1,
+      "einheit": "Prise",
+      "notiz": null,
+      "skalieren": false
+    },
+    {
+      "id": "z-butterschmalz",
+      "name": "Butterschmalz",
+      "menge": 1000,
+      "einheit": "g",
+      "notiz": "zum Ausbacken, hängt vom Topf ab",
+      "skalieren": false
+    },
+    {
+      "id": "z-konfituere",
+      "name": "Konfitüre",
+      "menge": 250,
+      "einheit": "g",
+      "notiz": "Hagebutte oder Pflaumenmus, glatt gerührt"
+    },
+    {
+      "id": "z-puderzucker",
+      "name": "Puderzucker",
+      "menge": null,
+      "einheit": null,
+      "notiz": "zum Bestäuben"
+    }
+  ],
+  "schritte": [
+    {
+      "id": "s-hefe",
+      "titel": "Hefe ansetzen",
+      "anweisung": "Hefe und den Löffel Zucker in der lauwarmen Milch auflösen und stehen lassen, bis sich Schaum bildet. Zeigt sich keiner, ist die Hefe tot — dann neu anfangen.",
+      "dauer_s": 900,
+      "unbeaufsichtigt": true,
+      "zutaten": [
+        "z-milch",
+        "z-hefe",
+        "z-zucker-hefe"
+      ],
+      "vorstufen": []
+    },
+    {
+      "id": "s-teig",
+      "titel": "Teig kneten",
+      "anweisung": "Alles zugeben und kneten, bis der Teig sich von der Schüssel löst und glänzt. Er bleibt weicher als Brotteig.",
+      "dauer_s": 600,
+      "zutaten": [
+        "z-mehl",
+        "z-zucker",
+        "z-eier",
+        "z-eigelb",
+        "z-butter",
+        "z-zitrone",
+        "z-salz"
+      ],
+      "vorstufen": [
+        "s-hefe"
+      ]
+    },
+    {
+      "id": "s-gehen",
+      "titel": "gehen lassen",
+      "anweisung": "Zugedeckt an einem warmen Ort gehen lassen, bis sich das Volumen verdoppelt hat.",
+      "dauer_s": 3600,
+      "unbeaufsichtigt": true,
+      "zutaten": [],
+      "vorstufen": [
+        "s-teig"
+      ]
+    },
+    {
+      "id": "s-formen",
+      "titel": "formen und ruhen",
+      "anweisung": "Zwölf Kugeln abstechen, auf bemehltem Tuch nochmals gehen lassen. Nicht mehr kneten, sonst fällt die Luft zusammen.",
+      "dauer_s": 1800,
+      "unbeaufsichtigt": true,
+      "zutaten": [],
+      "vorstufen": [
+        "s-gehen"
+      ]
+    },
+    {
+      "id": "s-backen",
+      "titel": "ausbacken",
+      "anweisung": "Fett auf 170 °C bringen. Kugeln zuerst mit Deckel goldbraun backen, dann wenden und offen fertig backen. Der helle Rand in der Mitte ist das Ziel.",
+      "dauer_s": 1200,
+      "temperatur_c": 170,
+      "zutaten": [
+        "z-butterschmalz"
+      ],
+      "vorstufen": [
+        "s-formen"
+      ]
+    },
+    {
+      "id": "s-fuellen",
+      "titel": "füllen und zuckern",
+      "anweisung": "Lauwarm von der Seite her mit dem Spritzbeutel füllen, danach bestäuben. Heiß füllen geht schief, die Konfitüre läuft wieder heraus.",
+      "dauer_s": null,
+      "zutaten": [
+        "z-konfituere",
+        "z-puderzucker"
+      ],
+      "vorstufen": [
+        "s-backen"
+      ]
+    }
+  ],
+  "hinweise": [
+    "Für André zur Klarstellung: Das hier sind Pfannkuchen. Die dünnen Dinger aus der Pfanne sind Eierkuchen und stehen unter eigenem Namen in dieser Sammlung.",
+    "Der helle Ring rundherum entsteht nur, wenn das Fett nicht zu heiß ist und die Kugeln beim ersten Backen schwimmen dürfen.",
+    "Am selben Tag essen. Hefegebäck mit Fett wird über Nacht zäh."
+  ]
+};
+
+window.REZEPTE["spaetzle"] = {
+  "schema": 1,
+  "id": "spaetzle",
+  "titel": "Spätzle",
+  "untertitel": "Vom Brett geschabt — vier Zutaten, der Rest ist Armkraft",
+  "portionen": 4,
+  "portionen_einheit": "Portionen",
+  "zeit_aktiv_s": 1500,
+  "zeit_gesamt_s": 3600,
+  "gefaess": "Rührschüssel, weiter Topf, Spätzlebrett und Palette",
+  "tags": [
+    "schwäbisch",
+    "beilage",
+    "grundrezept",
+    "vegetarisch"
+  ],
+  "quelle": null,
+  "zutaten": [
+    {
+      "id": "z-mehl",
+      "name": "Spätzlemehl",
+      "menge": 400,
+      "einheit": "g",
+      "notiz": "griffig, ersatzweise Type 405"
+    },
+    {
+      "id": "z-eier",
+      "name": "Eier",
+      "menge": 4,
+      "einheit": null,
+      "notiz": "Größe M"
+    },
+    {
+      "id": "z-wasser",
+      "name": "Wasser",
+      "menge": 100,
+      "einheit": "ml",
+      "notiz": "kalt, nach Bedarf"
+    },
+    {
+      "id": "z-salz",
+      "name": "Salz",
+      "menge": 1,
+      "einheit": "TL",
+      "notiz": null
+    },
+    {
+      "id": "z-muskat",
+      "name": "Muskatnuss",
+      "menge": null,
+      "einheit": null,
+      "notiz": "frisch gerieben"
+    },
+    {
+      "id": "z-kochwasser",
+      "name": "Wasser",
+      "menge": 4,
+      "einheit": "l",
+      "notiz": "zum Kochen",
+      "skalieren": false
+    },
+    {
+      "id": "z-kochsalz",
+      "name": "Salz",
+      "menge": 1,
+      "einheit": "EL",
+      "notiz": "für das Kochwasser",
+      "skalieren": false
+    },
+    {
+      "id": "z-butter",
+      "name": "Butter",
+      "menge": 30,
+      "einheit": "g",
+      "notiz": "zum Schwenken"
+    }
+  ],
+  "schritte": [
+    {
+      "id": "s-teig",
+      "titel": "Teig schlagen",
+      "anweisung": "Alles verrühren und dann kräftig schlagen, bis der Teig Blasen wirft und zäh vom Löffel reißt. Das Schlagen ist der ganze Trick — zu dünner Teig zerfällt im Wasser.",
+      "dauer_s": 480,
+      "zutaten": [
+        "z-mehl",
+        "z-eier",
+        "z-wasser",
+        "z-salz",
+        "z-muskat"
+      ],
+      "vorstufen": []
+    },
+    {
+      "id": "s-ruhen",
+      "titel": "ruhen lassen",
+      "anweisung": "Zugedeckt stehen lassen. Der Teig entspannt sich und lässt sich danach sauber schaben.",
+      "dauer_s": 1800,
+      "unbeaufsichtigt": true,
+      "zutaten": [],
+      "vorstufen": [
+        "s-teig"
+      ]
+    },
+    {
+      "id": "s-wasser",
+      "titel": "Wasser aufsetzen",
+      "anweisung": "Reichlich Wasser salzen und aufkochen. Danach die Hitze zurücknehmen, es soll sieden und nicht sprudeln.",
+      "dauer_s": 600,
+      "zutaten": [
+        "z-kochwasser",
+        "z-kochsalz"
+      ],
+      "vorstufen": [
+        "s-ruhen"
+      ]
+    },
+    {
+      "id": "s-schaben",
+      "titel": "schaben und garen",
+      "anweisung": "Teig dünn auf das nasse Brett streichen und in schmalen Streifen ins Wasser schaben. Sobald sie oben schwimmen, abschöpfen und kalt abschrecken.",
+      "dauer_s": 480,
+      "zutaten": [],
+      "vorstufen": [
+        "s-wasser"
+      ]
+    },
+    {
+      "id": "s-schwenken",
+      "titel": "schwenken",
+      "anweisung": "In brauner Butter schwenken und sofort auf den Tisch.",
+      "dauer_s": 120,
+      "zutaten": [
+        "z-butter"
+      ],
+      "vorstufen": [
+        "s-schaben"
+      ]
+    }
+  ],
+  "hinweise": [
+    "Brett und Palette immer wieder ins kochende Wasser tauchen, dann klebt nichts.",
+    "Wer presst statt schabt, bekommt Spätzle mit rundem Querschnitt. Schmeckt gleich, sieht anders aus, und in Gärtringen fällt es auf.",
+    "Als Käsespätzle: lagenweise mit geriebenem Bergkäse schichten und mit gerösteten Zwiebeln belegen."
   ]
 };

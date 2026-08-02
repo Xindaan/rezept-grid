@@ -1,0 +1,168 @@
+{
+  "schema": 1,
+  "id": "pfannkuchen",
+  "titel": "Pfannkuchen",
+  "untertitel": "Berliner Lesart: Hefeteig, ausgebacken, mit Konfitüre gefüllt — nicht zu verwechseln mit Eierkuchen",
+  "portionen": 12,
+  "portionen_einheit": "Stück",
+  "zeit_aktiv_s": 2700,
+  "zeit_gesamt_s": 10800,
+  "gefaess": "Rührschüssel, weiter Topf mit hohem Rand, Spritzbeutel",
+  "tags": ["hefeteig", "süß", "berlin", "silvester"],
+  "quelle": null,
+  "zutaten": [
+    {
+      "id": "z-milch",
+      "name": "Milch",
+      "menge": 250,
+      "einheit": "ml",
+      "notiz": "lauwarm, höchstens 37 °C"
+    },
+    {
+      "id": "z-hefe",
+      "name": "Frische Hefe",
+      "menge": 21,
+      "einheit": "g",
+      "notiz": "ein halber Würfel"
+    },
+    {
+      "id": "z-zucker-hefe",
+      "name": "Zucker",
+      "menge": 1,
+      "einheit": "TL",
+      "notiz": "für die Hefe",
+      "skalieren": false
+    },
+    {
+      "id": "z-mehl",
+      "name": "Weizenmehl",
+      "menge": 500,
+      "einheit": "g",
+      "notiz": "Type 550"
+    },
+    {
+      "id": "z-zucker",
+      "name": "Zucker",
+      "menge": 60,
+      "einheit": "g",
+      "notiz": "für den Teig"
+    },
+    {
+      "id": "z-eier",
+      "name": "Eier",
+      "menge": 2,
+      "einheit": null,
+      "notiz": "Größe M"
+    },
+    {
+      "id": "z-eigelb",
+      "name": "Eigelb",
+      "menge": 2,
+      "einheit": null,
+      "notiz": null
+    },
+    {
+      "id": "z-butter",
+      "name": "Butter",
+      "menge": 75,
+      "einheit": "g",
+      "notiz": "weich"
+    },
+    {
+      "id": "z-zitrone",
+      "name": "Bio-Zitrone",
+      "menge": 1,
+      "einheit": null,
+      "notiz": "nur die abgeriebene Schale"
+    },
+    {
+      "id": "z-salz",
+      "name": "Salz",
+      "menge": 1,
+      "einheit": "Prise",
+      "notiz": null,
+      "skalieren": false
+    },
+    {
+      "id": "z-butterschmalz",
+      "name": "Butterschmalz",
+      "menge": 1000,
+      "einheit": "g",
+      "notiz": "zum Ausbacken, hängt vom Topf ab",
+      "skalieren": false
+    },
+    {
+      "id": "z-konfituere",
+      "name": "Konfitüre",
+      "menge": 250,
+      "einheit": "g",
+      "notiz": "Hagebutte oder Pflaumenmus, glatt gerührt"
+    },
+    {
+      "id": "z-puderzucker",
+      "name": "Puderzucker",
+      "menge": null,
+      "einheit": null,
+      "notiz": "zum Bestäuben"
+    }
+  ],
+  "schritte": [
+    {
+      "id": "s-hefe",
+      "titel": "Hefe ansetzen",
+      "anweisung": "Hefe und den Löffel Zucker in der lauwarmen Milch auflösen und stehen lassen, bis sich Schaum bildet. Zeigt sich keiner, ist die Hefe tot — dann neu anfangen.",
+      "dauer_s": 900,
+      "unbeaufsichtigt": true,
+      "zutaten": ["z-milch", "z-hefe", "z-zucker-hefe"],
+      "vorstufen": []
+    },
+    {
+      "id": "s-teig",
+      "titel": "Teig kneten",
+      "anweisung": "Alles zugeben und kneten, bis der Teig sich von der Schüssel löst und glänzt. Er bleibt weicher als Brotteig.",
+      "dauer_s": 600,
+      "zutaten": ["z-mehl", "z-zucker", "z-eier", "z-eigelb", "z-butter", "z-zitrone", "z-salz"],
+      "vorstufen": ["s-hefe"]
+    },
+    {
+      "id": "s-gehen",
+      "titel": "gehen lassen",
+      "anweisung": "Zugedeckt an einem warmen Ort gehen lassen, bis sich das Volumen verdoppelt hat.",
+      "dauer_s": 3600,
+      "unbeaufsichtigt": true,
+      "zutaten": [],
+      "vorstufen": ["s-teig"]
+    },
+    {
+      "id": "s-formen",
+      "titel": "formen und ruhen",
+      "anweisung": "Zwölf Kugeln abstechen, auf bemehltem Tuch nochmals gehen lassen. Nicht mehr kneten, sonst fällt die Luft zusammen.",
+      "dauer_s": 1800,
+      "unbeaufsichtigt": true,
+      "zutaten": [],
+      "vorstufen": ["s-gehen"]
+    },
+    {
+      "id": "s-backen",
+      "titel": "ausbacken",
+      "anweisung": "Fett auf 170 °C bringen. Kugeln zuerst mit Deckel goldbraun backen, dann wenden und offen fertig backen. Der helle Rand in der Mitte ist das Ziel.",
+      "dauer_s": 1200,
+      "temperatur_c": 170,
+      "zutaten": ["z-butterschmalz"],
+      "vorstufen": ["s-formen"]
+    },
+    {
+      "id": "s-fuellen",
+      "titel": "füllen und zuckern",
+      "anweisung": "Lauwarm von der Seite her mit dem Spritzbeutel füllen, danach bestäuben. Heiß füllen geht schief, die Konfitüre läuft wieder heraus.",
+      "dauer_s": null,
+      "zutaten": ["z-konfituere", "z-puderzucker"],
+      "vorstufen": ["s-backen"]
+    }
+  ],
+  "hinweise": [
+    "Für André zur Klarstellung: Das hier sind Pfannkuchen. Die dünnen Dinger aus der Pfanne sind Eierkuchen und stehen unter eigenem Namen in dieser Sammlung.",
+    "Der helle Ring rundherum entsteht nur, wenn das Fett nicht zu heiß ist und die Kugeln beim ersten Backen schwimmen dürfen.",
+    "Am selben Tag essen. Hefegebäck mit Fett wird über Nacht zäh."
+  ]
+}

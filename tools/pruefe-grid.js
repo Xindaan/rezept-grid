@@ -25,7 +25,7 @@ function pruefe(name, ist, soll) {
 }
 
 // --- 1. Beispielrezept ------------------------------------------------
-var rezept = JSON.parse(fs.readFileSync(path.join(wurzel, "rezepte/linsen-eintopf.json"), "utf8"));
+var rezept = JSON.parse(fs.readFileSync(path.join(wurzel, "tools/testdaten/linsen-eintopf.json"), "utf8"));
 var m = G.gridModellBauen(rezept);
 
 pruefe("keine Probleme", m.probleme, []);
