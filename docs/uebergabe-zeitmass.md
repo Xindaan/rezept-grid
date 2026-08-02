@@ -2,7 +2,8 @@
 
 Stand: 2026-08-02. Grundlage: Entwurf `Rezept-Grid Richtungen.dc.html`, Option
 2a (Grid) und 2b (Belastungsprobe). Visuelle Tokens aus
-`Xindaan/WM-2026-Kicktipp`, `assets/tokens.css` + `assets/styles.css`.
+dem Kicktipp-Projekt (oeffentlich als `Xindaan/poisson-dor`),
+`assets/tokens.css` + `assets/styles.css`.
 
 Diese Datei ist als Vorlage fuer eine Claude-Code-Session gedacht: sie nennt
 je Datei, was zu aendern ist, und was ausdruecklich unangetastet bleibt.

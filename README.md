@@ -28,6 +28,12 @@ Dann http://localhost:8412 aufrufen.
   gezählte Zutaten als Küchenbrüche (`1½ TL`). Einzelne Zutaten sind von
   der Skalierung ausgenommen (Lorbeer, eine Prise Salz) und werden
   gedämpft dargestellt.
+- **Einkaufsliste**: In der Übersicht Rezepte ankreuzen, dann
+  „Einkaufsliste öffnen". Zutaten werden über die gewählten Rezepte
+  addiert (gleicher Name **und** gleiche Einheit), je Rezept lässt sich
+  die Portionszahl einstellen, Posten lassen sich abhaken. Die Auswahl
+  steht in der URL — die Liste ist damit teilbar und übersteht ein
+  Neuladen.
 - **Kochmodus**: blendet alles aus, was gerade nicht dran ist, und zeigt
   je Stufe die **neu** dazukommenden Zutaten, die Anweisung und einen
   Countdown. Navigation per Knopf, Pfeiltasten oder Escape zum Beenden.

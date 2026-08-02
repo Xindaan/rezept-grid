@@ -499,6 +499,92 @@
     });
   }
 
+  // Einkaufsliste (T-0026). `auswahl` ist [{rezept, portionen}].
+  function einkaufRendern(auswahl, ziel) {
+    var E = global.RezeptEinkauf;
+    ziel.textContent = "";
+
+    var zurueck = el("a", "zurueck-link", "Alle Rezepte");
+    zurueck.href = "index.html";
+    ziel.appendChild(zurueck);
+
+    var kopf = el("header", "rezept-kopf");
+    kopf.appendChild(el("h1", null, "Einkaufsliste"));
+    kopf.appendChild(el("p", "untertitel",
+      auswahl.length === 1 ? "Für ein Rezept" : "Für " + auswahl.length + " Rezepte"));
+    ziel.appendChild(kopf);
+
+    if (!auswahl.length) {
+      var leer = el("section", "probleme");
+      leer.appendChild(el("h2", null, "Kein Rezept gewählt"));
+      leer.appendChild(el("p", null,
+        "In der Übersicht auswählen, welche Rezepte auf die Liste sollen."));
+      ziel.appendChild(leer);
+      return;
+    }
+
+    // Je Rezept die Portionszahl einstellbar — die Liste soll das
+    // abbilden, was tatsaechlich gekocht wird, nicht die Basisgroesse.
+    var quellen = el("section", "einkauf-quellen");
+    auswahl.forEach(function (eintrag) {
+      var zeile = el("div", "einkauf-quelle");
+      var name = el("a", "einkauf-quelle-name", eintrag.rezept.titel);
+      name.href = "index.html?rezept=" + encodeURIComponent(eintrag.rezept.id);
+      zeile.appendChild(name);
+      zeile.appendChild(portionsWahlBauen(eintrag.rezept, eintrag.portionen, function (neu) {
+        eintrag.portionen = neu;
+        // Die Auswahl steht in der URL, damit die Liste teilbar bleibt
+        // und ein Neuladen sie nicht verliert.
+        var text = E.auswahlSchreiben(auswahl.map(function (a) {
+          return { id: a.rezept.id, portionen: a.portionen };
+        }));
+        global.history.replaceState(null, "", "index.html?einkauf=" + text);
+        einkaufRendern(auswahl, ziel);
+      }));
+      quellen.appendChild(zeile);
+    });
+    ziel.appendChild(quellen);
+
+    var posten = E.listeBauen(auswahl);
+    var liste = el("ul", "einkauf-liste");
+    posten.forEach(function (p) {
+      var eintrag = el("li", "einkauf-posten");
+      eintrag.setAttribute("role", "button");
+      eintrag.tabIndex = 0;
+      eintrag.setAttribute("aria-pressed", "false");
+
+      var menge = p.mengenlos ? "" : P.mengeFormatieren({
+        menge: p.menge, menge_bis: p.menge_bis, einheit: p.einheit
+      }, 1);
+      eintrag.appendChild(el("span", "posten-menge" + (menge ? "" : " menge-leer"), menge));
+
+      var text = el("span", "posten-text");
+      text.appendChild(el("span", "posten-name", p.name));
+      if (p.fix) text.appendChild(el("span", "marke-fix", "fix"));
+      text.appendChild(el("span", "posten-quellen", p.quellen.join(" · ")));
+      eintrag.appendChild(text);
+
+      function umschalten() {
+        var an = !eintrag.classList.contains("abgehakt");
+        eintrag.classList.toggle("abgehakt", an);
+        eintrag.setAttribute("aria-pressed", String(an));
+      }
+      eintrag.addEventListener("click", umschalten);
+      eintrag.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); umschalten(); }
+      });
+
+      liste.appendChild(eintrag);
+    });
+    ziel.appendChild(liste);
+
+    var hinweis = el("p", "einkauf-hinweis",
+      "Gleicher Name und gleiche Einheit werden addiert. Feste Mengen (fix) " +
+      "wachsen nicht mit der Portionszahl und werden nicht summiert — dort " +
+      "steht der größte Bedarf.");
+    ziel.appendChild(hinweis);
+  }
+
   // Rezept-Uebersicht (T-0006). Quelle ist das Manifest, weil es ohne
   // Server kein Verzeichnis-Listing gibt — dieselbe Liste, die auch der
   // file://-Ladeweg benutzt.
@@ -543,9 +629,41 @@
       }
 
       eintrag.appendChild(link);
+
+      // Auswahl fuer die Einkaufsliste. Bewusst NEBEN dem Link statt
+      // darin — ein Kontrollkaestchen in einem Link ist weder bedienbar
+      // noch vorlesbar.
+      var wahl = el("label", "karte-wahl");
+      var kasten = document.createElement("input");
+      kasten.type = "checkbox";
+      kasten.value = r.id;
+      kasten.addEventListener("change", auswahlAktualisieren);
+      wahl.appendChild(kasten);
+      wahl.appendChild(el("span", null, "Für die Einkaufsliste"));
+      eintrag.appendChild(wahl);
+
       liste.appendChild(eintrag);
     });
     ziel.appendChild(liste);
+
+    // Leiste, die erst erscheint, wenn etwas gewaehlt ist.
+    var leiste = el("div", "einkauf-leiste");
+    leiste.hidden = true;
+    var zaehler = el("span", "einkauf-zaehler");
+    var knopf = el("a", "koch-start", "Einkaufsliste öffnen");
+    leiste.appendChild(zaehler);
+    leiste.appendChild(knopf);
+    ziel.appendChild(leiste);
+
+    function auswahlAktualisieren() {
+      var gewaehlt = [].slice.call(ziel.querySelectorAll(".karte-wahl input:checked"))
+                       .map(function (k) { return k.value; });
+      leiste.hidden = gewaehlt.length === 0;
+      zaehler.textContent = gewaehlt.length === 1
+        ? "1 Rezept gewählt"
+        : gewaehlt.length + " Rezepte gewählt";
+      knopf.href = "index.html?einkauf=" + gewaehlt.join(",");
+    }
   }
 
   // Rendert ein Rezept vollstaendig in `ziel`.
@@ -604,6 +722,7 @@
   global.RezeptRender = {
     rezeptRendern: rezeptRendern,
     uebersichtRendern: uebersichtRendern,
+    einkaufRendern: einkaufRendern,
     tabelleBauen: tabelleBauen,
     mengenAktualisieren: mengenAktualisieren
   };

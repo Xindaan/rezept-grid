@@ -32,12 +32,12 @@ konvertiert.
 - **T-0009 Verteilung** — braucht Andre. Netlify entfaellt (Abo
   gekuendigt), GitHub Pages ist kostenlos nur fuer oeffentliche Repos.
   Empfehlung: oeffentlicher Ableger via `public-mirror`-Skill, Pages
-  darauf. Offen sind sein Go und die zwei Kommentare, die das private
-  Kicktipp-Repo nennen.
-- **T-0026 Einkaufsliste** — gewuenscht, noch nicht begonnen.
+  darauf. Offen ist nur noch sein Go — die Kommentare sind bereinigt
+  (T-0031).
 
 ## Letzte Done
 
+- T-0026 Einkaufsliste + T-0031 oeffentliche Repo-Verweise (2026-08-02)
 - T-0030 Parallele Straenge im Grid nebeneinander (2026-08-02)
 - T-0012 file://-Weg bestaetigt + T-0029 Zurueck-Link (2026-08-02)
 - T-0005 Zutaten abhaken (2026-08-02)

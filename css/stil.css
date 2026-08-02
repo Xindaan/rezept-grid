@@ -1,7 +1,8 @@
 /* stil.css — rezept-grid */
 
 /* Tokens nach docs/uebergabe-zeitmass.md Abschnitt 1. Die hellen Werte
-   stammen aus WM-2026-Kicktipp/assets/tokens.css, die dunklen sind aus
+   stammen aus dem Kicktipp-Projekt (github.com/Xindaan/poisson-dor,
+   assets/tokens.css), die dunklen sind aus
    Apple-Systemfarben abgeleitet — Kicktipp hat keinen Dunkelmodus.
    Alle Paarungen auf AA-Kontrast nachgerechnet. */
 :root {
@@ -512,9 +513,17 @@ body {
   list-style: none;
 }
 
+/* Das Listenelement traegt Karte UND Auswahlkaestchen. Ohne die
+   Flex-Spalte wuerde die Karte per height: 100% den ganzen Platz
+   einnehmen und das Kaestchen darunter herausdruecken. */
+.rezept-liste > li {
+  display: flex;
+  flex-direction: column;
+}
+
 .rezept-karte {
   display: block;
-  height: 100%;
+  flex: 1;
   padding: 1rem 1.1rem;
   border: 1px solid var(--linie);
   border-radius: var(--radius);
@@ -567,6 +576,107 @@ body {
 .zurueck-link:hover { color: var(--tinte); }
 
 body.kochmodus .zurueck-link { visibility: hidden; }
+
+/* --- Einkaufsliste (T-0026) ---------------------------------------- */
+
+.karte-wahl {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  margin-top: .5rem;
+  padding: .3rem .2rem;
+  color: var(--gedaempft);
+  font-size: .78rem;
+  cursor: pointer;
+}
+
+.karte-wahl input { accent-color: var(--akzent); width: 17px; height: 17px; }
+
+/* Erscheint erst, wenn etwas gewaehlt ist — vorher waere sie nur Ballast. */
+.einkauf-leiste {
+  position: sticky;
+  bottom: 1rem;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding: .8rem 1rem;
+  border: 1px solid var(--achse);
+  border-radius: var(--radius-karte);
+  background: var(--karte);
+  box-shadow: var(--schatten-leiste);
+}
+
+.einkauf-zaehler { color: var(--gedaempft); font-size: .85rem; }
+
+.einkauf-quellen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .6rem 1.4rem;
+  margin-bottom: 1.6rem;
+}
+
+.einkauf-quelle { display: flex; align-items: center; gap: .6rem; }
+
+.einkauf-quelle-name {
+  color: var(--tinte);
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 1px solid var(--achse);
+}
+
+.einkauf-quelle-name:hover { border-bottom-color: var(--akzent); color: var(--akzent); }
+
+.einkauf-liste {
+  margin: 0 0 1.2rem;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--achse);
+  border-radius: var(--radius-karte);
+  background: var(--karte);
+  box-shadow: var(--schatten-ruhe);
+  overflow: hidden;
+}
+
+.einkauf-posten {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  padding: .6rem 1.1rem;
+  border-bottom: 1px solid var(--linie);
+  cursor: pointer;
+}
+
+.einkauf-posten:last-child { border-bottom: none; }
+.einkauf-posten:hover { background: var(--flaeche2); }
+.einkauf-posten:focus-visible { outline: 2px solid var(--akzent); outline-offset: -2px; }
+
+.posten-menge {
+  flex: 0 0 6.5rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.posten-text { display: flex; align-items: baseline; flex-wrap: wrap; gap: .2rem .5rem; }
+.posten-name { font-weight: 600; }
+
+.posten-quellen {
+  color: var(--gedaempft);
+  font-size: .74rem;
+}
+
+/* Abgehakt: durchgestrichen und gedaempft, wie im Grid. */
+.einkauf-posten.abgehakt { opacity: .4; }
+.einkauf-posten.abgehakt .posten-name,
+.einkauf-posten.abgehakt .posten-menge { text-decoration: line-through; }
+
+.einkauf-hinweis {
+  color: var(--gedaempft);
+  font-size: .8rem;
+  max-width: 42rem;
+}
 
 /* --- Kochmodus ------------------------------------------------------ */
 

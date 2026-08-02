@@ -57,6 +57,21 @@
     var ziel = document.getElementById("rezept");
     var id = rezeptIdErmitteln();
 
+    // ?einkauf=<id>[:portionen],... zeigt die Einkaufsliste (T-0026).
+    var einkauf = new URLSearchParams(global.location.search).get("einkauf");
+    if (einkauf) {
+      var alle = global.REZEPTE || {};
+      var auswahl = global.RezeptEinkauf.auswahlLesen(einkauf)
+        .map(function (a) {
+          var r = alle[a.id];
+          return r ? { rezept: r, portionen: a.portionen || r.portionen } : null;
+        })
+        .filter(Boolean);
+      global.RezeptRender.einkaufRendern(auswahl, ziel);
+      document.title = "Einkaufsliste — rezept-grid";
+      return;
+    }
+
     // Ohne ?rezept= zeigt die App die Uebersicht.
     if (!id) {
       global.RezeptRender.uebersichtRendern(rezepteAuflisten(), ziel);

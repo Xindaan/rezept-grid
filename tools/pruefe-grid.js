@@ -13,6 +13,7 @@ var wurzel = path.resolve(__dirname, "..");
 eval(fs.readFileSync(path.join(wurzel, "js/grid.js"), "utf8"));
 eval(fs.readFileSync(path.join(wurzel, "js/portionen.js"), "utf8"));
 eval(fs.readFileSync(path.join(wurzel, "js/zeitmass.js"), "utf8"));
+eval(fs.readFileSync(path.join(wurzel, "js/einkauf.js"), "utf8"));
 eval(fs.readFileSync(path.join(wurzel, "js/kochmodus.js"), "utf8"));
 var G = globalThis.RezeptGrid;
 var P = globalThis.RezeptPortionen;
@@ -269,6 +270,67 @@ pruefe("Zeitmass: Stufe ohne Dauer ueberholt keine mit Dauer",
 // Mindestbreite waechst mit der Stufenzahl — sonst scrollt nichts.
 pruefe("Zeitmass: Mindestbreite steigt mit der Stufenzahl",
   [Z.noetigeBreite(3) < Z.noetigeBreite(6), Z.noetigeBreite(6) < Z.noetigeBreite(12)], [true, true]);
+
+// --- 2f. Einkaufsliste (T-0026) ---------------------------------------
+var EK = globalThis.RezeptEinkauf;
+function ladeRezept(id) {
+  return JSON.parse(fs.readFileSync(path.join(wurzel, "rezepte/" + id + ".json"), "utf8"));
+}
+function posten(liste, name, einheit) {
+  return liste.filter(function (p) {
+    return p.name === name && (einheit === undefined || p.einheit === einheit);
+  });
+}
+
+var sp = ladeRezept("spaetzle"), mt = ladeRezept("maultaschen");
+var liste = EK.listeBauen([
+  { rezept: sp, portionen: 4 },
+  { rezept: mt, portionen: 4 }
+]);
+
+pruefe("Einkauf: gleicher Name + gleiche Einheit werden addiert",
+  posten(liste, "Butter", "g")[0].menge, 50);
+pruefe("Einkauf: Eier aus beiden Rezepten zusammen",
+  posten(liste, "Eier", null)[0].menge, 9);
+pruefe("Einkauf: Wasser bleibt getrennt (skaliert vs. fix)",
+  posten(liste, "Wasser").map(function (p) { return [p.einheit, p.menge, p.fix]; }),
+  [["ml", 100, false], ["l", 4, true]]);
+pruefe("Einkauf: mengenlose Zutat einmal, ohne Menge",
+  (function () {
+    var m = posten(liste, "Muskatnuss");
+    return [m.length, m[0].mengenlos, m[0].quellen.length];
+  })(), [1, true, 2]);
+pruefe("Einkauf: jeder Posten kennt seine Rezepte",
+  posten(liste, "Butter", "g")[0].quellen.sort(), ["Maultaschen", "Spätzle"]);
+pruefe("Einkauf: alphabetisch sortiert",
+  liste.map(function (p) { return p.name; }).join("|") ===
+  liste.map(function (p) { return p.name; }).sort(function (a, b) {
+    return a.localeCompare(b, "de");
+  }).join("|"), true);
+
+// Portionen wirken: doppelte Portionszahl verdoppelt die skalierten Mengen,
+// laesst die festen aber stehen.
+var doppelt = EK.listeBauen([{ rezept: sp, portionen: 8 }]);
+var einfach = EK.listeBauen([{ rezept: sp, portionen: 4 }]);
+pruefe("Einkauf: Portionen verdoppeln die skalierte Menge",
+  [posten(einfach, "Spätzlemehl", "g")[0].menge, posten(doppelt, "Spätzlemehl", "g")[0].menge],
+  [400, 800]);
+pruefe("Einkauf: feste Menge bleibt bei Portionswechsel gleich",
+  [posten(einfach, "Wasser", "l")[0].menge, posten(doppelt, "Wasser", "l")[0].menge],
+  [4, 4]);
+// Dasselbe Rezept zweimal mit fester Menge: kein Aufsummieren.
+pruefe("Einkauf: feste Mengen werden nicht summiert, nur das Maximum zaehlt",
+  posten(EK.listeBauen([
+    { rezept: sp, portionen: 4 }, { rezept: sp, portionen: 8 }
+  ]), "Wasser", "l")[0].menge, 4);
+
+pruefe("Einkauf: Auswahl aus der URL lesen",
+  EK.auswahlLesen("spaetzle:8,maultaschen"),
+  [{ id: "spaetzle", portionen: 8 }, { id: "maultaschen", portionen: null }]);
+pruefe("Einkauf: Auswahl in die URL schreiben",
+  EK.auswahlSchreiben([{ id: "spaetzle", portionen: 8 }, { id: "maultaschen", portionen: null }]),
+  "spaetzle:8,maultaschen");
+pruefe("Einkauf: leere Auswahl ergibt leere Liste", EK.listeBauen([]), []);
 
 // --- 3. Fehlerfaelle werden gemeldet, nicht geworfen ------------------
 var kaputt = {

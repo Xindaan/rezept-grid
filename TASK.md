@@ -11,15 +11,13 @@
   kostenlos **nur fuer oeffentliche Repos**, fuer private braucht es
   GitHub Pro — also derselbe Fehler nochmal.
   Empfehlung: **oeffentlicher Ableger** nach dem Muster, das Andre schon
-  fahrt (`WM-2026-Kicktipp` -> `poisson-dor`, dafuer gibt es den
+  fahrt (privates Repo -> `poisson-dor`, dafuer gibt es den
   `public-mirror`-Skill mit Leak-Gate). Das private Repo behaelt
   `TASK.md`, `STATE.md`, `CLAUDE.md` und `docs/` — dort steckt der
   Personenbezug —, der Ableger bekommt nur die App: `index.html`, `css/`,
   `js/`, `rezepte/`. GitHub Pages auf dem Ableger, kostenlos.
-  **Vor dem ersten Push zu bereinigen:** zwei Kommentare nennen das
-  private Kicktipp-Repo beim Namen (`css/stil.css` Kopf, `js/zeitmass.js`
-  bzw. der Verweis in `docs/`). Entweder umformulieren oder bewusst
-  stehen lassen.
+  Die Kommentare, die vorher das private Kicktipp-Repo nannten, sind
+  bereinigt (T-0031) — offen ist nur noch Andres Go.
   Ungeklaert als Alternative: Cloudflare Pages (kostenlos, unbegrenzte
   Bandbreite, 500 Builds/Monat) — ob dort ein PRIVATES GitHub-Repo im
   Gratis-Tarif verbunden werden darf, liess sich nicht belegen. Waere der
@@ -34,14 +32,33 @@
   ueberlappt keine Wartezeit, nachgeprueft. Richtig waere die Zeit, in der
   **keine** beaufsichtigte Stufe laeuft, nicht die Summe der
   unbeaufsichtigten. Erst bauen, wenn ein Rezept den Fall erzeugt.
-- **T-0026** Einkaufsliste als eigene Ansicht: Zutaten mehrerer Rezepte
-  zusammengefasst, auf die gewaehlten Portionen gerechnet, zum Abhaken.
-  Deutlich groesser als T-0005 — braucht Mengen-Addition ueber Rezepte
-  hinweg (gleiche Zutat, gleiche Einheit zusammenfassen; unterschiedliche
-  Einheiten nebeneinander stehen lassen statt umzurechnen).
 
 ## Done
 
+- **T-0026** (2026-08-02) Einkaufsliste. Auswahl per Kaestchen in der
+  Uebersicht, Liste unter `?einkauf=<id>[:portionen],...` — die Auswahl
+  steht damit in der URL, ist teilbar und uebersteht ein Neuladen.
+  Rechnung in `js/einkauf.js` (eigenes Modul, headless pruefbar), vier
+  Regeln, alle aus dem Umstand, dass Mengen sich nicht beliebig addieren:
+  gleicher Name UND gleiche Einheit werden summiert; gleicher Name mit
+  verschiedener Einheit bleibt getrennt ("200 g Zwiebeln" und "1 Zwiebel"
+  ist keine Rechnung, die ich raten sollte); `skalieren: false` wird nicht
+  summiert, sondern das Maximum genommen (zwei Rezepte mit je einer Prise
+  brauchen keine zwei); mengenlose Zutaten stehen einmal ohne Menge da.
+  Jeder Posten nennt seine Rezepte — sonst steht man im Laden vor
+  "600 g Mehl" und weiss nicht mehr wofuer.
+  **Befund aus der ersten Rechnung:** "Ei" und "Eier" standen getrennt,
+  weil ich sie in den Rezepten unterschiedlich benannt hatte. Im Laden
+  kauft man neun. In `maultaschen.json` vereinheitlicht und als achter
+  Fallstrick in `docs/konvertierung.md` festgehalten.
+  **Nachjustiert:** Das Kaestchen unter der Karte hat die Kartenraster
+  zerlegt, weil `height: 100%` die Karte ueber den Platz des Kaestchens
+  ziehen liess. Listenelement ist jetzt eine Flex-Spalte.
+- **T-0031** (2026-08-02) Kommentare verweisen auf das **oeffentliche**
+  Kicktipp-Repo (`Xindaan/poisson-dor`) statt auf das private. Andres
+  Hinweis — die Sorge war gegenstandslos, das Repo ist ohnehin offen.
+  Damit ist der letzte offene Punkt aus T-0009 erledigt, der nicht sein
+  Go braucht.
 - **T-0030** (2026-08-02) Parallele Straenge stehen jetzt auch **im Bild**
   nebeneinander, nicht nur in der Zeitrechnung. Andre hat es gemeldet:
   nach T-0027 sagte die Zeitachse "0" fuer die Fuellung, die Spalte stand

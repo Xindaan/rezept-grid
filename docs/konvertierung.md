@@ -33,7 +33,7 @@ Ist eine Seite technisch nicht abrufbar (chefkoch.de war es am
 von Hand hereingeben oder ein Grundrezept eigenständig formulieren und
 `quelle: null` setzen.
 
-## Die sieben Fallstricke
+## Die acht Fallstricke
 
 Alle aus echten Konvertierungen, nicht ausgedacht.
 
@@ -94,6 +94,15 @@ Zwei Faustregeln:
   im selben Strang) — **nicht** auf die Stufe daneben.
 - `zeit_gesamt_s` ist der **kritische Pfad**, nicht die Summe der Dauern.
   `pruefe-grid.js` meldet es, wenn beides auseinanderfällt.
+
+**8. Gleiches Produkt, gleicher Name — über Rezepte hinweg.**
+Die Einkaufsliste fasst Posten über `name` + `einheit` zusammen. Heißt
+dieselbe Sache in einem Rezept „Ei" und im anderen „Eier", stehen sie
+doppelt auf der Liste und man kauft zu wenig. Also durchgängig denselben
+Namen verwenden, auch wenn es im Einzelfall grammatisch etwas steif
+klingt („1 | Eier"). Unterschiedliche Produkte dürfen dagegen ruhig
+verschieden heißen — „Spätzlemehl" und „Weizenmehl" sind nicht dasselbe
+und sollen getrennt bleiben.
 
 ## Plausibilität prüfen
 

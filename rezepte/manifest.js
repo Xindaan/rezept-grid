@@ -248,7 +248,7 @@ window.REZEPTE["maultaschen"] = {
     },
     {
       "id": "z-ei-fuellung",
-      "name": "Ei",
+      "name": "Eier",
       "menge": 1,
       "einheit": null,
       "notiz": "für die Füllung"
