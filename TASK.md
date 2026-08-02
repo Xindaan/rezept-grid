@@ -17,8 +17,50 @@
   Claude-Sessions. Jetzt mit Erfahrung aus zwei Konvertierungen schreibbar;
   die Fallstricke stehen schon in `docs/schema.md` und im README.
 
+- **T-0019** Tokens und Typografie auf die Kicktipp-Linie umstellen
+  (`css/stil.css`), nach `docs/uebergabe-zeitmass.md` Abschnitt 1.
+  Akzeptanz: Uebersicht und Einzelrezept unveraendert bedienbar,
+  Dunkelmodus belegt. **Nicht** `pruefe-grid.js` als Nachweis nehmen — die
+  Pruefungen laufen headless ueber `grid.js`/`portionen.js` und fassen
+  weder CSS noch `render.js` an; sie bleiben auch dann gruen, wenn die
+  Oberflaeche zerlegt ist. Nachweis ist der Browser.
+- **T-0020** Zeitmass: Spaltenbreite aus `dauer_s`, Zeitachse als `thead`,
+  Deckel mit Kuerzungsvermerk (`js/render.js`).
+  **Zwei Korrekturen an der Vorlage, beide nachgemessen:**
+  (a) Die Breite darf NICHT per `td.style.width` in `schrittZelleBauen`
+  gesetzt werden. `table-layout: fixed` liest Spaltenbreiten nur aus der
+  ersten Zeile; ausser der ersten beginnt jede Stufenzelle in einer
+  spaeteren Zeile, ihre Breite wird still ignoriert (gemessen: 240 px statt
+  der gesetzten 480 px). Stattdessen ein `<colgroup>` mit einem `<col>` je
+  Spalte in `tabelleBauen` erzeugen — damit greifen die Breiten exakt.
+  (b) Die Mindestbreite von 4,5 rem laesst sich nicht per CSS `min-width`
+  halten, das ist unter `table-layout: fixed` wirkungslos (gemessen: 16 px
+  statt 72 px). Die Untergrenze muss beim Rechnen der Prozentwerte geklemmt
+  und der Rest neu normiert werden.
+  Akzeptanz: Linsen-Eintopf zeigt koecheln als breiteste Spalte; ein
+  zehnstufiges Rezept scrollt horizontal, ohne dass eine Spalte unter
+  4,5 rem faellt.
+- **T-0021** Fuehrungslinie je Block (`css/stil.css` + Breite aus T-0020).
+  Akzeptanz: die Unterkante jeder Stufe laeuft bis zur Zutatenspalte durch,
+  ohne Beschriftungen zu ueberschreiben.
+- **T-0022** Kopf und Kochleiste neu (`js/render.js`, `css/stil.css`):
+  Kennzahlenstreifen, segmentierte Portionswahl, Zeitbalken in der Leiste,
+  `padding-bottom: 12.5rem`. Akzeptanz: Fuss wird nicht verdeckt, alle
+  Bedienziele >= 34 px.
+- **T-0023** Zutatenspalten `sticky` beim horizontalen Scrollen, Linien als
+  `box-shadow: inset`. Akzeptanz: in Chrome und Safari bleiben Menge und
+  Zutat mit sichtbarer Trennlinie stehen.
+
 ## Backlog
 
+- **T-0024** Gulasch als Rezept aufnehmen — **erst nach Quellenklaerung**.
+  Die 20-Zutaten-Fassung aus der Belastungsprobe (2b) ist Prueflast: Mengen
+  aus essen-und-trinken.de (Rezept 40504), chefkoch.de war nicht abrufbar.
+  Vor einer Datei unter `rezepte/` muss `quelle` auf die tatsaechlich
+  benutzte Vorlage gesetzt und die Schritte neu formuliert sein. Solange
+  nicht geklaert, darf die Datei nicht unter `rezepte/` liegen: der
+  Manifest-Waechter und `pruefe-grid.js` ziehen sie sonst sofort in die
+  Uebersicht und damit zu Familie und Freunden.
 - **T-0005** Zutaten-Abhaken per Klick (Einkauf / Mise en place).
 - **T-0008** Nicht-lineare Rezepte (parallele Straenge, z. B. Sauce separat):
   Konzept Teiltabellen/verschachtelte Spalten. Erst nach T-0002 stabil.

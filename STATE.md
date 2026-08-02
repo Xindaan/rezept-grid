@@ -40,8 +40,15 @@ konvertiert.
 - Vorschau zum Testen: `python3 -m http.server 8412` im Projektordner,
   Konfiguration liegt in `.claude/launch.json`.
 
+- Design-Uebergabe aus Claude Design liegt als `docs/uebergabe-zeitmass.md`
+  (Richtung "Zeitmass": Spaltenbreite proportional zur Dauer, Tokens aus
+  `WM-2026-Kicktipp`). Daraus T-0019 bis T-0023. **Umsetzung wartet auf drei
+  Entscheidungen von Andre** (Abschnitt 4 der Uebergabe).
+
 ## Next actions
 
+- T-0019 bis T-0023 umsetzen, sobald die drei Entscheidungen beantwortet
+  sind (Deckel, Dunkelmodus-Palette, Gulasch-Quelle)
 - T-0012 `file://`-Doppelklick-Test in echtem Browser — offen, braucht
   Andre; einziger unbestaetigter Architektur-Eckpfeiler
 - T-0007 `docs/konvertierung.md` (Anleitung + Prompt-Vorlage), jetzt mit
