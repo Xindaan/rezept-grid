@@ -115,20 +115,42 @@
     };
   }
 
-  // Startzeitpunkt jeder Stufe in Sekunden, kumuliert.
-  function startzeiten(dauern) {
-    var t = 0;
-    return dauern.map(function (d) {
-      var start = t;
-      t += (d || 0);
-      return start;
+  // Startzeitpunkt jeder Stufe in Sekunden. NICHT einfach aufaddiert:
+  // eine Stufe beginnt, sobald ihre Vorstufen fertig sind, und eine ohne
+  // Vorstufen beginnt bei null. Bei den Maultaschen laeuft "Fuellung
+  // mischen" waehrend der Teig ruht — stumpf addiert kaeme die Tabelle
+  // auf 90 Minuten statt der tatsaechlichen 75.
+  //
+  // `vorstufen` ist ein Feld von Index-Feldern. Fehlt es, gilt die lineare
+  // Kette (jede Stufe wartet auf die vorherige).
+  function startzeiten(dauern, vorstufen) {
+    var start = [], ende = [];
+    dauern.forEach(function (d, i) {
+      var vs = (vorstufen && vorstufen[i]) ? vorstufen[i] : (i > 0 ? [i - 1] : []);
+      var t = 0;
+      vs.forEach(function (j) {
+        if (j >= 0 && j < i) t = Math.max(t, ende[j]);
+      });
+      start[i] = t;
+      ende[i] = t + (d || 0);
     });
+    return start;
+  }
+
+  // Ende der letzten Stufe auf dem kritischen Pfad — die ehrliche
+  // Gesamtdauer eines Rezepts mit parallelen Straengen.
+  function gesamtdauer(dauern, vorstufen) {
+    var start = startzeiten(dauern, vorstufen);
+    return dauern.reduce(function (max, d, i) {
+      return Math.max(max, start[i] + (d || 0));
+    }, 0);
   }
 
   global.RezeptZeitmass = {
     spaltenbreiten: spaltenbreiten,
     noetigeBreite: noetigeBreite,
     startzeiten: startzeiten,
+    gesamtdauer: gesamtdauer,
     MIN_PX: MIN_PX,
     DECKEL: DECKEL,
     ZUTATEN: ZUTATEN

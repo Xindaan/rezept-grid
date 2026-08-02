@@ -34,8 +34,9 @@ konvertiert.
 - Tokens auf die Kicktipp-Linie umgestellt (T-0019): ein Schriftstack,
   Tabellenziffern global, Grid-Rahmen als Karte, gruener Akzent, Marken
   fuer Wartezeit und feste Mengen. Kontraste nachgerechnet.
-- Zeitmass (T-0020): Spaltenbreite proportional zur Dauer, Zeitachse
-  im Tabellenkopf, Vermerk wo die Breite die Dauer untertreibt.
+- Zeitmass (T-0020 + T-0027): Spaltenbreite proportional zur Dauer,
+  Zeitachse im Tabellenkopf auf dem **kritischen Pfad** (parallele
+  Straenge werden nicht aufaddiert), Vermerk wo die Breite die Dauer untertreibt.
   Rechnung in `js/zeitmass.js`, headless geprueft.
 - Kopf mit Kennzahlenstreifen und segmentierter Portionswahl (T-0022),
   Zeitbalken in der Kochleiste, Zutatenspalten sticky (T-0023).
@@ -48,7 +49,7 @@ konvertiert.
   beim Ueberfahren. Bewusst nicht dem Original nachgebaut — Andre hat freie
   Hand gegeben, und das Vorbild-Artifact ist aus der Session ohnehin nicht
   einsehbar (Inhalt liegt hinter Login).
-- Pruefung: `node tools/pruefe-grid.js` (86/86 gruen) — laeuft ueber alle
+- Pruefung: `node tools/pruefe-grid.js` (89/89 gruen) — laeuft ueber alle
   Rezepte und vergleicht zusaetzlich das Manifest gegen die JSON-Dateien.
 - Vorschau zum Testen: `python3 -m http.server 8412` im Projektordner,
   Konfiguration liegt in `.claude/launch.json`.
@@ -68,6 +69,7 @@ konvertiert.
 
 ## Letzte Done
 
+- T-0027 Zeitachse rechnet den kritischen Pfad (2026-08-02)
 - T-0007 Konvertierungsanleitung + T-0011 Einheiten-Pruefung (2026-08-02)
 - T-0022 Kopf und Kochleiste + T-0023 sticky Zutatenspalten (2026-08-02)
 - T-0020 Zeitmass (2026-08-02)

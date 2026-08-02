@@ -33,6 +33,13 @@
   Folge-Task.
 ## Backlog
 
+- **T-0028** "ohne Zutun" bei ueberlappenden Wartezeiten. Die Kennzahl in
+  `render.js` addiert die Dauern aller Stufen mit `unbeaufsichtigt: true`.
+  Laufen zwei davon gleichzeitig (paralleler Strang, in dem auch etwas
+  ruht), zaehlt sie doppelt. Derzeit latent — bei allen vier Rezepten
+  ueberlappt keine Wartezeit, nachgeprueft. Richtig waere die Zeit, in der
+  **keine** beaufsichtigte Stufe laeuft, nicht die Summe der
+  unbeaufsichtigten. Erst bauen, wenn ein Rezept den Fall erzeugt.
 - **T-0005** Zutaten im Grid abhaken (Mise en place). Klick auf eine
   Zutatenzeile streicht sie durch; Zustand nur in der Sitzung, nicht
   gespeichert. Kleiner Eingriff, nutzt den vorhandenen DOM-Vertrag
@@ -44,6 +51,22 @@
   Einheiten nebeneinander stehen lassen statt umzurechnen).
 ## Done
 
+- **T-0027** (2026-08-02) Zeitachse rechnet den kritischen Pfad statt
+  stumpf zu addieren. Andre hat es an den Maultaschen gesehen: die Fuellung
+  entsteht, waehrend der Teig ruht — die Achse zeigte trotzdem eine
+  Reihenfolge. Die Daten wussten es laengst (`s-fuellung` hat
+  `vorstufen: []`), nur `startzeiten` in `js/zeitmass.js` ignorierte das.
+  Jetzt beginnt eine Stufe, sobald ihre Vorstufen fertig sind, und eine
+  ohne Vorstufen bei null. Fuer Maultaschen: 75 statt 90 Minuten, und
+  `zeit_gesamt_s` im Rezept war mit 105 Minuten ebenfalls falsch —
+  korrigiert auf 4500.
+  Neu dazu: `gesamtdauer()` als kritischer Pfad, eine Marke
+  "∥ nebenher moeglich" an Stufen, die neben der vorherigen herlaufen
+  (sonst liest man die Tabelle als Reihenfolge, wo sie Gleichzeitigkeit
+  meint), und eine Pruefung, die `zeit_gesamt_s` gegen den kritischen Pfad
+  haelt. Gegengeprueft: mit dem alten Wert 6300 wird sie rot.
+  Isomorphie-Check: genau eine weitere Stelle derselben Klasse gefunden,
+  die Kennzahl "ohne Zutun" — latent, siehe T-0028.
 - **T-0008** (2026-08-02) **Entschieden: bleibt Konvention, kein Code.**
   Parallele Straenge traegt der Renderer bereits (belegt an Maultaschen).
   Der verschraenkte Fall — zwei Straenge, die sich abwechselnd Zutaten

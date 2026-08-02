@@ -27,6 +27,18 @@
     // derselben Zeile, zeichnet deren eigene Unterkante das Stueck.
     // Die erste Stufe braucht keine (sie grenzt schon an die Zutaten),
     // die letzte auch nicht (ihre Unterkante ist der Tabellenschluss).
+    // Welche Stufe laeuft neben der vorherigen her statt danach? Das
+    // entscheidet nicht die Reihenfolge im Grid, sondern die Zeitrechnung:
+    // eine Stufe ohne Vorstufen faengt bei null an, waehrend links davon
+    // noch etwas laeuft.
+    var dauernAlle = modell.spalten.map(function (s) { return s.schritt.dauer_s; });
+    var startsAlle = global.RezeptZeitmass.startzeiten(dauernAlle, vorstufenIndizes(modell));
+    var laeuftParallel = startsAlle.map(function (start, i) {
+      if (i === 0) return false;
+      var endeDavor = startsAlle[i - 1] + (dauernAlle[i - 1] || 0);
+      return start < endeDavor;
+    });
+
     var letzteSpalte = modell.spalten.length - 1;
     var blockEnde = new Map(); // Zeile -> hoechster Spaltenindex, der dort endet
     modell.spalten.forEach(function (spalte, k) {
@@ -64,7 +76,7 @@
 
       modell.spalten.forEach(function (spalte, k) {
         if (spalte.von === r) {
-          tr.appendChild(schrittZelleBauen(spalte));
+          tr.appendChild(schrittZelleBauen(spalte, laeuftParallel[k]));
         } else if (r > spalte.von && r <= spalte.bis) {
           // von der rowspan-Zelle darueber abgedeckt — nichts einfuegen
         } else {
@@ -96,6 +108,19 @@
     return tabelle;
   }
 
+  // Vorstufen als Spaltenindizes. Fehlt das Feld, gilt die lineare Kette
+  // — dieselbe Vorgabe wie in grid.js und docs/schema.md.
+  function vorstufenIndizes(modell) {
+    var nachId = {};
+    modell.spalten.forEach(function (s, i) { nachId[s.schritt.id] = i; });
+    return modell.spalten.map(function (s, i) {
+      var vs = s.schritt.vorstufen;
+      if (vs === undefined || vs === null) return i > 0 ? [i - 1] : [];
+      return vs.map(function (id) { return nachId[id]; })
+               .filter(function (j) { return j !== undefined; });
+    });
+  }
+
   // Kopfzeile mit den Startzeitpunkten der Stufen.
   function zeitachseBauen(modell) {
     var kopf = el("thead", "zeitachse");
@@ -106,7 +131,7 @@
     tr.appendChild(beschriftung);
 
     var dauern = modell.spalten.map(function (s) { return s.schritt.dauer_s; });
-    var starts = global.RezeptZeitmass.startzeiten(dauern);
+    var starts = global.RezeptZeitmass.startzeiten(dauern, vorstufenIndizes(modell));
     starts.forEach(function (sekunden, i) {
       var minuten = Math.round(sekunden / 60);
       var letzte = i === starts.length - 1;
@@ -171,9 +196,10 @@
     });
   }
 
-  function schrittZelleBauen(spalte) {
+  function schrittZelleBauen(spalte, parallel) {
     var schritt = spalte.schritt;
     var klassen = "schritt";
+    if (parallel) klassen += " laeuft-parallel";
     if (spalte.neueZutaten === 0) klassen += " schritt-ohne-zutaten";
     if (schritt.unbeaufsichtigt) klassen += " schritt-unbeaufsichtigt";
 
@@ -191,6 +217,11 @@
     // Wartezeit wird nicht nur eingefaerbt, sondern benannt.
     if (schritt.unbeaufsichtigt) {
       td.appendChild(el("span", "stufen-marke", "⧗ läuft von allein"));
+    }
+    // Und eine Stufe, die nebenher laeuft, sagt es auch — sonst liest man
+    // die Tabelle als Reihenfolge, obwohl sie hier Gleichzeitigkeit meint.
+    if (parallel) {
+      td.appendChild(el("span", "stufen-marke marke-parallel", "∥ nebenher möglich"));
     }
     return td;
   }

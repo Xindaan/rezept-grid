@@ -424,6 +424,13 @@ body {
 
 .schritt-unbeaufsichtigt .schritt-dauer { color: var(--ruhe-tinte); }
 
+/* Nebenher laufende Stufe: eigene Marke im Akzent statt in Orange —
+   das ist keine Wartezeit, sondern Gleichzeitigkeit. */
+.marke-parallel {
+  border-color: var(--akzent);
+  color: var(--akzent);
+}
+
 /* Wartezeit. Die Farbe traegt nie allein — dazu kommen die linke Kante
    und die Marke "laeuft von allein" mit Sanduhr (siehe render.js). */
 .schritt-unbeaufsichtigt {

@@ -196,8 +196,18 @@ zeitmassPruefen("alle ohne Dauer", [null, null, null]);
 zeitmassPruefen("eine Stufe", [600]);
 zeitmassPruefen("zwoelf Stufen", [60,60,60,60,60,60,60,60,60,60,60,3600]);
 
-pruefe("Zeitmass: Startzeiten kumulieren",
+// Lineare Kette: Startzeiten kumulieren wie bisher.
+pruefe("Zeitmass: Startzeiten kumulieren (linear)",
   Z.startzeiten([360, 300, 60, 180, 2100, null]), [0, 360, 660, 720, 900, 3000]);
+// Paralleler Strang: Stufe 2 hat keine Vorstufen und beginnt bei null,
+// waehrend Stufe 1 noch laeuft. Genau der Maultaschen-Fall.
+pruefe("Zeitmass: paralleler Strang beginnt bei null",
+  Z.startzeiten([600, 1800, 900, 1200, 900], [[], [0], [], [1, 2], [3]]),
+  [0, 600, 0, 2400, 3600]);
+pruefe("Zeitmass: Gesamtdauer ist der kritische Pfad, nicht die Summe",
+  Z.gesamtdauer([600, 1800, 900, 1200, 900], [[], [0], [], [1, 2], [3]]), 4500);
+pruefe("Zeitmass: bei linearer Kette ist beides gleich",
+  Z.gesamtdauer([360, 300, 60, 180, 2100]), 3000);
 // Eine Stufe ohne Dauer bekommt nie WENIGER als die Untergrenze. Mehr
 // darf sie bekommen: der Ueberschuss einer gedeckelten Nachbarstufe muss
 // irgendwohin, sonst verliert die Tabelle Breite.
@@ -296,6 +306,26 @@ dateien.forEach(function (datei) {
   // Layout muss ohne Beanstandung durchlaufen.
   var mm = G.gridModellBauen(r);
   mm.probleme.forEach(function (p) { maengel.push("Layout: " + p); });
+
+  // zeit_gesamt_s muss zum kritischen Pfad passen. Zu klein ist unmoeglich,
+  // deutlich zu gross heisst meistens: jemand hat die Dauern stumpf
+  // addiert und die parallelen Straenge uebersehen.
+  var idx = {};
+  r.schritte.forEach(function (s, i) { idx[s.id] = i; });
+  var vorstufen = r.schritte.map(function (s, i) {
+    if (s.vorstufen === undefined || s.vorstufen === null) return i > 0 ? [i - 1] : [];
+    return s.vorstufen.map(function (v) { return idx[v]; })
+                      .filter(function (j) { return j !== undefined; });
+  });
+  var dauern = r.schritte.map(function (s) { return s.dauer_s; });
+  var kritisch = Z.gesamtdauer(dauern, vorstufen);
+  var summe = dauern.reduce(function (a, d) { return a + (d || 0); }, 0);
+  if (r.zeit_gesamt_s && r.zeit_gesamt_s < kritisch) {
+    maengel.push("zeit_gesamt_s " + r.zeit_gesamt_s + " < kritischer Pfad " + kritisch);
+  }
+  if (kritisch < summe && r.zeit_gesamt_s >= summe) {
+    maengel.push("zeit_gesamt_s " + r.zeit_gesamt_s + " ignoriert die parallelen Straenge (kritischer Pfad " + kritisch + ", Summe " + summe + ")");
+  }
 
   // Und jede Menge muss bei jeder waehlbaren Portionszahl sauber sein.
   P.portionsOptionen(r.portionen).forEach(function (p) {

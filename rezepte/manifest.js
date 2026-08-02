@@ -155,11 +155,11 @@ window.REZEPTE["maultaschen"] = {
   "schema": 1,
   "id": "maultaschen",
   "titel": "Maultaschen",
-  "untertitel": "Zwei Stränge, die erst am Schluss zusammenlaufen: Teig und Füllung",
+  "untertitel": "Die Füllung entsteht, während der Teig ruht — zwei Stränge, die erst am Schluss zusammenlaufen",
   "portionen": 4,
   "portionen_einheit": "Portionen",
   "zeit_aktiv_s": 3600,
-  "zeit_gesamt_s": 6300,
+  "zeit_gesamt_s": 4500,
   "gefaess": "Zwei Schüsseln, Nudelholz oder Maschine, weiter Topf",
   "tags": [
     "schwäbisch",

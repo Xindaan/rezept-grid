@@ -2,13 +2,18 @@
   "schema": 1,
   "id": "maultaschen",
   "titel": "Maultaschen",
-  "untertitel": "Zwei Stränge, die erst am Schluss zusammenlaufen: Teig und Füllung",
+  "untertitel": "Die Füllung entsteht, während der Teig ruht — zwei Stränge, die erst am Schluss zusammenlaufen",
   "portionen": 4,
   "portionen_einheit": "Portionen",
   "zeit_aktiv_s": 3600,
-  "zeit_gesamt_s": 6300,
+  "zeit_gesamt_s": 4500,
   "gefaess": "Zwei Schüsseln, Nudelholz oder Maschine, weiter Topf",
-  "tags": ["schwäbisch", "hauptgericht", "vorkochen", "aufwendig"],
+  "tags": [
+    "schwäbisch",
+    "hauptgericht",
+    "vorkochen",
+    "aufwendig"
+  ],
   "quelle": null,
   "zutaten": [
     {
@@ -137,7 +142,12 @@
       "titel": "Nudelteig kneten",
       "anweisung": "Zu einem festen, glatten Teig kneten. Er soll deutlich fester sein als Spätzleteig, sonst reißt er beim Ausrollen.",
       "dauer_s": 600,
-      "zutaten": ["z-mehl", "z-eier-teig", "z-oel", "z-salz-teig"],
+      "zutaten": [
+        "z-mehl",
+        "z-eier-teig",
+        "z-oel",
+        "z-salz-teig"
+      ],
       "vorstufen": []
     },
     {
@@ -147,7 +157,9 @@
       "dauer_s": 1800,
       "unbeaufsichtigt": true,
       "zutaten": [],
-      "vorstufen": ["s-teig"]
+      "vorstufen": [
+        "s-teig"
+      ]
     },
     {
       "id": "s-fuellung",
@@ -155,9 +167,18 @@
       "anweisung": "Brötchenwürfel in der Milch einweichen und ausdrücken. Zwiebel in der Butter glasig dünsten und abkühlen lassen. Alles mit Spinat, Hack, Brät, Ei und Petersilie verkneten und kräftig abschmecken — die Füllung muss überwürzt schmecken, der Teig nimmt viel weg.",
       "dauer_s": 900,
       "zutaten": [
-        "z-broetchen", "z-milch", "z-zwiebel", "z-butter", "z-spinat",
-        "z-hack", "z-braet", "z-ei-fuellung", "z-petersilie",
-        "z-muskat", "z-salz-fuellung", "z-pfeffer"
+        "z-broetchen",
+        "z-milch",
+        "z-zwiebel",
+        "z-butter",
+        "z-spinat",
+        "z-hack",
+        "z-braet",
+        "z-ei-fuellung",
+        "z-petersilie",
+        "z-muskat",
+        "z-salz-fuellung",
+        "z-pfeffer"
       ],
       "vorstufen": []
     },
@@ -167,15 +188,22 @@
       "anweisung": "Teig dünn ausrollen, Füllung aufstreichen, einrollen und in Stücke abteilen. Ränder gut andrücken, sonst öffnen sie sich in der Brühe.",
       "dauer_s": 1200,
       "zutaten": [],
-      "vorstufen": ["s-teig-ruhen", "s-fuellung"]
+      "vorstufen": [
+        "s-teig-ruhen",
+        "s-fuellung"
+      ]
     },
     {
       "id": "s-ziehen",
       "titel": "in Brühe ziehen",
       "anweisung": "In siedender, nicht kochender Brühe ziehen lassen, bis sie oben schwimmen. Sprudelndes Wasser reißt sie auf.",
       "dauer_s": 900,
-      "zutaten": ["z-bruehe"],
-      "vorstufen": ["s-fuellen"]
+      "zutaten": [
+        "z-bruehe"
+      ],
+      "vorstufen": [
+        "s-fuellen"
+      ]
     }
   ],
   "hinweise": [
