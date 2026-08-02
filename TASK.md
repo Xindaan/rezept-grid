@@ -31,6 +31,7 @@
   Chrome-Connector erzwingt ein `https://`-Praefix). Ueber http ist der
   Pfad gruen. Akzeptanz: Befund notiert; falls CSS oder Laden scheitert,
   Folge-Task.
+
 ## Backlog
 
 - **T-0028** "ohne Zutun" bei ueberlappenden Wartezeiten. Die Kennzahl in
@@ -45,6 +46,7 @@
   Deutlich groesser als T-0005 — braucht Mengen-Addition ueber Rezepte
   hinweg (gleiche Zutat, gleiche Einheit zusammenfassen; unterschiedliche
   Einheiten nebeneinander stehen lassen statt umzurechnen).
+
 ## Done
 
 - **T-0005** (2026-08-02) Zutaten im Grid abhaken (Mise en place). Klick
