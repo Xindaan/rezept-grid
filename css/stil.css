@@ -230,11 +230,46 @@ body {
 /* Echtes Tabellenraster: die Zellen teilen sich ihre Kanten. Nur so
    entsteht die Treppenform, die in der Chu-Notation die Information
    traegt — mit Abstaenden dazwischen zerfaellt sie in Einzelkarten. */
+/* table-layout: fixed ist Pflicht — sonst ueberstimmt der Inhalt die
+   berechneten Spaltenbreiten und das Zeitmass verschwindet. */
 .grid {
   border-collapse: collapse;
+  table-layout: fixed;
   width: 100%;
   font-size: .88rem;
 }
+
+/* --- Zeitachse ----------------------------------------------------- */
+
+.zeitachse th {
+  padding: 0 .55rem .5rem;
+  border: none;
+  color: var(--gedaempft);
+  font-size: .68rem;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-align: left;
+}
+
+.zeitachse-label {
+  text-align: right !important;
+  padding-right: 1.6rem !important;
+  text-transform: uppercase;
+}
+
+.zeitachse-marke { font-variant-numeric: tabular-nums; }
+
+/* Vermerk auf gedeckelten Stufen: die Breite entspricht hier nicht der
+   Dauer, und das soll man nicht raten muessen. */
+.kuerzung {
+  display: block;
+  margin-top: .3rem;
+  color: var(--gedaempft);
+  font-size: .62rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.schritt.ist-gekuerzt { border-right-style: dashed; }
 
 .grid td {
   padding: .5rem .75rem;
@@ -262,7 +297,6 @@ body {
 .grid tbody tr:first-child .zutat { border-top: 1px solid var(--linie); }
 
 .menge {
-  width: 1%;
   white-space: nowrap;
   text-align: right;
   /* Schliesst den Zutatenblock nach links — sonst wirken die
@@ -294,13 +328,9 @@ body {
 }
 
 .zutat {
-  width: 1%;
-  /* Umbruchfaehig mit Untergrenze: seit der Rahmen eine Karte mit
-     Polsterung ist, fehlt die Breite, die vorher der Negativrand gab.
-     Ohne Umbruch schob die laengste Notiz die letzte Stufenspalte aus
-     dem Bild — lieber zwei Zeilen Notiz als eine unsichtbare Spalte. */
+  /* Breite kommt aus dem colgroup (T-0020); width und min-width waeren
+     unter table-layout: fixed ohnehin wirkungslos. */
   white-space: normal;
-  min-width: 12rem;
   padding-right: 1.6rem;
   /* Senkrechte Achse zwischen Zutaten und Arbeitsschritten. */
   border-right: 1px solid var(--achse);

@@ -12,10 +12,12 @@ var fs = require("fs"), path = require("path");
 var wurzel = path.resolve(__dirname, "..");
 eval(fs.readFileSync(path.join(wurzel, "js/grid.js"), "utf8"));
 eval(fs.readFileSync(path.join(wurzel, "js/portionen.js"), "utf8"));
+eval(fs.readFileSync(path.join(wurzel, "js/zeitmass.js"), "utf8"));
 eval(fs.readFileSync(path.join(wurzel, "js/kochmodus.js"), "utf8"));
 var G = globalThis.RezeptGrid;
 var P = globalThis.RezeptPortionen;
 var K = globalThis.RezeptKochmodus;
+var Z = globalThis.RezeptZeitmass;
 
 var fehler = 0;
 function pruefe(name, ist, soll) {
@@ -148,6 +150,68 @@ pruefe("Uhr unter einer Minute", K.zeitFormatieren(45), "0:45");
 pruefe("Uhr ueber einer Stunde", K.zeitFormatieren(3900), "1:05:00");
 pruefe("Uhr bei 0", K.zeitFormatieren(0), "0:00");
 pruefe("Uhr wird nicht negativ", K.zeitFormatieren(-5), "0:00");
+
+// --- 2e. Zeitmass (T-0020) --------------------------------------------
+// Die Spaltenbreiten sind Prozentwerte an der Mindestbreite. Drei
+// Eigenschaften muessen fuer JEDES Rezept gelten, sonst ist entweder eine
+// Stufe unlesbar schmal oder eine dominiert die Tabelle.
+function zeitmassPruefen(name, dauern) {
+  var n = dauern.length;
+  var breite = Z.noetigeBreite(n);
+  var b = Z.spaltenbreiten(dauern, breite);
+  var px = b.stufen.map(function (a) { return a * breite; });
+  var maengel = [];
+
+  var summe = b.stufen.reduce(function (a, x) { return a + x; }, 0);
+  var soll = 1 - Z.ZUTATEN[0] - Z.ZUTATEN[1];
+  if (Math.abs(summe - soll) > 0.001) maengel.push("Summe " + summe.toFixed(4) + " statt " + soll);
+
+  var schmalste = Math.min.apply(null, px);
+  if (schmalste < Z.MIN_PX - 0.5) maengel.push("schmalste Spalte " + schmalste.toFixed(1) + " px < " + Z.MIN_PX);
+
+  // Der wirksame Deckel ist nie schaerfer als der Gleichanteil: bei drei
+  // Spalten sind 26 % je Spalte unvermeidlich, bei einer sind es 78 %.
+  var stufenAnteil = 1 - Z.ZUTATEN[0] - Z.ZUTATEN[1];
+  var wirksamerDeckel = Math.max(Z.DECKEL, stufenAnteil / n);
+  var breiteste = Math.max.apply(null, b.stufen);
+  if (breiteste > wirksamerDeckel + 0.001) {
+    maengel.push("breiteste Spalte " + (breiteste * 100).toFixed(1) + " % > Deckel " + (wirksamerDeckel * 100).toFixed(1) + " %");
+  }
+
+  // Laengere Dauer darf nie zu einer schmaleren Spalte fuehren.
+  for (var i = 0; i < n; i++) {
+    for (var j = 0; j < n; j++) {
+      if ((dauern[i] || 0) > (dauern[j] || 0) && px[i] < px[j] - 0.5) {
+        maengel.push("Stufe " + i + " dauert laenger als " + j + ", ist aber schmaler");
+      }
+    }
+  }
+  pruefe("Zeitmass " + name, maengel, []);
+}
+
+zeitmassPruefen("Linsen-Eintopf", [360, 300, 60, 180, 2100, null]);
+zeitmassPruefen("Pfannkuchen", [900, 600, 3600, 1800, 1200, null]);
+zeitmassPruefen("Maultaschen", [600, 1800, 900, 1200, 900]);
+zeitmassPruefen("alle ohne Dauer", [null, null, null]);
+zeitmassPruefen("eine Stufe", [600]);
+zeitmassPruefen("zwoelf Stufen", [60,60,60,60,60,60,60,60,60,60,60,3600]);
+
+pruefe("Zeitmass: Startzeiten kumulieren",
+  Z.startzeiten([360, 300, 60, 180, 2100, null]), [0, 360, 660, 720, 900, 3000]);
+// Eine Stufe ohne Dauer bekommt nie WENIGER als die Untergrenze. Mehr
+// darf sie bekommen: der Ueberschuss einer gedeckelten Nachbarstufe muss
+// irgendwohin, sonst verliert die Tabelle Breite.
+pruefe("Zeitmass: Stufe ohne Dauer faellt nicht unter die Untergrenze",
+  Math.round(Z.spaltenbreiten([2100, null], Z.noetigeBreite(2)).stufen[1] * Z.noetigeBreite(2)) >= Z.MIN_PX, true);
+// Und sie ist nie breiter als eine Stufe, die tatsaechlich Zeit braucht.
+pruefe("Zeitmass: Stufe ohne Dauer ueberholt keine mit Dauer",
+  (function () {
+    var b = Z.spaltenbreiten([2100, 600, null], Z.noetigeBreite(3));
+    return b.stufen[2] <= b.stufen[1] + 0.001 && b.stufen[1] <= b.stufen[0] + 0.001;
+  })(), true);
+// Mindestbreite waechst mit der Stufenzahl — sonst scrollt nichts.
+pruefe("Zeitmass: Mindestbreite steigt mit der Stufenzahl",
+  [Z.noetigeBreite(3) < Z.noetigeBreite(6), Z.noetigeBreite(6) < Z.noetigeBreite(12)], [true, true]);
 
 // --- 3. Fehlerfaelle werden gemeldet, nicht geworfen ------------------
 var kaputt = {

@@ -16,30 +16,6 @@
 - **T-0007** `docs/konvertierung.md`: Arbeitsanleitung + Prompt-Vorlage fuer
   Claude-Sessions. Jetzt mit Erfahrung aus zwei Konvertierungen schreibbar;
   die Fallstricke stehen schon in `docs/schema.md` und im README.
-- **T-0020** Zeitmass: Spaltenbreite aus `dauer_s`, Zeitachse als `thead`,
-  Deckel mit Kuerzungsvermerk (`js/render.js`).
-  **Zwei Korrekturen an der Vorlage, beide nachgemessen:**
-  (a) Die Breite darf NICHT per `td.style.width` in `schrittZelleBauen`
-  gesetzt werden. `table-layout: fixed` liest Spaltenbreiten nur aus der
-  ersten Zeile; ausser der ersten beginnt jede Stufenzelle in einer
-  spaeteren Zeile, ihre Breite wird still ignoriert (gemessen: 240 px statt
-  der gesetzten 480 px). Stattdessen ein `<colgroup>` mit einem `<col>` je
-  Spalte in `tabelleBauen` erzeugen — damit greifen die Breiten exakt.
-  (b) Die Mindestbreite von 4,5 rem laesst sich nicht per CSS `min-width`
-  halten, das ist unter `table-layout: fixed` wirkungslos (gemessen: 16 px
-  statt 72 px). Die Untergrenze muss beim Rechnen der Prozentwerte geklemmt
-  und der Rest neu normiert werden.
-  **Entschieden (Andre, 02.08.):** Deckel bleibt bei 24 %. Die Breiten sind
-  qualitativ, niemand misst sie nach — Lesbarkeit der kurzen Stufen schlaegt
-  Massstabstreue.
-  **Offen geblieben und selbst festgelegt:** Stufen mit `dauer_s: null`
-  (z. B. "abschmecken") bekommen die Mindestbreite. Die Uebergabe sagt dazu
-  nichts; ohne Regel rechnet jemand mit `null` und bekommt `NaN` in einer
-  Prozentangabe.
-  Akzeptanz: Pfannkuchen zeigt "gehen lassen" als breiteste Spalte; ein
-  zehnstufiges Rezept scrollt horizontal, ohne dass eine Spalte unter
-  4,5 rem faellt. (Der Linsen-Eintopf ist kein Rezept mehr, sondern
-  Testvorlage — siehe T-0025.)
 - **T-0022** Kopf und Kochleiste neu (`js/render.js`, `css/stil.css`):
   Kennzahlenstreifen, segmentierte Portionswahl, Zeitbalken in der Leiste,
   `padding-bottom: 12.5rem`. Akzeptanz: Fuss wird nicht verdeckt, alle
@@ -78,6 +54,31 @@
 
 ## Done
 
+- **T-0020** (2026-08-02) Zeitmass: Spaltenbreite aus `dauer_s`,
+  Zeitachse als `thead`, Deckel bei 24 %. Rechnung in `js/zeitmass.js`
+  (eigenes Modul, damit sie headless pruefbar ist statt nur im Browser
+  anschaubar). Die beiden gemeldeten Korrekturen sind drin: `colgroup`
+  statt `td.style.width`, Untergrenze beim Rechnen statt per CSS.
+  **Drei Abweichungen von der Vorlage, alle aus dem Nachrechnen:**
+  (a) Gerechnet wird an der MINDESTbreite, nicht an der verfuegbaren.
+  Prozentwerte, die bei 1000 px 72 px ergeben, unterschreiten sie bei
+  740 px — die Untergrenze haelt nur, wenn sie am schmalsten Fall haengt.
+  Nebengewinn: die Verhaeltnisse sind bei jeder Fensterbreite dieselben
+  und es braucht **keinen** `ResizeObserver`. Das ist auch noetig: im
+  Vorschau-Pane feuert der nachweislich nie, eine daran haengende
+  Untergrenze waere dort schlicht weg.
+  (b) Der Deckel greift nie unter dem Gleichanteil. Sonst reissen bei
+  wenigen Stufen alle Spalten den Deckel, niemand nimmt den Ueberschuss
+  auf, und die Tabelle kommt auf 72 statt 78 Prozent.
+  (c) Der Vermerk "Achse gekuerzt" meint nicht die interne Deckelung —
+  die greift durch die Untergrenze fast nie. Er meint die Aussage, die den
+  Leser angeht: diese Stufe ist X % der Gesamtzeit, bekommt aber Y % der
+  Breite. Bei Spaetzle "52 % → 22 %".
+  Reserve von 25 % des Stufenbereichs, damit die Proportion nicht bei
+  langen Rezepten zusammenfaellt — ohne sie waeren bei zwoelf Stufen alle
+  Spalten exakt gleich breit und das Zeitmass tot.
+  Zehn Prueffaelle in `pruefe-grid.js`; drei davon haben beim ersten Lauf
+  echte Fehler gefunden (Deckel frisst Breite, Untergrenze faellt).
 - **T-0021** (2026-08-02) Fuehrungslinie je Block. Andre hat sie im Entwurf
   vermisst — sie macht sichtbar, auf welcher Hoehe eine Stufe endet, ohne
   dass das Auge die Treppe verfolgen muss.

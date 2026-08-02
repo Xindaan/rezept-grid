@@ -34,6 +34,9 @@ konvertiert.
 - Tokens auf die Kicktipp-Linie umgestellt (T-0019): ein Schriftstack,
   Tabellenziffern global, Grid-Rahmen als Karte, gruener Akzent, Marken
   fuer Wartezeit und feste Mengen. Kontraste nachgerechnet.
+- Zeitmass (T-0020): Spaltenbreite proportional zur Dauer, Zeitachse
+  im Tabellenkopf, Vermerk wo die Breite die Dauer untertreibt.
+  Rechnung in `js/zeitmass.js`, headless geprueft.
 - Fuehrungslinien je Block (T-0021): die Unterkante jeder Stufe laeuft
   nach links bis zur Zutatenachse durch.
 - Grid-Design ueberarbeitet (T-0016 + T-0018): echtes Tabellenraster mit
@@ -42,7 +45,7 @@ konvertiert.
   beim Ueberfahren. Bewusst nicht dem Original nachgebaut — Andre hat freie
   Hand gegeben, und das Vorbild-Artifact ist aus der Session ohnehin nicht
   einsehbar (Inhalt liegt hinter Login).
-- Pruefung: `node tools/pruefe-grid.js` (76/76 gruen) — laeuft ueber alle
+- Pruefung: `node tools/pruefe-grid.js` (86/86 gruen) — laeuft ueber alle
   Rezepte und vergleicht zusaetzlich das Manifest gegen die JSON-Dateien.
 - Vorschau zum Testen: `python3 -m http.server 8412` im Projektordner,
   Konfiguration liegt in `.claude/launch.json`.
@@ -54,9 +57,7 @@ konvertiert.
 
 ## Next actions
 
-- T-0020, T-0022 und T-0023 umsetzen (T-0019 und T-0021 sind erledigt). In T-0020 die
-  beiden gemessenen Korrekturen beachten: colgroup statt td.style.width,
-  Mindestbreite beim Rechnen klemmen.
+- T-0022 (Kopf und Kochleiste) und T-0023 (sticky Zutatenspalten)
 - T-0012 `file://`-Doppelklick-Test in echtem Browser — offen, braucht
   Andre; einziger unbestaetigter Architektur-Eckpfeiler
 - T-0007 `docs/konvertierung.md` (Anleitung + Prompt-Vorlage), jetzt mit
@@ -65,6 +66,7 @@ konvertiert.
 
 ## Letzte Done
 
+- T-0020 Zeitmass (2026-08-02)
 - T-0021 Fuehrungslinie je Block (2026-08-02)
 - T-0019 Tokens und Typografie (2026-08-02)
 - T-0025 Rezeptbestand: Pfannkuchen, Spaetzle, Maultaschen (2026-08-02)

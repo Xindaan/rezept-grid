@@ -81,8 +81,89 @@
       koerper.appendChild(tr);
     });
 
+    // Spaltengruppe: unter table-layout: fixed liest der Browser die
+    // Breiten NUR aus der ersten Zeile. Ausser der ersten beginnt jede
+    // Stufenzelle wegen der rowspans spaeter — eine Breite auf der Zelle
+    // wuerde still verworfen. Das colgroup gilt dagegen fuer die Spalte.
+    var gruppe = document.createElement("colgroup");
+    for (var c = 0; c < modell.spalten.length + 2; c++) {
+      gruppe.appendChild(document.createElement("col"));
+    }
+    // Reihenfolge im Markup: colgroup, thead, tbody.
+    tabelle.appendChild(gruppe);
+    tabelle.appendChild(zeitachseBauen(modell));
     tabelle.appendChild(koerper);
     return tabelle;
+  }
+
+  // Kopfzeile mit den Startzeitpunkten der Stufen.
+  function zeitachseBauen(modell) {
+    var kopf = el("thead", "zeitachse");
+    var tr = el("tr");
+    var beschriftung = el("th", "zeitachse-label", "Zeitachse ▸");
+    beschriftung.colSpan = 2;
+    beschriftung.scope = "row";
+    tr.appendChild(beschriftung);
+
+    var dauern = modell.spalten.map(function (s) { return s.schritt.dauer_s; });
+    var starts = global.RezeptZeitmass.startzeiten(dauern);
+    starts.forEach(function (sekunden, i) {
+      var minuten = Math.round(sekunden / 60);
+      var letzte = i === starts.length - 1;
+      var th = el("th", "zeitachse-marke", letzte ? minuten + " Min" : String(minuten));
+      th.scope = "col";
+      tr.appendChild(th);
+    });
+    kopf.appendChild(tr);
+    return kopf;
+  }
+
+  // Setzt die Spaltenbreiten aus den Dauern. Muss nach dem Einhaengen
+  // laufen, weil erst dann die Containerbreite feststeht, und erneut bei
+  // Groessenaenderung.
+  function breitenAnwenden(tabelle, modell) {
+    var Z = global.RezeptZeitmass;
+    var rahmen = tabelle.parentElement;
+    if (!rahmen) return;
+
+    var dauern = modell.spalten.map(function (s) { return s.schritt.dauer_s; });
+    var noetig = Z.noetigeBreite(dauern.length);
+
+    // Bewusst an der MINDESTbreite gerechnet, nicht an der verfuegbaren.
+    // Prozentwerte, die bei 1000 px eine Untergrenze von 72 px ergeben,
+    // unterschreiten sie bei 740 px — die Untergrenze haelt nur, wenn sie
+    // am schmalsten Fall haengt. Nebeneffekt und Gewinn: die Verhaeltnisse
+    // sind damit bei jeder Fensterbreite dieselben, das Bild springt beim
+    // Groesserziehen nicht, und es braucht keine Neuberechnung.
+    var mass = Z.spaltenbreiten(dauern, noetig);
+
+    // Untergrenze per CSS statt per JavaScript. Im Vorschau-Pane feuert
+    // ResizeObserver nachweislich nie; eine Untergrenze, die daran haengt,
+    // waere dort einfach weg.
+    tabelle.style.minWidth = noetig + "px";
+    tabelle.style.width = "100%";
+
+    var spalten = tabelle.querySelectorAll("colgroup col");
+    spalten[0].style.width = (mass.zutaten[0] * 100).toFixed(3) + "%";
+    spalten[1].style.width = (mass.zutaten[1] * 100).toFixed(3) + "%";
+    mass.stufen.forEach(function (anteil, i) {
+      if (spalten[i + 2]) spalten[i + 2].style.width = (anteil * 100).toFixed(3) + "%";
+    });
+
+    // Gedeckelte Stufen sagen, dass ihre Achse gekuerzt wurde — sonst
+    // liest man eine Breite ab, die nicht der Dauer entspricht.
+    modell.spalten.forEach(function (spalte, i) {
+      var td = tabelle.querySelector('[data-schritt="' + spalte.schritt.id + '"]');
+      if (!td) return;
+      var alt = td.querySelector(".kuerzung");
+      if (alt) alt.remove();
+      td.classList.toggle("ist-gekuerzt", !!mass.gekuerzt[i]);
+      if (mass.gekuerzt[i]) {
+        var zeit = Math.round(mass.zeitanteil[i] * 100);
+        var breit = Math.round(mass.stufen[i] * 100);
+        td.appendChild(el("span", "kuerzung", "∕∕ Achse gekürzt, " + zeit + " % → " + breit + " %"));
+      }
+    });
   }
 
   function schrittZelleBauen(spalte) {
@@ -368,9 +449,15 @@
     }, beiKochstart));
 
     var rahmen = el("div", "grid-rahmen");
-    rahmen.appendChild(tabelleBauen(modell, portionen));
+    var tabelle = tabelleBauen(modell, portionen);
+    rahmen.appendChild(tabelle);
     ziel.appendChild(rahmen);
     kopplungVerdrahten(modell, ziel);
+
+    // Einmal genuegt: die Breiten sind Prozentwerte an einer festen
+    // Mindestbreite, der Browser rechnet den Rest bei jeder Fenstergroesse
+    // selbst. Kein ResizeObserver, kein resize-Handler.
+    breitenAnwenden(tabelle, modell);
 
     ziel.appendChild(schritteBauen(rezept));
     var hinweise = hinweiseBauen(rezept);
