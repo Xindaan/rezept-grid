@@ -35,11 +35,16 @@
         tdMenge.classList.add("menge-fix");
         tdMenge.title = "wird nicht mit den Portionen skaliert";
       }
+      zeile.festeMenge = zutat.skalieren === false && zutat.menge !== null;
       tr.appendChild(tdMenge);
 
       var tdZutat = el("td", "zutat");
       tdZutat.dataset.zeile = r;
       tdZutat.appendChild(el("span", "zutat-name", zutat.name));
+      // Zweiter Traeger neben der gedaempften Schrift: eine sichtbare
+      // Marke. Wer Farbunterschiede nicht wahrnimmt, sieht sonst nicht,
+      // dass diese Menge beim Portionswechsel stehen bleibt.
+      if (zeile.festeMenge) tdZutat.appendChild(el("span", "marke-fix", "fix"));
       if (zutat.notiz) tdZutat.appendChild(el("span", "zutat-notiz", zutat.notiz));
       tr.appendChild(tdZutat);
 
@@ -76,6 +81,10 @@
     if (dauer) td.appendChild(el("span", "schritt-dauer", dauer));
     if (schritt.temperatur_c) {
       td.appendChild(el("span", "schritt-temperatur", schritt.temperatur_c + " °C"));
+    }
+    // Wartezeit wird nicht nur eingefaerbt, sondern benannt.
+    if (schritt.unbeaufsichtigt) {
+      td.appendChild(el("span", "stufen-marke", "⧗ läuft von allein"));
     }
     return td;
   }

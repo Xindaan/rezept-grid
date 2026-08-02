@@ -31,6 +31,9 @@ konvertiert.
   Der Linsen-Eintopf ist Testvorlage geworden
   (`tools/testdaten/linsen-eintopf.json`) und nicht mehr in der App.
 - README vorhanden (Quickstart, Rezept hinzufuegen, Troubleshooting).
+- Tokens auf die Kicktipp-Linie umgestellt (T-0019): ein Schriftstack,
+  Tabellenziffern global, Grid-Rahmen als Karte, gruener Akzent, Marken
+  fuer Wartezeit und feste Mengen. Kontraste nachgerechnet.
 - Grid-Design ueberarbeitet (T-0016 + T-0018): echtes Tabellenraster mit
   durchgehenden Haarlinien statt schwebender Karten, ein warmer Akzent fuer
   Zusammengehoeriges und die Haupthandlung, Kopplung von Stufe und Zutaten
@@ -49,7 +52,7 @@ konvertiert.
 
 ## Next actions
 
-- T-0019 bis T-0023 umsetzen (Entscheidungen liegen vor). In T-0020 die
+- T-0020 bis T-0023 umsetzen (T-0019 ist erledigt). In T-0020 die
   beiden gemessenen Korrekturen beachten: colgroup statt td.style.width,
   Mindestbreite beim Rechnen klemmen.
 - T-0012 `file://`-Doppelklick-Test in echtem Browser — offen, braucht
@@ -60,6 +63,7 @@ konvertiert.
 
 ## Letzte Done
 
+- T-0019 Tokens und Typografie (2026-08-02)
 - T-0025 Rezeptbestand: Pfannkuchen, Spaetzle, Maultaschen (2026-08-02)
 - T-0016 + T-0018 Grid-Design: Tabellenraster, Akzent, Kopplung (2026-08-01)
 - T-0006 Rezept-Uebersicht + T-0013 Manifest-Waechter + T-0015 README (2026-08-01)

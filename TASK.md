@@ -16,18 +16,6 @@
 - **T-0007** `docs/konvertierung.md`: Arbeitsanleitung + Prompt-Vorlage fuer
   Claude-Sessions. Jetzt mit Erfahrung aus zwei Konvertierungen schreibbar;
   die Fallstricke stehen schon in `docs/schema.md` und im README.
-
-- **T-0019** Tokens und Typografie auf die Kicktipp-Linie umstellen
-  (`css/stil.css`), nach `docs/uebergabe-zeitmass.md` Abschnitt 1.
-  Akzeptanz: Uebersicht und Einzelrezept unveraendert bedienbar,
-  Dunkelmodus belegt. **Nicht** `pruefe-grid.js` als Nachweis nehmen — die
-  Pruefungen laufen headless ueber `grid.js`/`portionen.js` und fassen
-  weder CSS noch `render.js` an; sie bleiben auch dann gruen, wenn die
-  Oberflaeche zerlegt ist. Nachweis ist der Browser.
-  **Entschieden (Andre, 02.08.):** Dunkelmodus wird gebaut. Die Werte sind
-  aus Apple-Systemfarben abgeleitet, nicht aus Kicktipp uebernommen — dort
-  gibt es keine einzige `prefers-color-scheme`-Regel. Kontraste vor dem
-  Festschreiben nachmessen, besonders `--ruhe-tinte` auf `--block-ruhe`.
 - **T-0020** Zeitmass: Spaltenbreite aus `dauer_s`, Zeitachse als `thead`,
   Deckel mit Kuerzungsvermerk (`js/render.js`).
   **Zwei Korrekturen an der Vorlage, beide nachgemessen:**
@@ -93,6 +81,24 @@
 
 ## Done
 
+- **T-0019** (2026-08-02) Tokens und Typografie auf die Kicktipp-Linie
+  umgestellt. Ein Schriftstack fuer alles, `font-variant-numeric:
+  tabular-nums` global — `--zahlen` (Monospace) ist damit ersatzlos
+  entfallen. Neue Tokens: `--karte`, `--flaeche2`, `--tinte2`, `--achse`,
+  `--fuehrung`, `--ruhe-tinte`; `--block` und `--block-rand` sind weg.
+  Der Grid-Rahmen ist eine Karte mit 18 px Radius und Ruheschatten;
+  Tabellenzellen bleiben eckig. Akzent von gebranntem Rot auf Gruen.
+  **Farbe traegt nicht mehr allein:** Wartezeit hat zusaetzlich eine 3 px
+  linke Kante und die Marke "⧗ laeuft von allein", feste Mengen eine Marke
+  "fix" neben dem Namen. Beides in `render.js` ergaenzt.
+  Alle zwoelf Farbpaarungen auf Kontrast nachgerechnet, alle >= 4,5:1 —
+  auch der erfundene Dunkelmodus. Nebenbefund: `color: var(--papier)` auf
+  dem Akzentknopf loest die Umkehr in beiden Modi von selbst, weil
+  `--papier` im Dunkelmodus schwarz ist.
+  **Nachjustiert:** Seit der Rahmen eine Karte mit Polsterung ist, fehlte
+  die Breite, die vorher der Negativrand gab — die letzte Stufenspalte lag
+  ausserhalb des Bildes. Die Zutatenspalte ist jetzt umbruchfaehig mit
+  12 rem Untergrenze; lieber zwei Zeilen Notiz als eine unsichtbare Spalte.
 - **T-0025** (2026-08-02) Rezeptbestand ausgetauscht. Linsen-Eintopf und
   Gulasch waren Prueflast, keine Rezepte, die jemand kochen will. Der
   Linsen-Eintopf ist **nicht geloescht**, sondern nach

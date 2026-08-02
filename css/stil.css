@@ -1,55 +1,80 @@
 /* stil.css — rezept-grid */
 
+/* Tokens nach docs/uebergabe-zeitmass.md Abschnitt 1. Die hellen Werte
+   stammen aus WM-2026-Kicktipp/assets/tokens.css, die dunklen sind aus
+   Apple-Systemfarben abgeleitet — Kicktipp hat keinen Dunkelmodus.
+   Alle Paarungen auf AA-Kontrast nachgerechnet. */
 :root {
-  --papier: #fbfaf7;
-  --tinte: #23211d;
-  --gedaempft: #6f6a61;
-  /* Zwei Linienstaerken: Haarlinie trennt Zutatenzeilen, Gitterlinie
-     zeichnet die Struktur der Arbeitsschritte. */
-  --linie: #ded9cf;
-  --gitter: #a89e8b;
-  --block: #f2ede2;
-  --block-rand: #a89e8b;
-  --block-ruhe: #e6edea;
-  --block-ruhe-rand: #8faaa3;
-  /* Genau ein Akzent. Er markiert, was gerade zusammengehoert, und die
-     eine Haupthandlung der Seite — sonst nichts. */
-  --akzent: #a8482a;
-  --akzent-flaeche: #f7e7de;
-  --warnung: #8a2f1d;
-  --warnung-flaeche: #fbeee9;
-  --radius: 4px;
-  /* Mengen und Zeiten in Tabellenziffern — das Rezept ist eine
-     Spezifikation, keine Erzaehlung. */
-  --zahlen: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+  --papier: #fbfbfd;
+  --karte: #ffffff;
+  --flaeche2: #f1f1f4;
+  --tinte: #1d1d1f;
+  --tinte2: #3c3c43;
+  --gedaempft: #6e6e73;
+  /* Drei Linienstaerken: Haarlinie trennt Zutatenzeilen, Achse rahmt den
+     Zutatenblock, Gitter zeichnet die Kontur der Arbeitsschritte. */
+  --linie: #efeff2;
+  --achse: #e6e6ea;
+  --gitter: #a5a5ac;
+  --fuehrung: #dedee3;
+  /* Genau ein Akzent: was zusammengehoert, und die eine Haupthandlung. */
+  --akzent: #047857;
+  --akzent-flaeche: #e6f8ec;
+  /* Wartezeit. Traegt nie allein — immer mit Sanduhr und Text. */
+  --block-ruhe: #fff1dc;
+  --block-ruhe-rand: #ff9500;
+  --ruhe-tinte: #a25e00;
+  --warnung: #d70015;
+  --warnung-flaeche: #fdeceb;
+
+  --radius: 8px;
+  --radius-gross: 13px;
+  --radius-karte: 18px;
+  --radius-tafel: 22px;
+  --schatten-ruhe: 0 .5px 1.5px rgba(0, 0, 0, .04), 0 1px 2px rgba(0, 0, 0, .05);
+  --schatten-leiste: 0 2px 8px rgba(0, 0, 0, .05), 0 22px 50px rgba(0, 0, 0, .1);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --papier: #1a1917;
-    --tinte: #eae6de;
-    --gedaempft: #9c958a;
-    --linie: #383430;
-    --gitter: #6b6359;
-    --block: #262320;
-    --block-rand: #6b6359;
-    --block-ruhe: #1f2b28;
-    --block-ruhe-rand: #4e6b63;
-    --akzent: #e2916c;
-    --akzent-flaeche: #3b2820;
-    --warnung: #e79c88;
-    --warnung-flaeche: #2e211d;
+    --papier: #000000;
+    --karte: #1c1c1e;
+    --flaeche2: #2c2c2e;
+    --tinte: #f2f2f7;
+    --tinte2: #d1d1d6;
+    --gedaempft: #98989d;
+    --linie: #2c2c2e;
+    --achse: #38383a;
+    --gitter: #636366;
+    --fuehrung: #3a3a3c;
+    --akzent: #30d158;
+    --akzent-flaeche: #0f2a1c;
+    --block-ruhe: #332412;
+    --block-ruhe-rand: #ff9f0a;
+    --ruhe-tinte: #ffb340;
+    --warnung: #ff453a;
+    --warnung-flaeche: #2c1513;
+    --schatten-ruhe: 0 .5px 1.5px rgba(0, 0, 0, .5), 0 1px 2px rgba(0, 0, 0, .4);
+    --schatten-leiste: 0 2px 8px rgba(0, 0, 0, .5), 0 22px 50px rgba(0, 0, 0, .6);
   }
 }
 
 * { box-sizing: border-box; }
 
+/* Ein Schriftstack fuer alles — ersetzt Serif, Sans und Monospace.
+   Tabellenziffern global, damit Mengen und Zeiten ohne eigene Schrift
+   buendig stehen; --zahlen entfaellt dadurch ersatzlos. */
 body {
   margin: 0;
   padding: 2.5rem 1.5rem 4rem;
   background: var(--papier);
   color: var(--tinte);
-  font: 16px/1.55 "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
+    "Segoe UI", system-ui, Roboto, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
 }
 
 .rezept { max-width: 68rem; margin: 0 auto; }
@@ -86,7 +111,6 @@ body {
 /* Beschriftungen treten zurueck, die Werte stehen vorn. */
 .meta dt {
   color: var(--gedaempft);
-  font-family: "Avenir Next", "Segoe UI", system-ui, sans-serif;
   font-size: .68rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -106,7 +130,6 @@ body {
   display: flex;
   align-items: center;
   gap: .3rem;
-  font-family: system-ui, sans-serif;
 }
 
 .portionen-knopf {
@@ -117,13 +140,12 @@ body {
   background: transparent;
   color: var(--gedaempft);
   font: inherit;
-  font-family: var(--zahlen);
   font-size: .82rem;
   font-variant-numeric: tabular-nums;
   cursor: pointer;
 }
 
-.portionen-knopf:hover { border-color: var(--block-rand); color: var(--tinte); }
+.portionen-knopf:hover { border-color: var(--gitter); color: var(--tinte); }
 
 .portionen-knopf.ist-aktiv {
   border-color: var(--akzent);
@@ -132,7 +154,7 @@ body {
   font-weight: 600;
 }
 
-.portionen-knopf:focus-visible { outline: 2px solid var(--block-rand); outline-offset: 1px; }
+.portionen-knopf:focus-visible { outline: 2px solid var(--akzent); outline-offset: 1px; }
 
 .portionen-einheit {
   margin-left: .25rem;
@@ -167,7 +189,6 @@ body {
   background: var(--akzent);
   color: var(--papier);
   font: inherit;
-  font-family: "Avenir Next", "Segoe UI", system-ui, sans-serif;
   font-size: .85rem;
   font-weight: 600;
   letter-spacing: .01em;
@@ -179,7 +200,6 @@ body {
 
 .tags li {
   color: var(--gedaempft);
-  font-family: "Avenir Next", "Segoe UI", system-ui, sans-serif;
   font-size: .68rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -195,7 +215,17 @@ body {
 
 /* --- Grid ---------------------------------------------------------- */
 
-.grid-rahmen { overflow-x: auto; margin: 0 -1.5rem 2.5rem; padding: 0 1.5rem; }
+/* Der Rahmen wird zur Karte — gerundet ist die Karte, niemals eine
+   Tabellenzelle. */
+.grid-rahmen {
+  overflow-x: auto;
+  margin: 0 0 2.5rem;
+  padding: 18px 20px 20px;
+  background: var(--karte);
+  border: 1px solid var(--achse);
+  border-radius: var(--radius-karte);
+  box-shadow: var(--schatten-ruhe);
+}
 
 /* Echtes Tabellenraster: die Zellen teilen sich ihre Kanten. Nur so
    entsteht die Treppenform, die in der Chu-Notation die Information
@@ -203,7 +233,6 @@ body {
 .grid {
   border-collapse: collapse;
   width: 100%;
-  font-family: "Avenir Next", "Segoe UI", system-ui, sans-serif;
   font-size: .88rem;
 }
 
@@ -238,24 +267,43 @@ body {
   text-align: right;
   /* Schliesst den Zutatenblock nach links — sonst wirken die
      Haarlinien wie freistehende Striche statt wie eine Tabelle. */
-  border-left: 1px solid var(--gitter);
+  border-left: 1px solid var(--achse);
   padding-left: .9rem;
   padding-right: 1rem;
-  font-family: var(--zahlen);
   font-size: .82rem;
   font-variant-numeric: tabular-nums;
   color: var(--tinte);
 }
 
-/* Menge, die bewusst nicht mitskaliert (z. B. Lorbeer). */
+/* Menge, die bewusst nicht mitskaliert (z. B. Lorbeer). Gedaempfte
+   Schrift allein reicht nicht — daneben steht die Marke "fix". */
 .menge-fix { color: var(--gedaempft); }
+
+.marke-fix {
+  display: inline-block;
+  margin-left: .45rem;
+  padding: 0 .35rem;
+  border-radius: 999px;
+  background: var(--flaeche2);
+  color: var(--gedaempft);
+  font-size: .62rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  vertical-align: 1px;
+}
 
 .zutat {
   width: 1%;
-  white-space: nowrap;
+  /* Umbruchfaehig mit Untergrenze: seit der Rahmen eine Karte mit
+     Polsterung ist, fehlt die Breite, die vorher der Negativrand gab.
+     Ohne Umbruch schob die laengste Notiz die letzte Stufenspalte aus
+     dem Bild — lieber zwei Zeilen Notiz als eine unsichtbare Spalte. */
+  white-space: normal;
+  min-width: 12rem;
   padding-right: 1.6rem;
   /* Senkrechte Achse zwischen Zutaten und Arbeitsschritten. */
-  border-right: 1px solid var(--gitter);
+  border-right: 1px solid var(--achse);
 }
 
 .zutat-notiz {
@@ -271,8 +319,8 @@ body {
      Chu-Notation normal. */
   min-width: 6.25rem;
   padding: .5rem .55rem;
-  border: 1px solid var(--block-rand);
-  background: var(--block);
+  border: 1px solid var(--gitter);
+  background: transparent;
   text-align: center;
 }
 
@@ -287,15 +335,31 @@ body {
   display: block;
   margin-top: .25rem;
   color: var(--gedaempft);
-  font-family: var(--zahlen);
   font-size: .74rem;
   font-variant-numeric: tabular-nums;
 }
 
-/* Stufe ohne neue Zutaten: reine Zeit-/Aktionsstufe. */
+/* Marke in der Stufenzelle — der zweite Traeger neben der Farbe. */
+.stufen-marke {
+  display: inline-block;
+  margin-top: .35rem;
+  padding: .1rem .45rem;
+  border: 1px solid var(--block-ruhe-rand);
+  border-radius: 999px;
+  color: var(--ruhe-tinte);
+  font-size: .66rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.schritt-unbeaufsichtigt .schritt-dauer { color: var(--ruhe-tinte); }
+
+/* Wartezeit. Die Farbe traegt nie allein — dazu kommen die linke Kante
+   und die Marke "laeuft von allein" mit Sanduhr (siehe render.js). */
 .schritt-unbeaufsichtigt {
   background: var(--block-ruhe);
   border-color: var(--block-ruhe-rand);
+  border-left: 3px solid var(--block-ruhe-rand);
 }
 
 .leer { border: none; background: none; padding: 0; }
@@ -311,7 +375,6 @@ body {
   text-transform: uppercase;
   letter-spacing: .07em;
   color: var(--gedaempft);
-  font-family: system-ui, sans-serif;
 }
 
 .anweisungen { margin-bottom: 2rem; }
@@ -366,11 +429,11 @@ body {
 }
 
 .rezept-karte:hover {
-  border-color: var(--block-rand);
-  background: var(--block);
+  border-color: var(--gitter);
+  background: var(--flaeche2);
 }
 
-.rezept-karte:focus-visible { outline: 2px solid var(--block-rand); outline-offset: 2px; }
+.rezept-karte:focus-visible { outline: 2px solid var(--akzent); outline-offset: 2px; }
 
 .karte-titel { display: block; font-size: 1.2rem; font-weight: 600; }
 
@@ -385,7 +448,6 @@ body {
   display: block;
   margin-top: .5rem;
   color: var(--gedaempft);
-  font-family: var(--zahlen);
   font-size: .74rem;
   font-variant-numeric: tabular-nums;
 }
@@ -394,7 +456,6 @@ body {
   display: block;
   margin-top: .5rem;
   color: var(--gedaempft);
-  font-family: "Avenir Next", "Segoe UI", system-ui, sans-serif;
   font-size: .78rem;
 }
 
@@ -404,7 +465,6 @@ body {
   display: inline-block;
   margin-bottom: 1.2rem;
   color: var(--gedaempft);
-  font-family: system-ui, sans-serif;
   font-size: .82rem;
   text-decoration: none;
 }
@@ -457,10 +517,9 @@ body.kochmodus .zutat.koch-neu { border-bottom-color: var(--akzent); }
   align-items: center;
   gap: 1rem 1.5rem;
   padding: 1rem 1.5rem;
-  border-top: 1px solid var(--block-rand);
+  border-top: 1px solid var(--gitter);
   background: var(--papier);
   box-shadow: 0 -6px 20px rgba(0, 0, 0, .12);
-  font-family: system-ui, sans-serif;
 }
 
 .koch-text { flex: 1 1 20rem; min-width: 0; }
@@ -522,13 +581,13 @@ body.kochmodus .zutat.koch-neu { border-bottom-color: var(--akzent); }
   cursor: pointer;
 }
 
-.koch-knopf:hover:not(:disabled) { border-color: var(--block-rand); }
-.koch-knopf:focus-visible { outline: 2px solid var(--block-rand); outline-offset: 1px; }
+.koch-knopf:hover:not(:disabled) { border-color: var(--gitter); }
+.koch-knopf:focus-visible { outline: 2px solid var(--akzent); outline-offset: 1px; }
 .koch-knopf:disabled { opacity: .35; cursor: default; }
 
 .koch-knopf-haupt {
-  border-color: var(--block-rand);
-  background: var(--block);
+  border-color: var(--gitter);
+  background: var(--flaeche2);
   font-weight: 600;
 }
 
