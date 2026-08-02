@@ -256,6 +256,35 @@ pruefe("Zeitmass: Gesamtdauer ist der kritische Pfad, nicht die Summe",
   Z.gesamtdauer([600, 1800, 900, 1200, 900], [[], [0], [], [1, 2], [3]]), 4500);
 pruefe("Zeitmass: bei linearer Kette ist beides gleich",
   Z.gesamtdauer([360, 300, 60, 180, 2100]), 3000);
+
+// --- Freie Zeit (T-0028) ---------------------------------------------
+// Nicht die Summe der unbeaufsichtigten Stufen: waehrend der Teig ruht,
+// wird die Fuellung gemischt. Frei bleibt Gesamtdauer minus Arbeit.
+var mtDauern = [600, 1800, 900, 1200, 900];
+var mtUnbeauf = [false, true, false, false, false];
+var mtVor = [[], [0], [], [1, 2], [3]];
+pruefe("Freie Zeit: Maultaschen 15 statt 30 Min",
+  Z.freieZeit(mtDauern, mtVor, mtUnbeauf), 900);
+pruefe("Freie Zeit: Summe der unbeaufsichtigten waere 30 Min gewesen",
+  mtDauern.reduce(function (a, d, i) { return a + (mtUnbeauf[i] ? d : 0); }, 0), 1800);
+pruefe("Freie Zeit: Arbeit ist die Summe der beaufsichtigten Stufen",
+  Z.arbeitszeit(mtDauern, mtUnbeauf), 3600);
+// Laengere Parallelarbeit als Ruhezeit: nichts frei, und es dauert laenger.
+var langDauern = [600, 1800, 2700, 1200, 900];
+pruefe("Freie Zeit: zu lange Parallelarbeit laesst nichts frei",
+  Z.freieZeit(langDauern, mtVor, mtUnbeauf), 0);
+pruefe("Freie Zeit: dann waechst die Gesamtdauer ueber den kritischen Pfad",
+  [Z.gesamtdauer(langDauern, mtVor), Z.realeGesamtdauer(langDauern, mtVor, mtUnbeauf)],
+  [4800, 5400]);
+pruefe("Freie Zeit: und das wird als 'braucht zwei Haende' gemeldet",
+  [Z.braucht2Haende(mtDauern, mtVor, mtUnbeauf), Z.braucht2Haende(langDauern, mtVor, mtUnbeauf)],
+  [false, true]);
+// Lineare Rezepte: freie Zeit bleibt die Summe der unbeaufsichtigten.
+var pkDauern = [900, 600, 3600, 1800, 1200, 0];
+var pkUnbeauf = [true, false, true, true, false, false];
+pruefe("Freie Zeit: bei linearem Rezept unveraendert",
+  Z.freieZeit(pkDauern, null, pkUnbeauf),
+  pkDauern.reduce(function (a, d, i) { return a + (pkUnbeauf[i] ? d : 0); }, 0));
 // Eine Stufe ohne Dauer bekommt nie WENIGER als die Untergrenze. Mehr
 // darf sie bekommen: der Ueberschuss einer gedeckelten Nachbarstufe muss
 // irgendwohin, sonst verliert die Tabelle Breite.

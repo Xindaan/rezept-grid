@@ -137,8 +137,8 @@
     return start;
   }
 
-  // Ende der letzten Stufe auf dem kritischen Pfad — die ehrliche
-  // Gesamtdauer eines Rezepts mit parallelen Straengen.
+  // Ende der letzten Stufe auf dem kritischen Pfad — die Gesamtdauer,
+  // wenn beliebig viel gleichzeitig laufen darf.
   function gesamtdauer(dauern, vorstufen) {
     var start = startzeiten(dauern, vorstufen);
     return dauern.reduce(function (max, d, i) {
@@ -146,11 +146,47 @@
     }, 0);
   }
 
+  // Summe der Stufen, an denen man selbst steht.
+  function arbeitszeit(dauern, unbeaufsichtigt) {
+    return dauern.reduce(function (summe, d, i) {
+      return summe + ((unbeaufsichtigt && unbeaufsichtigt[i]) ? 0 : (d || 0));
+    }, 0);
+  }
+
+  // Gesamtdauer fuer EINE Person. Der kritische Pfad allein reicht nicht:
+  // er laesst zwei beaufsichtigte Stufen gleichzeitig laufen, und das kann
+  // niemand. Ist die Arbeit laenger als der Pfad, dauert es entsprechend
+  // laenger — das ist die Wartezeit, bis die Parallelarbeit fertig ist.
+  function realeGesamtdauer(dauern, vorstufen, unbeaufsichtigt) {
+    return Math.max(gesamtdauer(dauern, vorstufen),
+                    arbeitszeit(dauern, unbeaufsichtigt));
+  }
+
+  // Zeit, in der man tatsaechlich nichts zu tun hat. NICHT die Summe der
+  // unbeaufsichtigten Stufen: waehrend der Teig ruht, mischt man die
+  // Fuellung — diese 15 Minuten sind nicht frei. Uebrig bleibt die
+  // Gesamtdauer minus der Arbeit.
+  function freieZeit(dauern, vorstufen, unbeaufsichtigt) {
+    var arbeit = arbeitszeit(dauern, unbeaufsichtigt);
+    return Math.max(0, realeGesamtdauer(dauern, vorstufen, unbeaufsichtigt) - arbeit);
+  }
+
+  // Passt das Rezept ueberhaupt fuer eine Person? Wenn die Arbeit den
+  // kritischen Pfad ueberschreitet, muessten zwei Stufen gleichzeitig
+  // betreut werden.
+  function braucht2Haende(dauern, vorstufen, unbeaufsichtigt) {
+    return arbeitszeit(dauern, unbeaufsichtigt) > gesamtdauer(dauern, vorstufen) + 0.5;
+  }
+
   global.RezeptZeitmass = {
     spaltenbreiten: spaltenbreiten,
     noetigeBreite: noetigeBreite,
     startzeiten: startzeiten,
     gesamtdauer: gesamtdauer,
+    arbeitszeit: arbeitszeit,
+    realeGesamtdauer: realeGesamtdauer,
+    freieZeit: freieZeit,
+    braucht2Haende: braucht2Haende,
     MIN_PX: MIN_PX,
     DECKEL: DECKEL,
     ZUTATEN: ZUTATEN

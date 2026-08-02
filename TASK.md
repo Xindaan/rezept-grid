@@ -25,16 +25,31 @@
 
 ## Backlog
 
-- **T-0028** "ohne Zutun" bei ueberlappenden Wartezeiten. Die Kennzahl in
-  `render.js` addiert die Dauern aller Stufen mit `unbeaufsichtigt: true`.
-  Laufen zwei davon gleichzeitig (paralleler Strang, in dem auch etwas
-  ruht), zaehlt sie doppelt. Derzeit latent — bei allen vier Rezepten
-  ueberlappt keine Wartezeit, nachgeprueft. Richtig waere die Zeit, in der
-  **keine** beaufsichtigte Stufe laeuft, nicht die Summe der
-  unbeaufsichtigten. Erst bauen, wenn ein Rezept den Fall erzeugt.
+(leer)
 
 ## Done
 
+- **T-0028** (2026-08-02) "ohne Zutun" rechnet jetzt richtig — und der Fall
+  war nicht latent, sondern seit T-0030 aktiv falsch. Andres Einwand:
+  "Fuellung mischen geht nur, wenn der Teig ruht" — also ist die Ruhezeit
+  nur so weit frei, wie sie laenger ist als die Parallelarbeit.
+  Die Kennzahl summierte die unbeaufsichtigten Dauern und zeigte fuer
+  Maultaschen 30 Minuten. Waehrend der 30 Minuten Ruhe mischt man aber
+  15 Minuten lang die Fuellung; frei sind **15**.
+  Formel ist einfacher als der Fehler: **frei = Gesamtdauer minus
+  Arbeit**, wobei Arbeit die Summe der beaufsichtigten Stufen ist. Fuer
+  lineare Rezepte kommt dabei wieder die Summe der unbeaufsichtigten
+  heraus — Pfannkuchen bleibt bei 1 Std 45 Min.
+  Andres zweiter Punkt ist der Umkehrfall: ist die Parallelarbeit
+  **laenger** als die Ruhephase, kommt Wartezeit dazu. Das faellt aus
+  derselben Rechnung: eine Person kann nicht zwei beaufsichtigte Stufen
+  gleichzeitig betreuen, also ist die reale Gesamtdauer
+  `max(kritischer Pfad, Arbeit)`. Gegengeprueft mit einer 45-Minuten-
+  Fuellung: kritischer Pfad 80 Min, Arbeit 90 Min, real 90 Min, frei 0 —
+  die Kachel verschwindet und stattdessen erscheint ein Hinweis, dass es
+  allein laenger dauert oder eine zweite Person braucht.
+  Neu in `js/zeitmass.js`: `arbeitszeit`, `realeGesamtdauer`, `freieZeit`,
+  `braucht2Haende`. Sieben Pruefungen.
 - **T-0026** (2026-08-02) Einkaufsliste. Auswahl per Kaestchen in der
   Uebersicht, Liste unter `?einkauf=<id>[:portionen],...` — die Auswahl
   steht damit in der URL, ist teilbar und uebersteht ein Neuladen.

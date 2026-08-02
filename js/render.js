@@ -297,10 +297,28 @@
   // und was das zusammen bedeutet. "ohne Zutun" ist neu und rechnet sich
   // aus den Stufen mit unbeaufsichtigt: true — die Zahl beantwortet die
   // Frage "kann ich nebenher etwas anderes machen".
+  // Vorstufen eines Rezepts als Schritt-Indizes. Wie in grid.js: fehlt
+  // das Feld, gilt der unmittelbare Vorgaenger.
+  function vorstufenAusRezept(rezept) {
+    var idx = {};
+    rezept.schritte.forEach(function (s, i) { idx[s.id] = i; });
+    return rezept.schritte.map(function (s, i) {
+      if (s.vorstufen === undefined || s.vorstufen === null) return i > 0 ? [i - 1] : [];
+      return s.vorstufen.map(function (v) { return idx[v]; })
+                        .filter(function (j) { return j !== undefined; });
+    });
+  }
+
   function kennzahlenBauen(rezept) {
-    var ohneZutun = rezept.schritte.reduce(function (summe, s) {
-      return summe + (s.unbeaufsichtigt ? (s.dauer_s || 0) : 0);
-    }, 0);
+    var Z = global.RezeptZeitmass;
+    var dauern = rezept.schritte.map(function (s) { return s.dauer_s; });
+    var unbeauf = rezept.schritte.map(function (s) { return !!s.unbeaufsichtigt; });
+    var vorstufen = vorstufenAusRezept(rezept);
+
+    // NICHT die Summe der unbeaufsichtigten Stufen: waehrend der Teig
+    // ruht, mischt man die Fuellung — diese Zeit ist nicht frei. Frei
+    // bleibt die Gesamtdauer minus der eigenen Arbeit.
+    var ohneZutun = Z.freieZeit(dauern, vorstufen, unbeauf);
 
     var streifen = el("div", "kennzahlen");
     [
@@ -314,6 +332,14 @@
       kachel.appendChild(el("span", "kennzahl-label", paar[0]));
       streifen.appendChild(kachel);
     });
+
+    // Passt das Rezept nicht fuer eine Person, ist das eine Aussage ueber
+    // die Planung und keine Nebensaechlichkeit.
+    if (Z.braucht2Haende(dauern, vorstufen, unbeauf)) {
+      streifen.appendChild(el("p", "kennzahl-warnung",
+        "Die parallelen Stränge überschneiden sich: allein dauert es länger als " +
+        "die Zeitachse zeigt, oder es braucht eine zweite Person."));
+    }
     return streifen;
   }
 

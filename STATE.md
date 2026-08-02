@@ -21,7 +21,7 @@ konvertiert.
   Zutatenspalten.
 - Parallele Straenge stehen im Grid nebeneinander (T-0030): Stufen
   teilen sich eine Spalte, wenn ihre Zeilen sich nicht ueberschneiden.
-- Pruefung: `node tools/pruefe-grid.js` — **92/92 gruen**. Laeuft ueber
+- Pruefung: `node tools/pruefe-grid.js` — **111/111 gruen**. Laeuft ueber
   alle Rezepte, prueft Schema, Layout, Zeitmass und Manifest-Aktualitaet.
 - Nach jeder Rezeptaenderung noetig: `node tools/build-manifest.js`.
 - Vorschau: `python3 -m http.server 8412`, Konfiguration in
@@ -37,6 +37,7 @@ konvertiert.
 
 ## Letzte Done
 
+- T-0028 Freie Zeit statt Summe der Wartezeiten (2026-08-02)
 - T-0026 Einkaufsliste + T-0031 oeffentliche Repo-Verweise (2026-08-02)
 - T-0030 Parallele Straenge im Grid nebeneinander (2026-08-02)
 - T-0012 file://-Weg bestaetigt + T-0029 Zurueck-Link (2026-08-02)
