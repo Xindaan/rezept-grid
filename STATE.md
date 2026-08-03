@@ -1,6 +1,6 @@
 # STATE.md — rezept-grid
 
-Stand: 2026-08-02
+Stand: 2026-08-03
 
 ## Ziel
 
@@ -16,13 +16,16 @@ konvertiert.
   mit Countdown, Zutaten abhaken.
 - **Design-Uebergabe aus Claude Design vollstaendig umgesetzt**
   (`docs/uebergabe-zeitmass.md`, T-0019 bis T-0023): Kicktipp-Tokens,
-  Zeitmass (Spaltenbreite proportional zur Dauer, Zeitachse auf dem
-  kritischen Pfad), Fuehrungslinien, Kennzahlenstreifen, sticky
-  Zutatenspalten.
-- Parallele Straenge stehen im Grid nebeneinander (T-0030): Stufen
-  teilen sich eine Spalte, wenn ihre Zeilen sich nicht ueberschneiden.
-- Pruefung: `node tools/pruefe-grid.js` — **111/111 gruen**. Laeuft ueber
-  alle Rezepte, prueft Schema, Layout, Zeitmass und Manifest-Aktualitaet.
+  Zeitmass (Spaltenbreite proportional zur Dauer), Fuehrungslinien,
+  Kennzahlenstreifen, sticky Zutatenspalten.
+- **Die Zeitachse ist der Ablauf fuer EINE Person** (T-0032): Stufen, die
+  die Haende belegen, ueberlappen sich nie; `unbeaufsichtigt` treibt
+  seither den Plan und nicht nur das Etikett. Die Spalten fallen aus
+  diesem Plan (T-0030/T-0032) — eine Spalte ist ein Zeitpunkt, und
+  parallele Straenge stehen nebeneinander, wenn ihre Zeilen sich nicht
+  ueberschneiden.
+- Pruefung: `node tools/pruefe-grid.js` — **121/121 gruen**. Laeuft ueber
+  alle Rezepte, prueft Schema, Layout, Zeitplan und Manifest-Aktualitaet.
 - Nach jeder Rezeptaenderung noetig: `node tools/build-manifest.js`.
 - Vorschau: `python3 -m http.server 8412`, Konfiguration in
   `.claude/launch.json`.
@@ -37,6 +40,7 @@ konvertiert.
 
 ## Letzte Done
 
+- T-0032 Zeitplan fuer eine Person treibt Grid und Achse (2026-08-03)
 - T-0028 Freie Zeit statt Summe der Wartezeiten (2026-08-02)
 - T-0026 Einkaufsliste + T-0031 oeffentliche Repo-Verweise (2026-08-02)
 - T-0030 Parallele Straenge im Grid nebeneinander (2026-08-02)

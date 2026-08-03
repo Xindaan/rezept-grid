@@ -113,9 +113,15 @@ kein Timer.
 **`unbeaufsichtigt`** trennt Wartezeit von Arbeitszeit: `true` bei
 Schritten, die von allein laufen (koecheln, backen, ruhen, marinieren),
 `false` (Default) bei allem, wo man am Topf steht. Die Summe der
-`false`-Dauern ist die Untergrenze von `zeit_aktiv_s`; der Kochmodus kann
-bei `true` anbieten, die Zeit anderweitig zu nutzen. Das Grid nutzt das
-Feld vorerst nicht.
+`false`-Dauern ist die Untergrenze von `zeit_aktiv_s`.
+
+Seit T-0032 ist das Feld kein Etikett mehr, sondern **treibt den
+Zeitplan und damit das Grid**: der Renderer plant fuer EINE Person, und
+zwei `false`-Stufen koennen sich deshalb nie ueberlappen. Eine
+`true`-Stufe belegt die Haende nicht und startet, sobald ihre Vorstufen
+fertig sind — nur in ihrem Schatten kann eine andere Stufe nebenherlaufen.
+Fehlt das Flag bei einer echten Wartezeit, ruecken alle folgenden Stufen
+nach hinten und das Rezept sieht laenger und stumpf-linear aus.
 
 ## Grid-Berechnung (Renderer)
 
@@ -171,5 +177,7 @@ Feld vorerst nicht.
   benennen ("aufgießen"), weil er in der Leiste als Ueberschrift steht.
 - **Nicht-lineare Rezepte (T-0008)** sind der Grund fuer `vorstufen`:
   ein zweiter Strang ist ein Schritt mit `vorstufen: []` mitten im Array,
-  ein Zusammenfuehren ein Schritt mit zwei Eintraegen in `vorstufen`. Das
-  Schema kann das heute schon ausdruecken, der Renderer noch nicht.
+  ein Zusammenfuehren ein Schritt mit zwei Eintraegen in `vorstufen`.
+  Umgesetzt seit T-0030 (Spalten) und T-0032 (Zeitplan): der Renderer
+  stellt parallele Straenge nebeneinander und legt sie in die Zeit, in
+  der sie fuer eine Person tatsaechlich machbar sind.

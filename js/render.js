@@ -21,15 +21,16 @@
     var koerper = el("tbody");
     var faktor = portionen / modell.rezept.portionen;
 
-    // Welche Stufe laeuft neben der vorherigen her statt danach? Eine
-    // Stufe ohne Vorstufen faengt bei null an, waehrend links davon noch
-    // etwas laeuft.
-    var dauernAlle = modell.spalten.map(function (s) { return s.schritt.dauer_s; });
-    var startsAlle = global.RezeptZeitmass.startzeiten(dauernAlle, vorstufenIndizes(modell));
-    var laeuftParallel = startsAlle.map(function (start, i) {
-      if (i === 0) return false;
-      var endeDavor = startsAlle[i - 1] + (dauernAlle[i - 1] || 0);
-      return start < endeDavor;
+    // Welche Stufe laeuft neben einer anderen her? Start und Ende stehen
+    // seit T-0032 im Modell — der Zeitplan aus grid.js, nicht der
+    // Nachbarvergleich von vorher. Die Marke bekommen nur beaufsichtigte
+    // Stufen: bei einer Ruhezeit sagt schon "laeuft von allein", dass
+    // daneben Platz ist.
+    var laeuftParallel = modell.spalten.map(function (s) {
+      if (s.schritt.unbeaufsichtigt) return false;
+      return modell.spalten.some(function (t) {
+        return t !== s && t.start < s.ende && s.start < t.ende;
+      });
     });
 
     var gruppen = nachSpalten(modell);
@@ -116,17 +117,6 @@
     return tabelle;
   }
 
-  // Vorstufen als Stufen-Indizes (nicht Spalten — mehrere Stufen koennen
-  // sich seit der Parallelisierung eine Spalte teilen).
-  function vorstufenIndizes(modell) {
-    var nachId = {};
-    modell.spalten.forEach(function (s, i) { nachId[s.schritt.id] = i; });
-    return modell.spalten.map(function (s) {
-      return (s.vorstufen || []).map(function (id) { return nachId[id]; })
-                                .filter(function (j) { return j !== undefined; });
-    });
-  }
-
   // Stufen nach Spalte gruppiert. Eine Spalte kann mehrere Stufen tragen,
   // wenn sie verschiedene Zeilen belegen (paralleler Strang).
   function nachSpalten(modell) {
@@ -140,22 +130,17 @@
   // Stufen, Dauer die Spanne bis zum spaetesten Ende. Bei einer Spalte
   // mit nur einer Stufe ist das genau deren Dauer.
   function spaltenZeiten(modell) {
-    var dauernStufen = modell.spalten.map(function (s) { return s.schritt.dauer_s; });
-    var startsStufen = global.RezeptZeitmass.startzeiten(dauernStufen, vorstufenIndizes(modell));
-    var gruppen = nachSpalten(modell);
-
     var starts = [], dauern = [];
-    gruppen.forEach(function (stufen, c) {
+    nachSpalten(modell).forEach(function (stufen, c) {
       var von = Infinity, bis = 0;
       stufen.forEach(function (s) {
-        var i = modell.spalten.indexOf(s);
-        von = Math.min(von, startsStufen[i]);
-        bis = Math.max(bis, startsStufen[i] + (dauernStufen[i] || 0));
+        von = Math.min(von, s.start);
+        bis = Math.max(bis, s.ende);
       });
       starts[c] = von === Infinity ? 0 : von;
       dauern[c] = Math.max(0, bis - starts[c]);
     });
-    return { starts: starts, dauern: dauern, stufenStarts: startsStufen };
+    return { starts: starts, dauern: dauern };
   }
 
   // Kopfzeile mit den Startzeitpunkten der Stufen.
@@ -337,8 +322,10 @@
     // die Planung und keine Nebensaechlichkeit.
     if (Z.braucht2Haende(dauern, vorstufen, unbeauf)) {
       streifen.appendChild(el("p", "kennzahl-warnung",
-        "Die parallelen Stränge überschneiden sich: allein dauert es länger als " +
-        "die Zeitachse zeigt, oder es braucht eine zweite Person."));
+        "Die Zeitachse zeigt den Weg für eine Person: " +
+        G.dauerFormatieren(Z.realeGesamtdauer(dauern, vorstufen, unbeauf)) +
+        ". Zu zweit wären es " + G.dauerFormatieren(Z.gesamtdauer(dauern, vorstufen)) +
+        " — zwei Schritte fallen zusammen, die allein nacheinander gehen."));
     }
     return streifen;
   }

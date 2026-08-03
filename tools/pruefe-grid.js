@@ -10,9 +10,9 @@
 "use strict";
 var fs = require("fs"), path = require("path");
 var wurzel = path.resolve(__dirname, "..");
+eval(fs.readFileSync(path.join(wurzel, "js/zeitmass.js"), "utf8"));
 eval(fs.readFileSync(path.join(wurzel, "js/grid.js"), "utf8"));
 eval(fs.readFileSync(path.join(wurzel, "js/portionen.js"), "utf8"));
-eval(fs.readFileSync(path.join(wurzel, "js/zeitmass.js"), "utf8"));
 eval(fs.readFileSync(path.join(wurzel, "js/einkauf.js"), "utf8"));
 eval(fs.readFileSync(path.join(wurzel, "js/kochmodus.js"), "utf8"));
 var G = globalThis.RezeptGrid;
@@ -188,16 +188,58 @@ function spaltenPruefen(name, rezept, erwarteteSpalten) {
 
 // Lineare Rezepte: jede Stufe behaelt ihre eigene Spalte.
 spaltenPruefen("linear (Linsen-Eintopf)", rezept, 6);
-// Paralleler Strang: Fuellung teilt sich Spalte 0 mit dem Teig.
+// Paralleler Strang: die Fuellung steht neben der RUHEZEIT, nicht neben
+// dem Kneten (T-0032). Beides mit den Haenden gleichzeitig geht nicht.
 var maultaschen = JSON.parse(fs.readFileSync(path.join(wurzel, "rezepte/maultaschen.json"), "utf8"));
 spaltenPruefen("parallel (Maultaschen)", maultaschen, 4);
-pruefe("Maultaschen: Fuellung teilt Spalte 0 mit dem Teig",
+pruefe("Maultaschen: Fuellung steht neben der Ruhezeit, nicht neben dem Kneten",
   (function () {
     var m = G.gridModellBauen(maultaschen);
-    var f = m.spalten.find(function (s) { return s.schritt.id === "s-fuellung"; });
-    var t = m.spalten.find(function (s) { return s.schritt.id === "s-teig"; });
-    return [f.spalte, t.spalte];
-  })(), [0, 0]);
+    function sp(id) { return m.spalten.find(function (s) { return s.schritt.id === id; }); }
+    return [sp("s-teig").spalte, sp("s-teig-ruhen").spalte, sp("s-fuellung").spalte];
+  })(), [0, 1, 1]);
+pruefe("Maultaschen: Startzeiten im Modell folgen dem Einpersonen-Plan",
+  (function () {
+    var m = G.gridModellBauen(maultaschen);
+    return m.spalten.map(function (s) { return s.start; });
+  })(), [0, 600, 600, 2400, 3600]);
+// Der eigentliche Befund: keine zwei beaufsichtigten Stufen zur gleichen
+// Zeit. Genau das war vorher im Bild — 15 Min Fuellung neben 10 Min
+// Kneten. Gilt fuer jedes Rezept, nicht nur fuer die Maultaschen.
+function haendePruefen(name, rezept) {
+  var m = G.gridModellBauen(rezept);
+  var maengel = [];
+  m.spalten.forEach(function (a, i) {
+    if (a.schritt.unbeaufsichtigt) return;
+    m.spalten.forEach(function (b, j) {
+      if (j <= i || b.schritt.unbeaufsichtigt) return;
+      if (a.start < b.ende && b.start < a.ende) {
+        maengel.push(a.schritt.id + " und " + b.schritt.id + " brauchen gleichzeitig die Haende");
+      }
+    });
+  });
+  pruefe("Zwei Haende " + name, maengel, []);
+}
+haendePruefen("(Maultaschen)", maultaschen);
+haendePruefen("(Linsen-Eintopf)", rezept);
+
+// Isomorphie-Check zu T-0032: der Kochmodus laeuft die Stufen in der
+// Reihenfolge des JSON durch und kennt den Zeitplan nicht. Solange die
+// Startzeiten in dieser Reihenfolge nicht zurueckspringen, ist das
+// dieselbe Reihenfolge. Ein paralleler Strang, der im JSON zu frueh
+// steht, wuerde den Kochmodus sonst still in die falsche Folge schicken.
+function kochfolgePruefen(name, rezept) {
+  var m = G.gridModellBauen(rezept);
+  var maengel = [];
+  m.spalten.forEach(function (s, i) {
+    if (i > 0 && s.start < m.spalten[i - 1].start) {
+      maengel.push(s.schritt.id + " beginnt vor " + m.spalten[i - 1].schritt.id +
+                   ", steht im JSON aber dahinter");
+    }
+  });
+  pruefe("Kochmodus-Reihenfolge " + name, maengel, []);
+}
+kochfolgePruefen("(Maultaschen)", maultaschen);
 
 // --- 2e. Zeitmass (T-0020) --------------------------------------------
 // Die Spaltenbreiten sind Prozentwerte an der Mindestbreite. Drei
@@ -279,6 +321,36 @@ pruefe("Freie Zeit: dann waechst die Gesamtdauer ueber den kritischen Pfad",
 pruefe("Freie Zeit: und das wird als 'braucht zwei Haende' gemeldet",
   [Z.braucht2Haende(mtDauern, mtVor, mtUnbeauf), Z.braucht2Haende(langDauern, mtVor, mtUnbeauf)],
   [false, true]);
+
+// --- Einpersonen-Plan (T-0032) ---------------------------------------
+// Der Plan serialisiert, was die Haende braucht. Bei den Maultaschen
+// heisst das: die Fuellung faellt in die Ruhezeit, nicht auf das Kneten.
+pruefe("Plan: Fuellung beginnt erst nach dem Kneten",
+  Z.plan(mtDauern, mtVor, mtUnbeauf).starts, [0, 600, 600, 2400, 3600]);
+pruefe("Plan: die Ruhezeit belegt die Haende nicht und startet sofort",
+  Z.plan(mtDauern, mtVor, mtUnbeauf).enden, [600, 2400, 1500, 3600, 4500]);
+pruefe("Plan: Gesamtdauer bleibt der kritische Pfad, wenn die Arbeit hineinpasst",
+  Z.plan(mtDauern, mtVor, mtUnbeauf).gesamt, Z.gesamtdauer(mtDauern, mtVor));
+// Ohne die Reihenfolge-Heuristik waere die lange Fuellung zuerst dran
+// und wuerde das Ruhen um 45 Minuten verschieben — 7200 statt 5400.
+pruefe("Plan: die Stufe mit dem laengsten Rest kommt zuerst dran",
+  Z.plan(langDauern, mtVor, mtUnbeauf).starts, [0, 600, 600, 3300, 4500]);
+// Lineare Rezepte: der Plan aendert nichts, es gab nie eine Ueberlappung.
+pruefe("Plan: lineare Kette bleibt die alte Kumulation",
+  Z.plan([360, 300, 60, 180, 2100, null], null, null).starts,
+  Z.startzeiten([360, 300, 60, 180, 2100, null]));
+// Erzwungener Leerlauf: zwei Ruhezeiten, an denen je eine Arbeit haengt.
+// max(kritischer Pfad, Arbeit) waere 100 Min — der Plan sieht die 50 Min
+// Leerlauf, in denen man auf die zweite Ruhezeit wartet.
+var leerDauern = [3000, 3000, 3000, 3000];
+var leerVor = [[], [0], [], [2]];
+var leerUnbeauf = [true, false, true, false];
+pruefe("Plan: erzwungener Leerlauf zaehlt zur Gesamtdauer",
+  [Z.gesamtdauer(leerDauern, leerVor),
+   Z.arbeitszeit(leerDauern, leerUnbeauf),
+   Z.realeGesamtdauer(leerDauern, leerVor, leerUnbeauf)],
+  [6000, 6000, 9000]);
+
 // Lineare Rezepte: freie Zeit bleibt die Summe der unbeaufsichtigten.
 var pkDauern = [900, 600, 3600, 1800, 1200, 0];
 var pkUnbeauf = [true, false, true, true, false, false];
@@ -445,9 +517,30 @@ dateien.forEach(function (datei) {
   var mm = G.gridModellBauen(r);
   mm.probleme.forEach(function (p) { maengel.push("Layout: " + p); });
 
-  // zeit_gesamt_s muss zum kritischen Pfad passen. Zu klein ist unmoeglich,
-  // deutlich zu gross heisst meistens: jemand hat die Dauern stumpf
-  // addiert und die parallelen Straenge uebersehen.
+  // Und der Zeitplan muss fuer eine Person aufgehen (T-0032): keine zwei
+  // beaufsichtigten Stufen gleichzeitig, und die JSON-Reihenfolge darf
+  // der Reihenfolge des Plans nicht widersprechen (Kochmodus).
+  mm.spalten.forEach(function (a, i) {
+    if (i > 0 && a.start < mm.spalten[i - 1].start) {
+      maengel.push("Zeitplan: " + a.schritt.id + " beginnt vor " +
+                   mm.spalten[i - 1].schritt.id + ", steht im JSON aber dahinter");
+    }
+    if (a.schritt.unbeaufsichtigt) return;
+    mm.spalten.forEach(function (b, j) {
+      if (j <= i || b.schritt.unbeaufsichtigt) return;
+      if (a.start < b.ende && b.start < a.ende) {
+        maengel.push("Zeitplan: " + a.schritt.id + " und " + b.schritt.id +
+                     " brauchen gleichzeitig die Haende");
+      }
+    });
+  });
+
+  // zeit_gesamt_s muss zum Einpersonen-Plan passen. Zu klein ist
+  // unmoeglich — und die Untergrenze ist seit T-0032 der Plan, nicht der
+  // kritische Pfad: der Pfad laesst zwei beaufsichtigte Stufen parallel
+  // laufen und ist deshalb zu optimistisch. Deutlich zu gross heisst
+  // meistens: jemand hat die Dauern stumpf addiert und die parallelen
+  // Straenge uebersehen.
   var idx = {};
   r.schritte.forEach(function (s, i) { idx[s.id] = i; });
   var vorstufen = r.schritte.map(function (s, i) {
@@ -456,13 +549,14 @@ dateien.forEach(function (datei) {
                       .filter(function (j) { return j !== undefined; });
   });
   var dauern = r.schritte.map(function (s) { return s.dauer_s; });
-  var kritisch = Z.gesamtdauer(dauern, vorstufen);
+  var unbeauf = r.schritte.map(function (s) { return !!s.unbeaufsichtigt; });
+  var allein = Z.realeGesamtdauer(dauern, vorstufen, unbeauf);
   var summe = dauern.reduce(function (a, d) { return a + (d || 0); }, 0);
-  if (r.zeit_gesamt_s && r.zeit_gesamt_s < kritisch) {
-    maengel.push("zeit_gesamt_s " + r.zeit_gesamt_s + " < kritischer Pfad " + kritisch);
+  if (r.zeit_gesamt_s && r.zeit_gesamt_s < allein) {
+    maengel.push("zeit_gesamt_s " + r.zeit_gesamt_s + " < Einpersonen-Plan " + allein);
   }
-  if (kritisch < summe && r.zeit_gesamt_s >= summe) {
-    maengel.push("zeit_gesamt_s " + r.zeit_gesamt_s + " ignoriert die parallelen Straenge (kritischer Pfad " + kritisch + ", Summe " + summe + ")");
+  if (allein < summe && r.zeit_gesamt_s >= summe) {
+    maengel.push("zeit_gesamt_s " + r.zeit_gesamt_s + " ignoriert die parallelen Straenge (Einpersonen-Plan " + allein + ", Summe " + summe + ")");
   }
 
   // Und jede Menge muss bei jeder waehlbaren Portionszahl sauber sein.

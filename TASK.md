@@ -25,10 +25,54 @@
 
 ## Backlog
 
-(leer)
+- **T-0033** Spaetzle: "Wasser aufsetzen" haengt an der Teigruhe, obwohl
+  es nicht davon abhaengt. Gefunden beim Durchsehen nach T-0032.
+  `s-wasser` hat `vorstufen: ["s-ruhen"]`; Wasser kann man aber waehrend
+  der 30 Minuten Ruhe aufsetzen. Mit `vorstufen: []` faellt es in die
+  Ruhezeit und das Rezept kaeme auf 48 statt 56 Minuten (`zeit_gesamt_s`
+  waere anzupassen, ebenso die freie Zeit).
+  **Andres Entscheidung, nicht meine** — es ist sein Familienrezept und
+  seine Zeitangabe. Genau der Fehlertyp, den `docs/konvertierung.md` §7
+  beschreibt ("verweist NICHT auf die Stufe daneben"), diesmal in den
+  eigenen Daten.
+  Die drei anderen Rezepte sind geprueft und sauber: bei Eierkuchen und
+  Pfannkuchen haengt jede Stufe echt an ihrer Vorgaengerin, bei den
+  Maultaschen stimmt es seit T-0032.
 
 ## Done
 
+- **T-0032** (2026-08-03) Der Zeitplan kennt jetzt zwei Haende, nicht nur
+  Abhaengigkeiten. Andres Befund am Bild: "15 min nebenher moeglich zu
+  einem 10-min-Knetjob" — im Grid stand "Fuellung mischen, 15 Min" neben
+  "Nudelteig kneten, 10 Min", beides ab Minute 0, beides mit den Haenden.
+  Ursache: `startzeiten()` kannte nur `vorstufen`. Eine Stufe mit
+  `vorstufen: []` startete bei null, egal ob dort schon jemand am Teig
+  steht. Die Spaltenzuordnung aus T-0030 haengte an der
+  Abhaengigkeitstiefe und erbte den Fehler eins zu eins.
+  **Das ist derselbe Fehler wie T-0028, eine Ebene tiefer.** Dort habe
+  ich die Kennzahl auf eine Person umgestellt und den Zeitplan stehen
+  lassen, aus dem das Bild gebaut wird. Die Zahl stimmte danach, das Bild
+  nicht — und Andre hat auf das Bild gesehen.
+  Neu: `plan()` in `js/zeitmass.js`. Zwei Regeln — eine Stufe beginnt
+  fruehestens nach ihren Vorstufen, und beaufsichtigte Stufen ueberlappen
+  sich nie. Unbeaufsichtigte belegen die Haende nicht und starten sofort.
+  Die Reihenfolge unter den beaufsichtigten ist eine Heuristik (laengster
+  Restpfad zuerst), kein Optimum; ohne sie kaeme die 45-Minuten-Fuellung
+  vor den Teig und das Ruhen verschoebe sich um 45 Minuten.
+  `grid.js` baut die Spalten jetzt aus diesem Plan: eine Spalte ist ein
+  Zeitpunkt, nicht eine Abhaengigkeitsstufe. Maultaschen 0/10/10/40/60 —
+  die Fuellung steht linksbuendig unter der Teigruhe (im Browser
+  gemessen: beide beginnen bei x=527, das Kneten endet dort).
+  `realeGesamtdauer` ist jetzt das Ende des Plans statt
+  `max(Pfad, Arbeit)`; der Unterschied ist erzwungener Leerlauf, siehe
+  Nachtrag bei T-0028. Die drei linearen Rezepte aendern sich nicht.
+  Isomorphie-Check: dieselbe Annahme "beliebig viel laeuft gleichzeitig"
+  steckte sonst nur noch im Kochmodus, der die Stufen in JSON-Reihenfolge
+  durchgeht ohne den Plan zu kennen. Heute deckungsgleich bei allen vier
+  Rezepten; eine Pruefung je Rezeptdatei haelt das fest (Startzeiten
+  duerfen in JSON-Reihenfolge nicht zurueckspringen). Dazu je Rezept die
+  Pruefung, dass nie zwei beaufsichtigte Stufen zugleich laufen.
+  121/121 gruen.
 - **T-0028** (2026-08-02) "ohne Zutun" rechnet jetzt richtig — und der Fall
   war nicht latent, sondern seit T-0030 aktiv falsch. Andres Einwand:
   "Fuellung mischen geht nur, wenn der Teig ruht" — also ist die Ruhezeit
@@ -41,15 +85,19 @@
   lineare Rezepte kommt dabei wieder die Summe der unbeaufsichtigten
   heraus — Pfannkuchen bleibt bei 1 Std 45 Min.
   Andres zweiter Punkt ist der Umkehrfall: ist die Parallelarbeit
-  **laenger** als die Ruhephase, kommt Wartezeit dazu. Das faellt aus
-  derselben Rechnung: eine Person kann nicht zwei beaufsichtigte Stufen
-  gleichzeitig betreuen, also ist die reale Gesamtdauer
-  `max(kritischer Pfad, Arbeit)`. Gegengeprueft mit einer 45-Minuten-
-  Fuellung: kritischer Pfad 80 Min, Arbeit 90 Min, real 90 Min, frei 0 —
-  die Kachel verschwindet und stattdessen erscheint ein Hinweis, dass es
-  allein laenger dauert oder eine zweite Person braucht.
+  **laenger** als die Ruhephase, kommt Wartezeit dazu. Eine Person kann
+  nicht zwei beaufsichtigte Stufen gleichzeitig betreuen. Gegengeprueft
+  mit einer 45-Minuten-Fuellung: kritischer Pfad 80 Min, Arbeit 90 Min,
+  real 90 Min, frei 0 — die Kachel verschwindet und stattdessen erscheint
+  ein Hinweis auf die zweite Person.
   Neu in `js/zeitmass.js`: `arbeitszeit`, `realeGesamtdauer`, `freieZeit`,
   `braucht2Haende`. Sieben Pruefungen.
+  **Nachtrag T-0032:** die hier benutzte Formel `max(kritischer Pfad,
+  Arbeit)` ist als Untergrenze richtig, aber nicht als Gesamtdauer — sie
+  uebersieht erzwungenen Leerlauf (zwei Ruhephasen mit je einer Arbeit
+  dahinter: Pfad 100, Arbeit 100, tatsaechlich 150). Ersetzt durch das
+  Ende des Einpersonen-Plans. Die drei hier genannten Zahlen bleiben
+  richtig, die Begruendung nicht.
 - **T-0026** (2026-08-02) Einkaufsliste. Auswahl per Kaestchen in der
   Uebersicht, Liste unter `?einkauf=<id>[:portionen],...` — die Auswahl
   steht damit in der URL, ist teilbar und uebersteht ein Neuladen.

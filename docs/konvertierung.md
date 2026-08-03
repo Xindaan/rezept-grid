@@ -77,23 +77,32 @@ Grid hintereinander stehen. Dafür den ganzen Strang in **einem** Schritt
 einführen, statt seine Zutaten über mehrere zu verteilen. Verschränkte
 Stränge meldet der Renderer als „kein zusammenhängender Zeilenblock".
 
-**7. `vorstufen` steuert zwei Dinge, nicht eines.**
-Das Feld bestimmt die Form des Grids **und** die Zeitrechnung. Eine Stufe
-beginnt, sobald ihre Vorstufen fertig sind; eine mit `vorstufen: []`
-beginnt bei null und läuft damit neben dem her, was links von ihr steht.
+**7. `vorstufen` und `unbeaufsichtigt` planen gemeinsam den Ablauf.**
+`vorstufen` sagt, was **worauf warten muss**; `unbeaufsichtigt` sagt, was
+**die Hände belegt**. Aus beidem zusammen rechnet der Renderer einen Plan
+für *eine* Person — und daraus erst entstehen Spalten und Zeitachse.
 
-Daraus folgt: Ein falsch gesetztes `vorstufen` sieht nicht nur schief
-aus, es produziert eine **falsche Zahl**. Bei den Maultaschen entsteht
-die Füllung während der Teig ruht — mit korrekten Vorstufen sind das
-75 Minuten, ohne sie hätte die Zeitachse 90 angezeigt.
+Zwei Regeln stecken darin: eine Stufe beginnt frühestens, wenn ihre
+Vorstufen fertig sind, und zwei beaufsichtigte Stufen laufen nie
+gleichzeitig. Man hat zwei Hände.
 
-Zwei Faustregeln:
+Daraus folgt: Ein falsch gesetztes Feld sieht nicht nur schief aus, es
+produziert eine **falsche Zahl und ein falsches Bild**. Bei den
+Maultaschen stand „Füllung mischen, 15 Min" eine Zeit lang neben
+„Nudelteig kneten, 10 Min" — beides mit den Händen, beides ab Minute 0.
+Richtig ist, dass die Füllung in die 30 Minuten Teigruhe fällt.
+
+Drei Faustregeln:
 
 - Eine Stufe, die *irgendwann während* einer anderen erledigt werden
   kann, bekommt `vorstufen: []` (oder verweist auf ihre eigene Vorstufe
-  im selben Strang) — **nicht** auf die Stufe daneben.
-- `zeit_gesamt_s` ist der **kritische Pfad**, nicht die Summe der Dauern.
-  `pruefe-grid.js` meldet es, wenn beides auseinanderfällt.
+  im selben Strang) — **nicht** auf die Stufe daneben. Wo sie zeitlich
+  landet, entscheidet der Plan, nicht die Reihenfolge im Array.
+- `unbeaufsichtigt: true` gehört an **jede** echte Wartezeit. Fehlt es,
+  hält die Stufe die Hände besetzt, und alles Parallele rutscht dahinter.
+- `zeit_gesamt_s` ist das Ende dieses Plans, nicht die Summe der Dauern
+  und auch nicht der reine kritische Pfad. `pruefe-grid.js` meldet es,
+  wenn beides auseinanderfällt.
 
 **8. Gleiches Produkt, gleicher Name — über Rezepte hinweg.**
 Die Einkaufsliste fasst Posten über `name` + `einheit` zusammen. Heißt
@@ -110,9 +119,10 @@ Vor dem Commit kurz gegenlesen:
 
 - Ergeben die Mengen die angegebene Portionszahl? 300 g Linsen für vier
   Personen ja, für zwölf nicht.
-- Passt `zeit_gesamt_s` zum **kritischen Pfad** plus Vorbereitung? Bei
-  parallelen Strängen ist das weniger als die Summe der Dauern — das
-  Prüfskript meldet es, wenn die Stränge beim Addieren übersehen wurden.
+- Passt `zeit_gesamt_s` zum **Ablauf für eine Person** plus Vorbereitung?
+  Bei parallelen Strängen ist das weniger als die Summe der Dauern — das
+  Prüfskript meldet es, wenn die Stränge beim Addieren übersehen wurden,
+  und ebenso, wenn der Wert unter dem geplanten Ablauf liegt.
 - Ist `zeit_aktiv_s` mindestens so groß wie die Summe der Stufen **ohne**
   `unbeaufsichtigt`?
 - Sind die Schritt-Titel Handlungen in ein bis vier Wörtern? Sie stehen
@@ -157,13 +167,16 @@ Regeln, die dabei zaehlen:
    seine Zutaten ueber mehrere zu verteilen. Sonst verschraenken sich die
    Straenge und der Renderer kann das Grid nicht bauen.
 
-7. vorstufen steuert die Form des Grids UND die Zeitrechnung. Eine Stufe
-   beginnt, sobald ihre Vorstufen fertig sind; eine mit vorstufen: []
-   beginnt bei null und laeuft neben dem her, was links von ihr steht.
-   Kann eine Stufe irgendwann waehrend einer anderen erledigt werden
-   (Fuellung mischen, waehrend der Teig ruht), verweist sie NICHT auf die
-   Stufe daneben. Setze zeit_gesamt_s auf den kritischen Pfad, nicht auf
-   die Summe der Dauern.
+7. vorstufen und unbeaufsichtigt planen zusammen den Ablauf, und daraus
+   entstehen Grid und Zeitachse. vorstufen sagt, was worauf warten muss;
+   unbeaufsichtigt sagt, was die Haende belegt. Geplant wird fuer EINE
+   Person: zwei beaufsichtigte Stufen laufen nie gleichzeitig, eine
+   unbeaufsichtigte belegt niemanden. Kann eine Stufe irgendwann waehrend
+   einer anderen erledigt werden (Fuellung mischen, waehrend der Teig
+   ruht), bekommt sie vorstufen: [] und verweist NICHT auf die Stufe
+   daneben — wo sie zeitlich landet, rechnet der Renderer aus. Setze
+   zeit_gesamt_s auf das Ende dieses Ablaufs, nicht auf die Summe der
+   Dauern.
 
 8. Der Schritt-Titel ist ein Kurzlabel von ein bis vier Woertern
    ("aufgiessen", "Tomatenmark roesten"), die Anweisung der ganze Satz.

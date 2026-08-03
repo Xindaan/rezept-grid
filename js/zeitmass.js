@@ -137,6 +137,103 @@
     return start;
   }
 
+  // Zeitplan fuer EINE Person (T-0032).
+  //
+  // `startzeiten` oben kennt nur Abhaengigkeiten und laesst deshalb zwei
+  // beaufsichtigte Stufen gleichzeitig laufen. Das kann niemand: bei den
+  // Maultaschen stand "Fuellung mischen, 15 Min" neben "Nudelteig kneten,
+  // 10 Min" — beides mit den Haenden, beides ab Minute 0. Richtig ist,
+  // dass die Fuellung in die Ruhezeit des Teigs faellt.
+  //
+  // Also zwei Regeln statt einer:
+  //   1. Eine Stufe beginnt fruehestens, wenn ihre Vorstufen fertig sind.
+  //   2. Beaufsichtigte Stufen ueberlappen sich nie. Unbeaufsichtigte
+  //      belegen die Haende nicht und starten immer sofort.
+  //
+  // Die Reihenfolge unter den beaufsichtigten ist eine Heuristik, keine
+  // Optimierung: es kommt dran, hinter wem noch am meisten haengt
+  // (laengster Restpfad). Bei den Maultaschen waehlt das den Teig vor der
+  // Fuellung — richtig, weil danach 30 Minuten Ruhe von allein laufen.
+  // Ein echtes Optimum waere Scheduling-Theorie fuer fuenf Stufen.
+  function plan(dauern, vorstufen, unbeaufsichtigt) {
+    var n = dauern.length;
+
+    function vor(i) {
+      return (vorstufen && vorstufen[i]) ? vorstufen[i] : (i > 0 ? [i - 1] : []);
+    }
+    function betreut(i) { return !(unbeaufsichtigt && unbeaufsichtigt[i]); }
+
+    // Restpfad HINTER der Stufe: wie lange es nach ihrem Ende mindestens
+    // noch weitergeht. Vorstufen haben kleinere Indizes (grid.js meldet
+    // Verstoesse), deshalb reicht ein Rueckwaertslauf.
+    var rest = new Array(n).fill(0);
+    for (var i = n - 1; i >= 0; i--) {
+      var dahinter = rest[i] + (dauern[i] || 0);
+      vor(i).forEach(function (j) {
+        if (j >= 0 && j < i && dahinter > rest[j]) rest[j] = dahinter;
+      });
+    }
+
+    var start = [], ende = [], geplant = new Array(n).fill(false);
+    var handFrei = 0;
+
+    // Frueheste Zeit aus den Abhaengigkeiten, oder null solange eine
+    // Vorstufe noch ungeplant ist.
+    function bereitAb(k) {
+      var t = 0, ok = true;
+      vor(k).forEach(function (j) {
+        if (j < 0 || j >= n) return;
+        if (!geplant[j]) ok = false;
+        else if (ende[j] > t) t = ende[j];
+      });
+      return ok ? t : null;
+    }
+
+    for (var runde = 0; runde < n; runde++) {
+      // Erst alles, was von allein laeuft — es konkurriert mit niemandem
+      // und darf keine Sekunde spaeter anfangen als noetig.
+      var nachgelegt = true;
+      while (nachgelegt) {
+        nachgelegt = false;
+        for (var u = 0; u < n; u++) {
+          if (geplant[u] || betreut(u)) continue;
+          var tu = bereitAb(u);
+          if (tu === null) continue;
+          start[u] = tu;
+          ende[u] = tu + (dauern[u] || 0);
+          geplant[u] = true;
+          nachgelegt = true;
+        }
+      }
+
+      var beste = -1;
+      for (var k = 0; k < n; k++) {
+        if (geplant[k] || !betreut(k) || bereitAb(k) === null) continue;
+        if (beste < 0 || rest[k] > rest[beste] ||
+            (rest[k] === rest[beste] && (dauern[k] || 0) < (dauern[beste] || 0))) {
+          beste = k;
+        }
+      }
+      if (beste < 0) break;
+
+      var t = Math.max(bereitAb(beste), handFrei);
+      start[beste] = t;
+      ende[beste] = t + (dauern[beste] || 0);
+      handFrei = ende[beste];
+      geplant[beste] = true;
+    }
+
+    // Zyklische oder kaputte Vorstufen: grid.js meldet das bereits, hier
+    // bekommen die Reste wenigstens einen brauchbaren Wert.
+    for (var m = 0; m < n; m++) {
+      if (!geplant[m]) { start[m] = 0; ende[m] = dauern[m] || 0; }
+    }
+
+    var gesamt = 0;
+    for (var e = 0; e < n; e++) if (ende[e] > gesamt) gesamt = ende[e];
+    return { starts: start, enden: ende, gesamt: gesamt };
+  }
+
   // Ende der letzten Stufe auf dem kritischen Pfad — die Gesamtdauer,
   // wenn beliebig viel gleichzeitig laufen darf.
   function gesamtdauer(dauern, vorstufen) {
@@ -153,13 +250,13 @@
     }, 0);
   }
 
-  // Gesamtdauer fuer EINE Person. Der kritische Pfad allein reicht nicht:
-  // er laesst zwei beaufsichtigte Stufen gleichzeitig laufen, und das kann
-  // niemand. Ist die Arbeit laenger als der Pfad, dauert es entsprechend
-  // laenger — das ist die Wartezeit, bis die Parallelarbeit fertig ist.
+  // Gesamtdauer fuer EINE Person: das Ende des Einpersonen-Plans. Der
+  // kritische Pfad allein reicht nicht, er laesst zwei beaufsichtigte
+  // Stufen gleichzeitig laufen. Auch max(Pfad, Arbeit) reicht nicht: es
+  // uebersieht den Leerlauf, der entsteht, wenn man auf eine Ruhezeit
+  // wartet und in der Zwischenzeit nichts anfangen kann.
   function realeGesamtdauer(dauern, vorstufen, unbeaufsichtigt) {
-    return Math.max(gesamtdauer(dauern, vorstufen),
-                    arbeitszeit(dauern, unbeaufsichtigt));
+    return plan(dauern, vorstufen, unbeaufsichtigt).gesamt;
   }
 
   // Zeit, in der man tatsaechlich nichts zu tun hat. NICHT die Summe der
@@ -171,17 +268,20 @@
     return Math.max(0, realeGesamtdauer(dauern, vorstufen, unbeaufsichtigt) - arbeit);
   }
 
-  // Passt das Rezept ueberhaupt fuer eine Person? Wenn die Arbeit den
-  // kritischen Pfad ueberschreitet, muessten zwei Stufen gleichzeitig
-  // betreut werden.
+  // Passt das Rezept ueberhaupt fuer eine Person? Dauert der
+  // Einpersonen-Plan laenger als der kritische Pfad, mussten Stufen
+  // auseinandergezogen werden, die eigentlich gleichzeitig laufen
+  // koennten — zu zweit ginge es schneller.
   function braucht2Haende(dauern, vorstufen, unbeaufsichtigt) {
-    return arbeitszeit(dauern, unbeaufsichtigt) > gesamtdauer(dauern, vorstufen) + 0.5;
+    return realeGesamtdauer(dauern, vorstufen, unbeaufsichtigt)
+         > gesamtdauer(dauern, vorstufen) + 0.5;
   }
 
   global.RezeptZeitmass = {
     spaltenbreiten: spaltenbreiten,
     noetigeBreite: noetigeBreite,
     startzeiten: startzeiten,
+    plan: plan,
     gesamtdauer: gesamtdauer,
     arbeitszeit: arbeitszeit,
     realeGesamtdauer: realeGesamtdauer,

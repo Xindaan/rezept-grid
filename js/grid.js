@@ -3,6 +3,8 @@
 // Kern des Projekts: aus einem Rezept nach docs/schema.md wird das
 // Tabellen-Layout BERECHNET (Zeilenreihenfolge, rowspans, Luecken).
 // Reine Rechnung, kein DOM, kein I/O — damit testbar und wiederverwendbar.
+// Braucht js/zeitmass.js (der Zeitplan bestimmt die Spalten, T-0032);
+// deshalb steht zeitmass.js in index.html davor.
 
 (function (global) {
   "use strict";
@@ -119,39 +121,64 @@
       });
     });
 
-    // --- 3. Spaltenzuordnung ------------------------------------------
-    // Nicht je Stufe eine Spalte: Stufen, deren Zeilenbloecke sich nicht
-    // ueberschneiden, teilen sich eine. Nur so stehen parallele Straenge
-    // nebeneinander statt hintereinander — bei den Maultaschen entsteht
-    // die Fuellung waehrend der Teig ruht, und das gehoert an dieselbe
-    // Stelle der Zeitachse.
-    //
-    // Zwei Bedingungen: eine Stufe steht rechts von allen ihren
-    // Vorstufen, und in ihrer Spalte darf keine andere Stufe dieselben
-    // Zeilen belegen. Bei linearen Rezepten faellt daraus wieder genau
-    // eine Spalte je Stufe.
-    var spalteNachId = {};
-    spalten.forEach(function (s) { spalteNachId[s.schritt.id] = s; });
+    // --- 3. Zeitplan fuer eine Person ---------------------------------
+    // Erst der Plan, dann die Spalten — nicht umgekehrt (T-0032). Vorher
+    // ergab sich die Spalte aus der Abhaengigkeitstiefe: eine Stufe ohne
+    // Vorstufen landete in Spalte 0, egal wann man sie realistisch macht.
+    // Bei den Maultaschen stand "Fuellung mischen" dadurch neben dem
+    // Kneten, obwohl beides die Haende braucht. Sie gehoert in die
+    // Ruhezeit des Teigs, und genau das rechnet der Plan aus.
+    var indexNachId = {};
+    spalten.forEach(function (s, i) { indexNachId[s.schritt.id] = i; });
 
-    var belegung = [];
-    spalten.forEach(function (s) {
-      var fruehestens = 0;
-      s.vorstufen.forEach(function (vid) {
-        var vor = spalteNachId[vid];
-        if (vor && vor.spalte !== undefined) {
-          fruehestens = Math.max(fruehestens, vor.spalte + 1);
-        }
-      });
-
-      var c = fruehestens;
-      while (belegung[c] && belegung[c].some(function (b) {
-        return !(s.bis < b.von || s.von > b.bis);
-      })) c++;
-
-      s.spalte = c;
-      belegung[c] = belegung[c] || [];
-      belegung[c].push({ von: s.von, bis: s.bis });
+    var plan = global.RezeptZeitmass.plan(
+      spalten.map(function (s) { return s.schritt.dauer_s; }),
+      spalten.map(function (s) {
+        return s.vorstufen.map(function (vid) { return indexNachId[vid]; })
+                          .filter(function (j) { return j !== undefined; });
+      }),
+      spalten.map(function (s) { return !!s.schritt.unbeaufsichtigt; })
+    );
+    spalten.forEach(function (s, i) {
+      s.start = plan.starts[i];
+      s.ende = plan.enden[i];
     });
+
+    // --- 4. Spaltenzuordnung ------------------------------------------
+    // Eine Spalte ist ein Zeitpunkt: Stufen, die zusammen beginnen,
+    // teilen sie sich. Das geht nur, wenn ihre Zeilenbloecke sich nicht
+    // ueberschneiden — sonst rueckt die spaetere nach rechts. Bei
+    // linearen Rezepten faellt daraus wieder genau eine Spalte je Stufe.
+    var belegung = [];
+    var minSpalte = 0, letzterStart = null;
+
+    spalten.map(function (s, i) { return i; })
+      .sort(function (a, b) {
+        return (spalten[a].start - spalten[b].start) || (a - b);
+      })
+      .forEach(function (i) {
+        var s = spalten[i];
+        // Neuer Zeitpunkt: alles bisher Platzierte liegt links davon.
+        if (letzterStart !== null && s.start > letzterStart) minSpalte = belegung.length;
+        letzterStart = s.start;
+
+        // Redundant, solange jede Stufe positive Dauer hat — aber eine
+        // Stufe ohne Dauer beginnt zeitgleich mit ihrer Vorstufe und
+        // duerfte sonst links von ihr landen.
+        var c = minSpalte;
+        s.vorstufen.forEach(function (vid) {
+          var vor = spalten[indexNachId[vid]];
+          if (vor && vor.spalte !== undefined) c = Math.max(c, vor.spalte + 1);
+        });
+
+        while (belegung[c] && belegung[c].some(function (b) {
+          return !(s.bis < b.von || s.von > b.bis);
+        })) c++;
+
+        s.spalte = c;
+        belegung[c] = belegung[c] || [];
+        belegung[c].push({ von: s.von, bis: s.bis });
+      });
 
     return {
       rezept: rezept,
