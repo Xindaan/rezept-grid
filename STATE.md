@@ -41,6 +41,7 @@ konvertiert.
 
 ## Letzte Done
 
+- T-0034 Rezepttexte entpersonalisiert, Tonregel in der Anleitung (2026-08-03)
 - T-0032 Zeitplan fuer eine Person treibt Grid und Achse (2026-08-03)
 - T-0028 Freie Zeit statt Summe der Wartezeiten (2026-08-02)
 - T-0026 Einkaufsliste + T-0031 oeffentliche Repo-Verweise (2026-08-02)

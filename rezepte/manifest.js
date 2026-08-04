@@ -155,7 +155,7 @@ window.REZEPTE["maultaschen"] = {
   "schema": 1,
   "id": "maultaschen",
   "titel": "Maultaschen",
-  "untertitel": "Die Füllung entsteht, während der Teig ruht — zwei Stränge, die erst am Schluss zusammenlaufen",
+  "untertitel": "Schwäbische Teigtaschen mit Brät-Spinat-Füllung — die Füllung entsteht, während der Teig ruht",
   "portionen": 4,
   "portionen_einheit": "Portionen",
   "zeit_aktiv_s": 3600,
@@ -360,8 +360,8 @@ window.REZEPTE["maultaschen"] = {
     }
   ],
   "hinweise": [
-    "Dieses Rezept ist der erste Fall in der Sammlung mit zwei parallelen Strängen: Teig und Füllung entstehen unabhängig voneinander und treffen sich erst beim Formen. Im Grid sind das zwei getrennte Klammern, die zusammenlaufen.",
-    "Übrige Maultaschen am nächsten Tag in Scheiben mit Ei in der Pfanne braten. In Gärtringen gilt das nicht als Resteverwertung, sondern als eigenes Gericht.",
+    "Die Füllung braucht keinen fertigen Teig. Wer sie während der Teigruhe ansetzt, spart eine halbe Stunde.",
+    "Geröstete Maultaschen sind ein eigenes Gericht, keine Resteverwertung: am Folgetag in Scheiben schneiden und mit verquirltem Ei in der Pfanne braten.",
     "Wer sie einfriert, tut das roh und gart sie später direkt aus dem Gefrierfach."
   ]
 };
@@ -561,7 +561,7 @@ window.REZEPTE["pfannkuchen"] = {
     }
   ],
   "hinweise": [
-    "Für André zur Klarstellung: Das hier sind Pfannkuchen. Die dünnen Dinger aus der Pfanne sind Eierkuchen und stehen unter eigenem Namen in dieser Sammlung.",
+    "Der Name ist regional verschieden: In Berlin und Brandenburg heißt dieses Hefegebäck Pfannkuchen, andernorts Berliner oder Krapfen. Das flache Gebäck aus der Pfanne heißt hier Eierkuchen und steht unter eigenem Namen.",
     "Der helle Ring rundherum entsteht nur, wenn das Fett nicht zu heiß ist und die Kugeln beim ersten Backen schwimmen dürfen.",
     "Am selben Tag essen. Hefegebäck mit Fett wird über Nacht zäh."
   ]
@@ -708,7 +708,7 @@ window.REZEPTE["spaetzle"] = {
   ],
   "hinweise": [
     "Brett und Palette immer wieder ins kochende Wasser tauchen, dann klebt nichts.",
-    "Wer presst statt schabt, bekommt Spätzle mit rundem Querschnitt. Schmeckt gleich, sieht anders aus, und in Gärtringen fällt es auf.",
+    "Gepresst statt geschabt ergibt einen runden, gleichmäßigen Querschnitt statt der unregelmäßigen Form. Der Teig darf dafür etwas fester sein.",
     "Als Käsespätzle: lagenweise mit geriebenem Bergkäse schichten und mit gerösteten Zwiebeln belegen."
   ]
 };

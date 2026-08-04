@@ -46,6 +46,31 @@
 
 ## Done
 
+- **T-0034** (2026-08-03) Rezepttexte entpersonalisiert. Andre beim
+  Durchsehen vor der Veroeffentlichung: "Es geht um professionelle
+  Rezepte, nicht haha-lahme-Witze."
+  Vier Freitexte in drei Rezepten, zwei verschiedene Abrutscher:
+  **Personenbezug** — "Fuer Andre zur Klarstellung" (pfannkuchen),
+  "in Gaertringen gilt das nicht als Resteverwertung" (maultaschen),
+  "in Gaertringen faellt es auf" (spaetzle). **App-Jargon statt Kochen** —
+  der Maultaschen-Hinweis erklaerte, dass dies "der erste Fall in der
+  Sammlung mit zwei parallelen Straengen" sei und wie das Grid das
+  darstellt, und der Untertitel sprach von "zwei Straengen".
+  In allen vier Faellen steckte ein brauchbarer Kern drin, der erhalten
+  ist: geroestete Maultaschen sind ein eigenes Gericht; Pfannkuchen
+  heisst regional verschieden (Berlin/Brandenburg vs. Berliner/Krapfen);
+  gepresst ergibt runden Querschnitt und braucht festeren Teig.
+  **Ursache und eigentlicher Fix:** `docs/konvertierung.md` sagte zum Ton
+  der Freitexte gar nichts — `docs/schema.md` beschrieb `hinweise` nur
+  als "Tipps, Varianten, Aufbewahrung". Ohne Regel driftet jede naechste
+  Konvertierung genauso. Neu als Fallstrick 9 und als Punkt 9 in der
+  Prompt-Vorlage, mit Prueffrage: "Stuende der Satz so in einem
+  Kochbuch, das jemand kauft?"
+  Gegengeprueft: Anweisungen und Zutatennotizen waren sauber, der
+  Personen- und Jargon-Grep ueber `rezepte/` ist jetzt leer.
+  Offen gelassen (Andres Entscheidung): der Vorname steht weiterhin in
+  `TASK.md`, `CLAUDE.md`, `STATE.md` und einem Kommentar in
+  `js/zeitmass.js` — das ist Projektdokumentation, kein Rezepttext.
 - **T-0032** (2026-08-03) Der Zeitplan kennt jetzt zwei Haende, nicht nur
   Abhaengigkeiten. Andres Befund am Bild: "15 min nebenher moeglich zu
   einem 10-min-Knetjob" — im Grid stand "Fuellung mischen, 15 Min" neben

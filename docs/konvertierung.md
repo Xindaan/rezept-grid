@@ -33,7 +33,7 @@ Ist eine Seite technisch nicht abrufbar (chefkoch.de war es am
 von Hand hereingeben oder ein Grundrezept eigenständig formulieren und
 `quelle: null` setzen.
 
-## Die acht Fallstricke
+## Die neun Fallstricke
 
 Alle aus echten Konvertierungen, nicht ausgedacht.
 
@@ -113,6 +113,25 @@ klingt („1 | Eier"). Unterschiedliche Produkte dürfen dagegen ruhig
 verschieden heißen — „Spätzlemehl" und „Weizenmehl" sind nicht dasselbe
 und sollen getrennt bleiben.
 
+**9. `hinweise` und `untertitel` sind Kochwissen, keine Anekdoten.**
+Beides ist nutzersichtbar und der Ton des ganzen Rezepts. Hinein gehört,
+was jemand am Herd braucht: Varianten, Aufbewahrung, was schiefgeht und
+warum, regionale Namensunterschiede, wenn sie zur Verwechslung führen.
+
+Nicht hinein gehören:
+
+- **Anspielungen auf Personen oder Orte** („für X zur Klarstellung", „in
+  Y fällt das auf"). Das Rezept wird geteilt und veröffentlicht; ein
+  Insider-Witz ist dann nur noch ein Rätsel — und trägt Personenbezug in
+  ein öffentliches Repo.
+- **Aussagen über die App statt über das Essen** („das erste Rezept in
+  der Sammlung mit zwei Strängen", „im Grid sind das zwei Klammern").
+  Wie der Renderer arbeitet, steht in `docs/`, nicht im Rezept.
+
+Prüffrage: Stünde der Satz so in einem Kochbuch, das jemand kauft? Wenn
+nein, streichen. (Nachträglich korrigiert am 03.08.2026 — vier Texte in
+drei Rezepten waren in beide Richtungen abgerutscht.)
+
 ## Plausibilität prüfen
 
 Vor dem Commit kurz gegenlesen:
@@ -180,6 +199,15 @@ Regeln, die dabei zaehlen:
 
 8. Der Schritt-Titel ist ein Kurzlabel von ein bis vier Woertern
    ("aufgiessen", "Tomatenmark roesten"), die Anweisung der ganze Satz.
+
+9. hinweise und untertitel sind Kochwissen, kein Plauderton. Hinein
+   gehoert, was jemand am Herd braucht: Varianten, Aufbewahrung, was
+   schiefgeht und warum, regionale Namensunterschiede. NICHT hinein
+   gehoeren Anspielungen auf Personen oder Orte ("fuer X zur
+   Klarstellung", "in Y faellt das auf") und Aussagen ueber die App
+   statt ueber das Essen ("im Grid sind das zwei Klammern"). Die
+   Rezepte werden veroeffentlicht. Prueffrage: Stuende der Satz so in
+   einem Kochbuch, das jemand kauft?
 
 Danach fuehre bitte aus:
   node tools/build-manifest.js
