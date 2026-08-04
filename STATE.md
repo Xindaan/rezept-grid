@@ -32,11 +32,12 @@ konvertiert.
 
 ## Next actions
 
-- **T-0009 Verteilung** — braucht Andre. Netlify entfaellt (Abo
-  gekuendigt), GitHub Pages ist kostenlos nur fuer oeffentliche Repos.
-  Empfehlung: oeffentlicher Ableger via `public-mirror`-Skill, Pages
-  darauf. Offen ist nur noch sein Go — die Kommentare sind bereinigt
-  (T-0031).
+- **T-0009 Verteilung** — entschieden: EIN oeffentliches Repo mit GitHub
+  Pages, kein Ableger (der haette den Personenbezug nicht zurueckgehalten,
+  er steckt in den Rezept-Hinweisen selbst). Vorbereitet sind `.nojekyll`
+  und der README-Abschnitt "Veroeffentlichen". Offen und **bei Andre**:
+  Repo oeffentlich anlegen, pushen, Pages auf `main` / `/ (root)`
+  stellen.
 
 ## Letzte Done
 

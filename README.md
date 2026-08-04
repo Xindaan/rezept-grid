@@ -58,6 +58,34 @@ Konvertierungen aus fremden Quellen: Mengen und Zutaten übernehmen,
 Anleitungstexte eigenständig neu formulieren, Quelle im Feld `quelle`
 nennen. Details in `CLAUDE.md`.
 
+## Veröffentlichen (GitHub Pages)
+
+Die App ist rein statisch, es gibt keinen Build. Was im Repo liegt, ist
+was ausgeliefert wird.
+
+**Einmalig einrichten:** Settings → Pages → Source „Deploy from a
+branch", Branch `main`, Ordner **`/ (root)`** — *nicht* `/docs`, dort
+liegen die Entwicklerdokumente, nicht die App. Die Seite steht dann unter
+`https://<benutzer>.github.io/rezept-grid/`.
+
+Die leere Datei `.nojekyll` im Wurzelverzeichnis schaltet die
+Jekyll-Verarbeitung ab. Nötig ist sie hier nicht — kein Pfad beginnt mit
+einem Unterstrich —, aber sie kostet nichts und nimmt eine Fehlerquelle
+raus, falls später ein solcher Ordner dazukommt.
+
+**Ein neues Rezept geht so live:**
+
+```bash
+node tools/build-manifest.js && node tools/pruefe-grid.js && git add rezepte/ && git commit -m "Rezept: <name>" && git push
+```
+
+Danach dauert es rund eine Minute, bis Pages neu ausgeliefert hat. Läuft
+die Prüfung rot, bricht die Kette ab und es wird nichts committet.
+
+Alle Pfade in der App sind relativ, die Seite funktioniert deshalb sowohl
+im Unterverzeichnis von Pages als auch per Doppelklick auf
+`index.html`.
+
 ## Troubleshooting
 
 **Die Übersicht ist leer oder ein neues Rezept fehlt.**

@@ -6,22 +6,27 @@
 
 ## Next
 
-- **T-0009** Verteilung — **Netlify ist raus** (Abo gekuendigt, soll kein
-  Geld kosten; Eintrag vom 02.08. damit ueberholt). GitHub Pages ist
-  kostenlos **nur fuer oeffentliche Repos**, fuer private braucht es
-  GitHub Pro — also derselbe Fehler nochmal.
-  Empfehlung: **oeffentlicher Ableger** nach dem Muster, das Andre schon
-  fahrt (privates Repo -> `poisson-dor`, dafuer gibt es den
-  `public-mirror`-Skill mit Leak-Gate). Das private Repo behaelt
-  `TASK.md`, `STATE.md`, `CLAUDE.md` und `docs/` — dort steckt der
-  Personenbezug —, der Ableger bekommt nur die App: `index.html`, `css/`,
-  `js/`, `rezepte/`. GitHub Pages auf dem Ableger, kostenlos.
-  Die Kommentare, die vorher das private Kicktipp-Repo nannten, sind
-  bereinigt (T-0031) — offen ist nur noch Andres Go.
-  Ungeklaert als Alternative: Cloudflare Pages (kostenlos, unbegrenzte
-  Bandbreite, 500 Builds/Monat) — ob dort ein PRIVATES GitHub-Repo im
-  Gratis-Tarif verbunden werden darf, liess sich nicht belegen. Waere der
-  einzige Weg mit nur einem Repo.
+- **T-0009** Verteilung — **entschieden am 03.08.2026: EIN oeffentliches
+  Repo, GitHub Pages darauf.** Kein Ableger, kein `public-mirror`.
+  Vorgeschichte: Netlify raus (Abo gekuendigt), GitHub Pages kostenlos nur
+  fuer oeffentliche Repos.
+  Meine Ableger-Empfehlung vom 02.08. beruhte auf einer falschen Praemisse
+  — "der Personenbezug steckt in TASK/STATE/docs". Nachgeprueft: Vorname
+  und "Gaertringen" stehen in den **Rezept-Hinweisen** selbst
+  (`maultaschen.json`, `spaetzle.json`, `pfannkuchen.json`) und sind im UI
+  sichtbar. Ein Ableger haette sie mitgenommen und nur meine Arbeitsnotizen
+  zurueckgehalten. Der Schutz waere Theater gewesen, die zwei Stände echte
+  Pflegelast.
+  Was noch zu tun ist (macht Andre, ich pushe nichts):
+  1. Repo `rezept-grid` oeffentlich anlegen, `git remote add origin`,
+     `git push -u origin main`.
+  2. Settings -> Pages -> Branch `main`, Ordner **`/ (root)`**, nicht
+     `/docs`.
+  Vorbereitet: `.nojekyll` und der README-Abschnitt "Veroeffentlichen"
+  mit dem Ein-Zeiler vom Rezept zum Livegang. Alle Pfade sind relativ,
+  der Unterpfad von Pages ist geprueft.
+  Commit-Mails sind bereits GitHub-Noreply (`112499291+Xindaan@...`), da
+  laeuft keine Adresse mit.
 
 ## Backlog
 
