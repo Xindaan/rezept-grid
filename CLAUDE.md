@@ -2,7 +2,7 @@
 
 ## Zweck
 
-Statische Rezept-App fuer Andre, Familie und Freunde. Rezepte werden in der
+Statische Rezept-App fuer Familie und Freunde. Rezepte werden in der
 Tabellen-Notation von "Cooking for Engineers" (Michael Chu) dargestellt:
 Zutaten als Zeilen links, Arbeitsschritte als verbundene Zellen rechts —
 das Grid kodiert, was wann mit was kombiniert wird.
@@ -10,7 +10,8 @@ das Grid kodiert, was wann mit was kombiniert wird.
 Vorbild (Einzelrezept, handkodiert): claude.ai-Artifact "The Stew"
 https://claude.ai/public/artifacts/61558425-7ef9-40b9-86ae-b241baaf9cdc
 
-## Architektur-Eckpfeiler (bewusst entschieden, nicht verhandelbar ohne Andre)
+## Architektur-Eckpfeiler (bewusst entschieden, nicht ohne Ruecksprache
+aendern)
 
 1. **Reine statische Dateien.** HTML/CSS/JS ohne Framework, ohne
    Build-Tooling, ohne Server. `index.html` im Browser oeffnen = die App.

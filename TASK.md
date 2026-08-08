@@ -17,7 +17,7 @@
   sichtbar. Ein Ableger haette sie mitgenommen und nur meine Arbeitsnotizen
   zurueckgehalten. Der Schutz waere Theater gewesen, die zwei Stände echte
   Pflegelast.
-  Was noch zu tun ist (macht Andre, ich pushe nichts):
+  Was noch zu tun ist (nicht von mir, ich pushe nichts):
   1. Repo `rezept-grid` oeffentlich anlegen, `git remote add origin`,
      `git push -u origin main`.
   2. Settings -> Pages -> Branch `main`, Ordner **`/ (root)`**, nicht
@@ -30,14 +30,25 @@
 
 ## Backlog
 
+- **T-0036** Vorname in den Commit-Messages — 14 der 27 Commits, 20
+  Fundstellen. Die Dateien sind seit T-0035 sauber, die Historie nicht.
+  **Zeitkritisch:** solange nichts gepusht ist, ist ein Umschreiben per
+  `git filter-repo --message-callback` folgenlos (keine fremden Klone,
+  kein force-push gegen jemanden). Nach dem ersten Push ist es das
+  Gegenteil.
+  Nur zu machen, wenn ausdruecklich gewuenscht: es schreibt alle 27 SHAs
+  um. Wer die Historie als Arbeitsprotokoll lesen will, verliert dabei
+  nichts inhaltlich, aber jede bisher notierte SHA (z. B. in dieser Datei)
+  zeigt danach ins Leere.
+
 - **T-0033** Spaetzle: "Wasser aufsetzen" haengt an der Teigruhe, obwohl
   es nicht davon abhaengt. Gefunden beim Durchsehen nach T-0032.
   `s-wasser` hat `vorstufen: ["s-ruhen"]`; Wasser kann man aber waehrend
   der 30 Minuten Ruhe aufsetzen. Mit `vorstufen: []` faellt es in die
   Ruhezeit und das Rezept kaeme auf 48 statt 56 Minuten (`zeit_gesamt_s`
   waere anzupassen, ebenso die freie Zeit).
-  **Andres Entscheidung, nicht meine** — es ist sein Familienrezept und
-  seine Zeitangabe. Genau der Fehlertyp, den `docs/konvertierung.md` §7
+  **Nicht meine Entscheidung** — es ist ein Familienrezept mit eigener
+  Zeitangabe. Genau der Fehlertyp, den `docs/konvertierung.md` §7
   beschreibt ("verweist NICHT auf die Stufe daneben"), diesmal in den
   eigenen Daten.
   Die drei anderen Rezepte sind geprueft und sauber: bei Eierkuchen und
@@ -46,11 +57,29 @@
 
 ## Done
 
-- **T-0034** (2026-08-03) Rezepttexte entpersonalisiert. Andre beim
+- **T-0035** (2026-08-03) Vorname aus den Steuerdateien entfernt, vor der
+  Veroeffentlichung. 26 Fundstellen in fuenf Dateien: `TASK.md` (20),
+  `CLAUDE.md` (2), `STATE.md` (2), `docs/uebergabe-zeitmass.md` (1) und
+  ein Kommentar in `js/zeitmass.js`.
+  Umformuliert statt geschwaerzt — die Saetze tragen weiter dieselbe
+  Aussage, nur ohne Traeger: "Andres Befund am Bild" -> "Befund am Bild",
+  "Bestaetigt von Andre" -> "Bestaetigt", "nicht verhandelbar ohne Andre"
+  -> "nicht ohne Ruecksprache aendern". Wer etwas gemeldet oder
+  entschieden hat, war fuer keinen Eintrag die Information; wichtig war
+  immer, DASS es gemeldet wurde.
+  Der Grep ueber alle versionierten Dateien ist leer. Ein Fallstrick
+  dabei: "andruecken" enthaelt die Zeichenfolge und taucht in zwei
+  Rezeptanweisungen auf — Treffer pruefen, nicht blind ersetzen.
+  **Nicht erledigt und bewusst nicht angefasst:** die Historie. 14 der 27
+  Commit-Messages nennen den Vornamen, 20 Fundstellen. Solange nichts
+  gepusht ist, waere ein `git filter-branch`/`filter-repo` folgenlos
+  moeglich; danach nicht mehr. Das ist eine Entscheidung ueber die
+  Projekthistorie und keine Aufraeumarbeit — offen als T-0036.
+- **T-0034** (2026-08-03) Rezepttexte entpersonalisiert. Rueckmeldung beim
   Durchsehen vor der Veroeffentlichung: "Es geht um professionelle
   Rezepte, nicht haha-lahme-Witze."
   Vier Freitexte in drei Rezepten, zwei verschiedene Abrutscher:
-  **Personenbezug** — "Fuer Andre zur Klarstellung" (pfannkuchen),
+  **Personenbezug** — "Fuer <Vorname> zur Klarstellung" (pfannkuchen),
   "in Gaertringen gilt das nicht als Resteverwertung" (maultaschen),
   "in Gaertringen faellt es auf" (spaetzle). **App-Jargon statt Kochen** —
   der Maultaschen-Hinweis erklaerte, dass dies "der erste Fall in der
@@ -68,11 +97,10 @@
   Kochbuch, das jemand kauft?"
   Gegengeprueft: Anweisungen und Zutatennotizen waren sauber, der
   Personen- und Jargon-Grep ueber `rezepte/` ist jetzt leer.
-  Offen gelassen (Andres Entscheidung): der Vorname steht weiterhin in
-  `TASK.md`, `CLAUDE.md`, `STATE.md` und einem Kommentar in
-  `js/zeitmass.js` — das ist Projektdokumentation, kein Rezepttext.
+  Damals offen gelassen (Vorname in den Steuerdateien) — inzwischen
+  erledigt, siehe T-0035.
 - **T-0032** (2026-08-03) Der Zeitplan kennt jetzt zwei Haende, nicht nur
-  Abhaengigkeiten. Andres Befund am Bild: "15 min nebenher moeglich zu
+  Abhaengigkeiten. Befund am Bild: "15 min nebenher moeglich zu
   einem 10-min-Knetjob" — im Grid stand "Fuellung mischen, 15 Min" neben
   "Nudelteig kneten, 10 Min", beides ab Minute 0, beides mit den Haenden.
   Ursache: `startzeiten()` kannte nur `vorstufen`. Eine Stufe mit
@@ -82,7 +110,7 @@
   **Das ist derselbe Fehler wie T-0028, eine Ebene tiefer.** Dort habe
   ich die Kennzahl auf eine Person umgestellt und den Zeitplan stehen
   lassen, aus dem das Bild gebaut wird. Die Zahl stimmte danach, das Bild
-  nicht — und Andre hat auf das Bild gesehen.
+  nicht — und angesehen wird das Bild.
   Neu: `plan()` in `js/zeitmass.js`. Zwei Regeln — eine Stufe beginnt
   fruehestens nach ihren Vorstufen, und beaufsichtigte Stufen ueberlappen
   sich nie. Unbeaufsichtigte belegen die Haende nicht und starten sofort.
@@ -104,7 +132,7 @@
   Pruefung, dass nie zwei beaufsichtigte Stufen zugleich laufen.
   121/121 gruen.
 - **T-0028** (2026-08-02) "ohne Zutun" rechnet jetzt richtig — und der Fall
-  war nicht latent, sondern seit T-0030 aktiv falsch. Andres Einwand:
+  war nicht latent, sondern seit T-0030 aktiv falsch. Der Einwand:
   "Fuellung mischen geht nur, wenn der Teig ruht" — also ist die Ruhezeit
   nur so weit frei, wie sie laenger ist als die Parallelarbeit.
   Die Kennzahl summierte die unbeaufsichtigten Dauern und zeigte fuer
@@ -114,7 +142,7 @@
   Arbeit**, wobei Arbeit die Summe der beaufsichtigten Stufen ist. Fuer
   lineare Rezepte kommt dabei wieder die Summe der unbeaufsichtigten
   heraus — Pfannkuchen bleibt bei 1 Std 45 Min.
-  Andres zweiter Punkt ist der Umkehrfall: ist die Parallelarbeit
+  Der zweite Punkt ist der Umkehrfall: ist die Parallelarbeit
   **laenger** als die Ruhephase, kommt Wartezeit dazu. Eine Person kann
   nicht zwei beaufsichtigte Stufen gleichzeitig betreuen. Gegengeprueft
   mit einer 45-Minuten-Fuellung: kritischer Pfad 80 Min, Arbeit 90 Min,
@@ -148,12 +176,13 @@
   zerlegt, weil `height: 100%` die Karte ueber den Platz des Kaestchens
   ziehen liess. Listenelement ist jetzt eine Flex-Spalte.
 - **T-0031** (2026-08-02) Kommentare verweisen auf das **oeffentliche**
-  Kicktipp-Repo (`Xindaan/poisson-dor`) statt auf das private. Andres
-  Hinweis — die Sorge war gegenstandslos, das Repo ist ohnehin offen.
+  Kicktipp-Repo (`Xindaan/poisson-dor`) statt auf das private. Der
+  Hinweis kam von aussen — die Sorge war gegenstandslos, das Repo ist
+  ohnehin offen.
   Damit ist der letzte offene Punkt aus T-0009 erledigt, der nicht sein
   Go braucht.
 - **T-0030** (2026-08-02) Parallele Straenge stehen jetzt auch **im Bild**
-  nebeneinander, nicht nur in der Zeitrechnung. Andre hat es gemeldet:
+  nebeneinander, nicht nur in der Zeitrechnung. Gemeldet:
   nach T-0027 sagte die Zeitachse "0" fuer die Fuellung, die Spalte stand
   aber weiter rechts von "Teig ruhen lassen" — Bild und Beschriftung
   widersprachen sich, und die Rueckwaerts-Null sah aus wie ein Fehler.
@@ -170,13 +199,13 @@
   Tabelle, Zeitachse und Breiten jetzt nach Spalten aus statt nach
   Schritten; eine Spalte erbt als Start den fruehesten und als Dauer die
   Spanne bis zum spaetesten Ende ihrer Stufen.
-- **T-0012** (2026-08-02) **Bestaetigt von Andre: der `file://`-Weg
+- **T-0012** (2026-08-02) **Bestaetigt: der `file://`-Weg
   funktioniert.** Doppelklick auf `index.html` zeigt die Uebersicht mit
   allen vier Rezepten, gestaltet, und ein Klick auf eine Karte oeffnet das
   Rezept. Der Manifest-Fallback traegt also — der einzige Pfad, den ich
   aus der Session nie ausfuehren konnte.
 - **T-0029** (2026-08-02) Zurueck-Link oeffnete per `file://` den Finder
-  statt der Uebersicht. Von Andre beim Doppelklick-Test gefunden.
+  statt der Uebersicht. Beim Doppelklick-Test gefunden.
   Ursache: `href = "./"` ist ein **Verzeichnis**-URL. Ueber http liefert
   der Server dort die `index.html` aus, deshalb war es unsichtbar; per
   `file://` reicht macOS ein Verzeichnis an den Finder weiter. Beide
@@ -204,7 +233,7 @@
   produziert eine falsche Zahl — bei den Maultaschen 90 statt 75 Minuten.
   Auch in der Prompt-Vorlage nachgezogen.
 - **T-0027** (2026-08-02) Zeitachse rechnet den kritischen Pfad statt
-  stumpf zu addieren. Andre hat es an den Maultaschen gesehen: die Fuellung
+  stumpf zu addieren. An den Maultaschen aufgefallen: die Fuellung
   entsteht, waehrend der Teig ruht — die Achse zeigte trotzdem eine
   Reihenfolge. Die Daten wussten es laengst (`s-fuellung` hat
   `vorstufen: []`), nur `startzeiten` in `js/zeitmass.js` ignorierte das.
@@ -227,7 +256,8 @@
   bisher jedes Rezept getragen hat. Tritt der Fall doch auf, meldet der
   Renderer ihn verstaendlich; dann mit echtem Anwendungsfall neu
   entscheiden.
-- **T-0010** (2026-08-02) **Gestrichen.** Andre druckt keine Rezepte — in
+- **T-0010** (2026-08-02) **Gestrichen.** Es werden keine Rezepte
+  gedruckt — in
   der Kueche steht ein Bildschirm, dafuer gibt es den Kochmodus.
 - **T-0022** (2026-08-02) Kopf und Kochleiste neu. Kennzahlenstreifen mit
   drei Kacheln statt der Beschreibungsliste; "ohne Zutun" ist neu und
@@ -272,7 +302,7 @@
   Spalten exakt gleich breit und das Zeitmass tot.
   Zehn Prueffaelle in `pruefe-grid.js`; drei davon haben beim ersten Lauf
   echte Fehler gefunden (Deckel frisst Breite, Untergrenze faellt).
-- **T-0021** (2026-08-02) Fuehrungslinie je Block. Andre hat sie im Entwurf
+- **T-0021** (2026-08-02) Fuehrungslinie je Block. Sie wurde im Entwurf
   vermisst — sie macht sichtbar, auf welcher Hoehe eine Stufe endet, ohne
   dass das Auge die Treppe verfolgen muss.
   **Ohne die Kopplung an T-0020 gebaut.** Die Uebergabe schlaegt ein
@@ -316,7 +346,7 @@
   `spaetzle` und `maultaschen` (Gaertringer Seite der Familie).
   Alle drei eigenstaendig formuliert, `quelle: null`. 76/76 gruen.
 - **T-0018** (2026-08-01) Zweiter Designdurchgang, diesmal ohne die Vorgabe
-  "wie das Original" — Andre hat ausdruecklich freie Hand gegeben. Richtung:
+  "wie das Original" — es wurde ausdruecklich freie Hand gegeben. Richtung:
   Kuechen-Spezifikation (technische Zeichnung auf warmem Papier). Genau ein
   Akzent (`--akzent`, gebranntes Rot) fuer zweierlei: was gerade
   zusammengehoert, und die eine Haupthandlung (Kochmodus). Beschriftungen im
@@ -329,8 +359,8 @@
   muessen. Im Kochmodus abgeschaltet (dort fuehrt die Stufennavigation), auf
   Geraeten ohne Mauszeiger per `@media (hover: none)` neutralisiert.
   T-0017 (Abgleich mit dem Original) ist damit hinfaellig.
-- **T-0016** (2026-08-01) Grid-Design ueberarbeitet, nachdem Andre die
-  fehlenden horizontalen Linien bemaengelt hat. Drei Ursachen, alle in
+- **T-0016** (2026-08-01) Grid-Design ueberarbeitet, nachdem die
+  fehlenden horizontalen Linien bemaengelt wurden. Drei Ursachen, alle in
   `css/stil.css`: `border-spacing: 3px` liess nichts sich beruehren, sodass
   gar kein Raster entstand; die Haarlinie lag nur auf `.zutat`, nicht auf
   `.menge`, lief also nur unter der halben Zeile; `border-radius` machte aus
@@ -369,7 +399,7 @@
   latenter Fehler auf: Mengen ohne Einheit liefen in die Dezimalrundung,
   "3 Eier" bei anderthalbfacher Menge waeren "4,5 Eier" geworden statt
   "4½". In `js/portionen.js` behoben.
-  Quelle: Chefkoch-Link von Andre war fuer den Abruf gesperrt, daher das
+  Quelle: der Chefkoch-Link war fuer den Abruf gesperrt, daher das
   Grundrezept eigenstaendig formuliert und `quelle: null` gesetzt statt
   eine ungelesene Quelle einzutragen. Falls die Chefkoch-Mengen abweichen,
   nachziehen.
@@ -400,8 +430,8 @@
   Zeilenreihenfolge automatisch), `vorstufen` verweist auf vorhergehende
   Schritte (heute immer der Vorgaenger, spaeter der Hebel fuer T-0008),
   `dauer_s` pro Schritt in Sekunden mit `null` fuer zeitlose Stufen, plus
-  `unbeaufsichtigt` zur Trennung von Warte- und Arbeitszeit (Andres
-  Entscheidung, fuer T-0004). Folge fuer Konvertierungen: eine Zutat belegt
+  `unbeaufsichtigt` zur Trennung von Warte- und Arbeitszeit (Entscheidung
+  fuer T-0004). Folge fuer Konvertierungen: eine Zutat belegt
   genau eine Zeile — mehrfach verwendete Zutaten brauchen je einen eigenen
   Eintrag.
 - **T-0002** (2026-08-01) Grid-Renderer fuer lineare Rezepte: `index.html`,

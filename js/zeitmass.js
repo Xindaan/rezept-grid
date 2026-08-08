@@ -8,7 +8,7 @@
 //   2. Deckel: keine Spalte nimmt mehr als DECKEL der Tabellenbreite.
 //      Ohne ihn belegt "koecheln, 35 Min" siebzig Prozent und die fuenf
 //      kurzen Stufen werden unlesbar. Die Breiten sind qualitativ —
-//      niemand misst sie nach (Entscheidung Andre, 02.08.2026).
+//      niemand misst sie nach (Entscheidung 02.08.2026).
 //   3. Der gedeckelte Ueberschuss geht proportional an die uebrigen.
 //
 // Reine Rechnung, kein DOM — damit in pruefe-grid.js nachrechenbar.

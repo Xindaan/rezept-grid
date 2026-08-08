@@ -10,8 +10,8 @@ konvertiert.
 
 ## Status
 
-- **Funktional fertig**, auch per Doppelklick ohne Server (T-0012 von
-  Andre bestaetigt). Vier Rezepte (`eierkuchen`, `pfannkuchen`,
+- **Funktional fertig**, auch per Doppelklick ohne Server (T-0012
+  bestaetigt). Vier Rezepte (`eierkuchen`, `pfannkuchen`,
   `spaetzle`, `maultaschen`), Uebersicht, Portions-Skalierung, Kochmodus
   mit Countdown, Zutaten abhaken.
 - **Design-Uebergabe aus Claude Design vollstaendig umgesetzt**
@@ -35,12 +35,13 @@ konvertiert.
 - **T-0009 Verteilung** — entschieden: EIN oeffentliches Repo mit GitHub
   Pages, kein Ableger (der haette den Personenbezug nicht zurueckgehalten,
   er steckt in den Rezept-Hinweisen selbst). Vorbereitet sind `.nojekyll`
-  und der README-Abschnitt "Veroeffentlichen". Offen und **bei Andre**:
-  Repo oeffentlich anlegen, pushen, Pages auf `main` / `/ (root)`
-  stellen.
+  und der README-Abschnitt "Veroeffentlichen"; die Steuerdateien sind
+  seit T-0035 namensfrei. Offen, und nicht von mir zu machen: Repo
+  oeffentlich anlegen, pushen, Pages auf `main` / `/ (root)` stellen.
 
 ## Letzte Done
 
+- T-0035 Vorname aus den Steuerdateien entfernt (2026-08-03)
 - T-0034 Rezepttexte entpersonalisiert, Tonregel in der Anleitung (2026-08-03)
 - T-0032 Zeitplan fuer eine Person treibt Grid und Achse (2026-08-03)
 - T-0028 Freie Zeit statt Summe der Wartezeiten (2026-08-02)

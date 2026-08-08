@@ -119,7 +119,7 @@ Rindergulasch, 20 Zutaten, 10 Stufen, eine Schmorstufe von 1:45:
   Chrome bei `border-collapse: collapse` die Rahmen sticky-Zellen nicht
   mitnimmt.
 
-## 4. Offene Entscheidungen fuer Andre
+## 4. Offene Entscheidungen
 
 1. Bleibt der Deckel bei 24 %, oder gibt die gedeckelte Spalte ihre Breite an
    die kurzen Stufen ab? Empfehlung: Deckel lassen — beim Kochen ist „das
