@@ -370,7 +370,7 @@ window.REZEPTE["pfannkuchen"] = {
   "schema": 1,
   "id": "pfannkuchen",
   "titel": "Pfannkuchen",
-  "untertitel": "Berliner Lesart: Hefeteig, ausgebacken, mit Konfitüre gefüllt — nicht zu verwechseln mit Eierkuchen",
+  "untertitel": "Hefeteig, ausgebacken, mit Konfitüre gefüllt — was sonst.",
   "portionen": 12,
   "portionen_einheit": "Stück",
   "zeit_aktiv_s": 2700,
@@ -561,7 +561,7 @@ window.REZEPTE["pfannkuchen"] = {
     }
   ],
   "hinweise": [
-    "Der Name ist regional verschieden: In Berlin und Brandenburg heißt dieses Hefegebäck Pfannkuchen, andernorts Berliner oder Krapfen. Das flache Gebäck aus der Pfanne heißt hier Eierkuchen und steht unter eigenem Namen.",
+    "Wer sie als Berliner oder Krapfen kennt, meint dasselbe Gebäck. Das flache aus der Pfanne heißt Eierkuchen und steht in dieser Sammlung unter eigenem Namen.",
     "Der helle Ring rundherum entsteht nur, wenn das Fett nicht zu heiß ist und die Kugeln beim ersten Backen schwimmen dürfen.",
     "Am selben Tag essen. Hefegebäck mit Fett wird über Nacht zäh."
   ]
