@@ -335,13 +335,20 @@
     kopf.appendChild(el("h1", null, rezept.titel));
     if (rezept.untertitel) kopf.appendChild(el("p", "untertitel", rezept.untertitel));
 
+    // Eigener Absatz, nicht angehaengt an den Untertitel. Vorher war das
+    // ein <span> im Untertitel, getrennt nur durch ein CSS-::before.
+    // Generierter Inhalt wandert beim Markieren nicht in die
+    // Zwischenablage und wird nicht vorgelesen — kopiert bekam man
+    // "...mit EierkuchenRuehrschuessel, weiter Topf". Ausstattung ist
+    // ohnehin eine andere Sorte Information als die Einordnung.
     if (rezept.gefaess) {
-      var geraet = kopf.querySelector(".untertitel");
-      if (geraet) {
-        geraet.appendChild(el("span", "gefaess", rezept.gefaess));
-      } else {
-        kopf.appendChild(el("p", "untertitel", rezept.gefaess));
-      }
+      var geraet = el("p", "gefaess");
+      geraet.appendChild(el("span", "gefaess-label", "Ausstattung"));
+      // Das Leerzeichen gehoert in den Text, nicht in die CSS-Marge —
+      // sonst klebt beim Kopieren "AusstattungRuehrschuessel", also
+      // genau derselbe Fehler eine Zelle weiter rechts.
+      geraet.appendChild(document.createTextNode(" " + rezept.gefaess));
+      kopf.appendChild(geraet);
     }
 
     kopf.appendChild(kennzahlenBauen(rezept));
