@@ -366,6 +366,214 @@ window.REZEPTE["maultaschen"] = {
   ]
 };
 
+window.REZEPTE["omelett-mit-pilzen"] = {
+  "schema": 1,
+  "id": "omelett-mit-pilzen",
+  "titel": "Omelett mit Pilzen",
+  "untertitel": "Vier Eier, gebratene Champignons und Zwiebel — die Pilze kommen fertig aufs Omelett, nicht in die Eimasse",
+  "portionen": 1,
+  "portionen_einheit": "Stück",
+  "zeit_aktiv_s": 840,
+  "zeit_gesamt_s": 1020,
+  "gefaess": "Schüssel, beschichtete Pfanne 24 cm",
+  "tags": [
+    "schnell",
+    "vegetarisch",
+    "eier",
+    "herzhaft"
+  ],
+  "quelle": {
+    "titel": "Omelett mit Pilzen und Zwiebeln",
+    "autor": "einfachkochen.de",
+    "url": "https://www.einfachkochen.de/rezepte/omelette-mit-pilzen-und-zwiebeln",
+    "hinweis": "Mengen und Zeiten übernommen, Schritte eigenständig formuliert"
+  },
+  "zutaten": [
+    {
+      "id": "z-champignons",
+      "name": "Champignons",
+      "menge": 150,
+      "einheit": "g",
+      "notiz": "geputzt, in Scheiben"
+    },
+    {
+      "id": "z-zwiebel",
+      "name": "Zwiebel",
+      "menge": 1,
+      "einheit": null,
+      "notiz": "halbiert, in feinen Streifen"
+    },
+    {
+      "id": "z-oel-1",
+      "name": "Sonnenblumenöl",
+      "menge": 1,
+      "einheit": "EL",
+      "notiz": "für die Pilze"
+    },
+    {
+      "id": "z-salz-2",
+      "name": "Salz",
+      "menge": 1,
+      "einheit": "Prise",
+      "notiz": "für die Pilze",
+      "skalieren": false
+    },
+    {
+      "id": "z-zucker",
+      "name": "Zucker",
+      "menge": 1,
+      "einheit": "Prise",
+      "notiz": null,
+      "skalieren": false
+    },
+    {
+      "id": "z-eier",
+      "name": "Eier",
+      "menge": 4,
+      "einheit": null,
+      "notiz": "Größe M"
+    },
+    {
+      "id": "z-salz-1",
+      "name": "Salz",
+      "menge": 1,
+      "einheit": "Prise",
+      "notiz": "für die Eimasse",
+      "skalieren": false
+    },
+    {
+      "id": "z-pfeffer",
+      "name": "Schwarzer Pfeffer",
+      "menge": 1,
+      "einheit": "Prise",
+      "notiz": "frisch gemahlen",
+      "skalieren": false
+    },
+    {
+      "id": "z-butter",
+      "name": "Butter",
+      "menge": 1,
+      "einheit": "EL",
+      "notiz": "kalt, in Flöckchen"
+    },
+    {
+      "id": "z-oel-2",
+      "name": "Sonnenblumenöl",
+      "menge": 1,
+      "einheit": "EL",
+      "notiz": "für das Omelett"
+    },
+    {
+      "id": "z-schnittlauch",
+      "name": "Schnittlauch",
+      "menge": null,
+      "einheit": null,
+      "notiz": "in Röllchen, zum Bestreuen"
+    }
+  ],
+  "schritte": [
+    {
+      "id": "s-schneiden",
+      "titel": "Pilze und Zwiebel schneiden",
+      "anweisung": "Champignons putzen und in Scheiben schneiden, Zwiebel schälen, halbieren und in feine Streifen schneiden.",
+      "dauer_s": 300,
+      "zutaten": [
+        "z-champignons",
+        "z-zwiebel"
+      ],
+      "vorstufen": []
+    },
+    {
+      "id": "s-anbraten",
+      "titel": "scharf anbraten",
+      "anweisung": "Öl in der Pfanne stark erhitzen, Pilze und Zwiebeln hineingeben und unter Rühren scharf anbraten, bis sie Farbe nehmen.",
+      "dauer_s": 120,
+      "zutaten": [
+        "z-oel-1"
+      ],
+      "vorstufen": [
+        "s-schneiden"
+      ]
+    },
+    {
+      "id": "s-wuerzen",
+      "titel": "würzen, weiterbraten",
+      "anweisung": "Mit Salz und einer Prise Zucker würzen und noch einmal braten, bis die Flüssigkeit verdampft ist. Dann aus der Pfanne nehmen und warm stellen.",
+      "dauer_s": 120,
+      "zutaten": [
+        "z-salz-2",
+        "z-zucker"
+      ],
+      "vorstufen": [
+        "s-anbraten"
+      ]
+    },
+    {
+      "id": "s-verquirlen",
+      "titel": "Eier verquirlen",
+      "anweisung": "Eier mit Salz und Pfeffer in der Schüssel verquirlen, die Butterflöckchen unterrühren. Sie schmelzen später in der Pfanne und machen das Omelett saftig.",
+      "dauer_s": 120,
+      "zutaten": [
+        "z-eier",
+        "z-salz-1",
+        "z-pfeffer",
+        "z-butter"
+      ],
+      "vorstufen": []
+    },
+    {
+      "id": "s-eingiessen",
+      "titel": "Eimasse eingießen",
+      "anweisung": "Restliches Öl in dieselbe Pfanne geben, Hitze auf schwach stellen und die Eimasse gleichmäßig einlaufen lassen.",
+      "dauer_s": 60,
+      "zutaten": [
+        "z-oel-2"
+      ],
+      "vorstufen": [
+        "s-verquirlen",
+        "s-wuerzen"
+      ]
+    },
+    {
+      "id": "s-stocken",
+      "titel": "stocken lassen",
+      "anweisung": "Bei schwacher Hitze ohne Rühren stocken lassen, bis die Oberfläche gerade noch feucht glänzt. Nicht wenden.",
+      "dauer_s": 240,
+      "unbeaufsichtigt": true,
+      "zutaten": [],
+      "vorstufen": [
+        "s-eingiessen"
+      ]
+    },
+    {
+      "id": "s-schnittlauch",
+      "titel": "Schnittlauch schneiden",
+      "anweisung": "Schnittlauch in feine Röllchen schneiden.",
+      "dauer_s": 60,
+      "zutaten": [
+        "z-schnittlauch"
+      ],
+      "vorstufen": []
+    },
+    {
+      "id": "s-falten",
+      "titel": "füllen und falten",
+      "anweisung": "Pilze und Zwiebeln auf einer Hälfte verteilen, die andere Hälfte darüberklappen, auf den Teller gleiten lassen und mit Schnittlauch bestreuen. Sofort servieren.",
+      "dauer_s": 60,
+      "zutaten": [],
+      "vorstufen": [
+        "s-stocken",
+        "s-schnittlauch"
+      ]
+    }
+  ],
+  "hinweise": [
+    "Cremiger wird das Omelett, wenn 1–2 EL Schmand oder Crème fraîche mit in die Eimasse kommen.",
+    "Für mehrere Personen die Omeletts nacheinander braten — zu viel Eimasse auf einmal wird in der Pfanne zu Rührei, weil sie nicht mehr gleichmäßig stockt.",
+    "Die Pilze erst würzen, wenn sie Farbe haben: Salz zu früh zieht Wasser, und sie kochen statt zu braten. Der Zucker unterstützt die Bräunung."
+  ]
+};
+
 window.REZEPTE["pfannkuchen"] = {
   "schema": 1,
   "id": "pfannkuchen",

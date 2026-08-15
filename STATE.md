@@ -1,6 +1,6 @@
 # STATE.md — rezept-grid
 
-Stand: 2026-08-08
+Stand: 2026-08-15
 
 ## Ziel
 
@@ -11,9 +11,9 @@ konvertiert.
 ## Status
 
 - **Funktional fertig**, auch per Doppelklick ohne Server (T-0012
-  bestaetigt). Vier Rezepte (`eierkuchen`, `pfannkuchen`,
-  `spaetzle`, `maultaschen`), Uebersicht, Portions-Skalierung, Kochmodus
-  mit Countdown, Zutaten abhaken.
+  bestaetigt). Fuenf Rezepte (`eierkuchen`, `pfannkuchen`,
+  `spaetzle`, `maultaschen`, `omelett-mit-pilzen`), Uebersicht,
+  Portions-Skalierung, Kochmodus mit Countdown, Zutaten abhaken.
 - **Design-Uebergabe aus Claude Design vollstaendig umgesetzt**
   (`docs/uebergabe-zeitmass.md`, T-0019 bis T-0023): Kicktipp-Tokens,
   Zeitmass (Spaltenbreite proportional zur Dauer), Fuehrungslinien,
@@ -24,7 +24,7 @@ konvertiert.
   diesem Plan (T-0030/T-0032) — eine Spalte ist ein Zeitpunkt, und
   parallele Straenge stehen nebeneinander, wenn ihre Zeilen sich nicht
   ueberschneiden.
-- Pruefung: `node tools/pruefe-grid.js` — **126/126 gruen**. Laeuft ueber
+- Pruefung: `node tools/pruefe-grid.js` — **127/127 gruen**. Laeuft ueber
   alle Rezepte, prueft Schema, Layout, Zeitplan und Manifest-Aktualitaet.
 - Nach jeder Rezeptaenderung noetig: `node tools/build-manifest.js`.
 - Vorschau: `python3 -m http.server 8412`, Konfiguration in
@@ -40,6 +40,7 @@ konvertiert.
 
 ## Letzte Done
 
+- T-0040 Omelett mit Pilzen aufgenommen, erstes Rezept mit Quelle (2026-08-15)
 - T-0038/T-0039.1 Touch-Zustaende, Tap-Ziele, Zutatenspalten (2026-08-08)
 - T-0037 Ausstattung als eigener Absatz (2026-08-08)
 - T-0035 Vorname aus den Steuerdateien entfernt (2026-08-03)

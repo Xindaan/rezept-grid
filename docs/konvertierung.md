@@ -33,7 +33,7 @@ Ist eine Seite technisch nicht abrufbar (chefkoch.de war es am
 von Hand hereingeben oder ein Grundrezept eigenständig formulieren und
 `quelle: null` setzen.
 
-## Die neun Fallstricke
+## Die zehn Fallstricke
 
 Alle aus echten Konvertierungen, nicht ausgedacht.
 
@@ -132,6 +132,17 @@ Prüffrage: Stünde der Satz so in einem Kochbuch, das jemand kauft? Wenn
 nein, streichen. (Nachträglich korrigiert am 03.08.2026 — vier Texte in
 drei Rezepten waren in beide Richtungen abgerutscht.)
 
+**10. Die Schritt-Reihenfolge im JSON folgt dem Plan, nicht der Quelle.**
+`pruefe-grid.js` meldet es, wenn eine Stufe im Array hinter einer steht,
+die der Planer erst später beginnt. Bei zwei beaufsichtigten Strängen
+nimmt der Planer den mit dem längeren Restpfad zuerst — und der zweite
+Strang darf im Array **nicht zwischen** die Stufen des ersten, sonst
+zerreißt dessen Zeilenblock. Also den kürzeren Strang komplett dahinter
+schreiben, auch wenn die Quelle ihn zuerst nennt. Beim Omelett heißt
+das: Pilze schneiden, braten, würzen — und erst dann „Eier verquirlen",
+obwohl einfachkochen.de mit den Eiern anfängt. Kochen kann man trotzdem
+in beliebiger Reihenfolge; das Grid zeigt den Weg für eine Person.
+
 ## Plausibilität prüfen
 
 Vor dem Commit kurz gegenlesen:
@@ -208,6 +219,13 @@ Regeln, die dabei zaehlen:
    statt ueber das Essen ("im Grid sind das zwei Klammern"). Die
    Rezepte werden veroeffentlicht. Prueffrage: Stuende der Satz so in
    einem Kochbuch, das jemand kauft?
+
+10. Die Reihenfolge der Schritte im JSON folgt dem berechneten Plan,
+    nicht der Quelle: pruefe-grid.js meldet Stufen, die im Array vor
+    einer stehen, die der Planer frueher beginnt. Bei zwei
+    beaufsichtigten Straengen kommt der mit dem laengeren Restpfad
+    zuerst, und der zweite darf im Array nicht zwischen die Stufen des
+    ersten (sonst zerreisst dessen Zeilenblock) — also komplett dahinter.
 
 Danach fuehre bitte aus:
   node tools/build-manifest.js

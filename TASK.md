@@ -65,6 +65,22 @@
 
 ## Done
 
+- **T-0040** (2026-08-15) Rezept "Omelett mit Pilzen" aufgenommen
+  (`rezepte/omelett-mit-pilzen.json`), Mengen und Zeiten von
+  einfachkochen.de, Schritte eigenstaendig formuliert. **Erstes Rezept
+  mit gesetzter `quelle`** — der Quellenblock des Renderers ist damit
+  zum ersten Mal live zu sehen (Titel, Autor, Link, Hinweis).
+  Zwei Straenge (Pilze braten / Eier verquirlen), zusammengefuehrt beim
+  Eingiessen; "stocken lassen" unbeaufsichtigt, Schnittlauch faellt
+  hinein. 17 Min gesamt, 14 Min Arbeit, 1 Stueck als Basis.
+  Lehre, als Fallstrick 10 in `docs/konvertierung.md` eingetragen: Das
+  Pruefskript verlangt, dass die JSON-Reihenfolge der Schritte dem
+  berechneten Plan folgt. Bei zwei beaufsichtigten Straengen kommt der
+  mit dem laengeren Restpfad zuerst — und der zweite Strang darf im JSON
+  nicht ZWISCHEN die Stufen des ersten, sonst zerreisst dessen
+  Zeilenblock. Der kuerzere Strang steht also komplett dahinter, auch
+  wenn die Quelle ihn zuerst nennt (hier: Eier verquirlen erst nach den
+  Pilzen). Pruefung 127/127 gruen.
 - **T-0038/T-0039.1** (2026-08-08) Touch-Bedienung und die gekappten
   Zutatenspalten. Gemeldet: "Die UI sieht auf iOS nicht so gut aus, und
   Mouseover wird nicht in Fingertippen uebersetzt, da kommen keine
