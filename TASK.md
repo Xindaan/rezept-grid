@@ -50,33 +50,40 @@
   geraten. Betrifft auch die Tabelle: `td.zutat` enthaelt dieselbe
   Verschachtelung.
 
-- **T-0036** Vorname in den Commit-Messages — 14 der 27 Commits, 20
-  Fundstellen. Die Dateien sind seit T-0035 sauber, die Historie nicht.
-  **Zeitkritisch:** solange nichts gepusht ist, ist ein Umschreiben per
-  `git filter-repo --message-callback` folgenlos (keine fremden Klone,
-  kein force-push gegen jemanden). Nach dem ersten Push ist es das
-  Gegenteil.
-  Nur zu machen, wenn ausdruecklich gewuenscht: es schreibt alle 27 SHAs
-  um. Wer die Historie als Arbeitsprotokoll lesen will, verliert dabei
-  nichts inhaltlich, aber jede bisher notierte SHA (z. B. in dieser Datei)
-  zeigt danach ins Leere.
-
-- **T-0033** Spaetzle: "Wasser aufsetzen" haengt an der Teigruhe, obwohl
-  es nicht davon abhaengt. Gefunden beim Durchsehen nach T-0032.
-  `s-wasser` hat `vorstufen: ["s-ruhen"]`; Wasser kann man aber waehrend
-  der 30 Minuten Ruhe aufsetzen. Mit `vorstufen: []` faellt es in die
-  Ruhezeit und das Rezept kaeme auf 48 statt 56 Minuten (`zeit_gesamt_s`
-  waere anzupassen, ebenso die freie Zeit).
-  **Nicht meine Entscheidung** — es ist ein Familienrezept mit eigener
-  Zeitangabe. Genau der Fehlertyp, den `docs/konvertierung.md` §7
-  beschreibt ("verweist NICHT auf die Stufe daneben"), diesmal in den
-  eigenen Daten.
-  Die drei anderen Rezepte sind geprueft und sauber: bei Eierkuchen und
-  Pfannkuchen haengt jede Stufe echt an ihrer Vorgaengerin, bei den
-  Maultaschen stimmt es seit T-0032.
-
 ## Done
 
+- **T-0033** (2026-08-15) Spaetzle: "Wasser aufsetzen" haengt nicht mehr
+  an der Teigruhe. `s-wasser` bekam `vorstufen: []` — Wasser setzt man
+  auf, waehrend der Teig ruht.
+  **Der zweite Teil war der wichtigere und stand nicht im Task:** mit
+  `vorstufen: []` allein waere die Teigruhe gar keine Voraussetzung des
+  Schabens mehr gewesen, denn die Kette lief bisher
+  teig -> ruhen -> wasser -> schaben und trug die Abhaengigkeit
+  transitiv. `s-schaben` verweist deshalb jetzt auf **beides**,
+  `["s-ruhen", "s-wasser"]` — ein echter Zusammenlauf.
+  Wirkung: vier Spalten statt fuenf, Wasser und Teigruhe stehen
+  nebeneinander in Spalte 1 (Zeilen 0-4 gegen 5-6, ueberschneidungsfrei).
+  48 statt 56 Minuten, 20 Minuten ohne Zutun. `zeit_gesamt_s` auf 2880
+  und `zeit_aktiv_s` auf 1680 nachgezogen — die Summe der beaufsichtigten
+  Stufen war mit 1500 ohnehin zu niedrig angesetzt.
+  Offen gelassen: `s-wasser` ist als beaufsichtigt gefuehrt, obwohl
+  Wasser die meiste Zeit von allein kocht. Mit `unbeaufsichtigt: true`
+  wuerde das Rezept nochmals kuerzer — das ist eine Aussage ueber das
+  Kochen, keine ueber den Renderer, und deshalb nicht mitentschieden.
+- **T-0036** (2026-08-15) **War bereits erledigt, der Backlog-Eintrag
+  stand faelschlich noch offen.** Der Vorname wurde am 03.08. per
+  filter-branch aus allen 28 Commit-Messages entfernt, vor dem ersten
+  Push. Nachgeprueft an `origin/main`: null Fundstellen in der Historie.
+  Ich hatte trotzdem noch gemeldet, er stehe "in 14 Commit-Messages" —
+  falsch, und die Steuerdatei hat den Irrtum gestuetzt statt ihn zu
+  korrigieren.
+  Zwei Reste gab es doch: ausgerechnet im T-0035-Eintrag, der die
+  Entfernung dokumentiert und die ersetzten Formulierungen als Beispiel
+  zitierte. Damit war der Name wieder drin. Jetzt ohne Beispiele.
+  Faktenlage zum oeffentlichen Auftritt: das GitHub-Profil `Xindaan`
+  fuehrt **keinen** Klarnamen (`name: null`, keine Bio, keine Firma,
+  keine Mail), und die Commit-Metadaten nennen `Xindaan` mit
+  Noreply-Adresse.
 - **T-0041** (2026-08-15, **umnummeriert von T-0040**) Rezept "Omelett
   mit Pilzen" aufgenommen
   (`rezepte/omelett-mit-pilzen.json`), Mengen und Zeiten von
@@ -182,9 +189,8 @@
   `CLAUDE.md` (2), `STATE.md` (2), `docs/uebergabe-zeitmass.md` (1) und
   ein Kommentar in `js/zeitmass.js`.
   Umformuliert statt geschwaerzt — die Saetze tragen weiter dieselbe
-  Aussage, nur ohne Traeger: "Andres Befund am Bild" -> "Befund am Bild",
-  "Bestaetigt von Andre" -> "Bestaetigt", "nicht verhandelbar ohne Andre"
-  -> "nicht ohne Ruecksprache aendern". Wer etwas gemeldet oder
+  Aussage, nur ohne Traeger: der Name des Melders faellt weg, die
+  Meldung bleibt. Wer etwas gemeldet oder
   entschieden hat, war fuer keinen Eintrag die Information; wichtig war
   immer, DASS es gemeldet wurde.
   Der Grep ueber alle versionierten Dateien ist leer. Ein Fallstrick

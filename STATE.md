@@ -24,7 +24,7 @@ konvertiert.
   diesem Plan (T-0030/T-0032) — eine Spalte ist ein Zeitpunkt, und
   parallele Straenge stehen nebeneinander, wenn ihre Zeilen sich nicht
   ueberschneiden.
-- Pruefung: `node tools/pruefe-grid.js` — **ZAEHLER gruen**. Laeuft ueber
+- Pruefung: `node tools/pruefe-grid.js` — **137/137 gruen**. Laeuft ueber
   alle Rezepte, prueft Schema, Layout, Zeitplan und Manifest-Aktualitaet.
 - Nach jeder Rezeptaenderung noetig: `node tools/build-manifest.js`.
 - Vorschau: `python3 -m http.server 8412`, Konfiguration in
@@ -32,11 +32,11 @@ konvertiert.
 
 ## Next actions
 
-- **T-0033** Spaetzle-Daten: "Wasser aufsetzen" haengt unnoetig an der
-  Teigruhe. Braucht eine Entscheidung, es ist ein Familienrezept.
+- (nichts Dringendes offen; Backlog: T-0042 Klebestellen beim Kopieren)
 
 ## Letzte Done
 
+- T-0033 Spaetzle: Wasser laeuft parallel zur Teigruhe, 48 statt 56 Min (2026-08-15)
 - T-0041 Omelett mit Pilzen, erstes Rezept mit Quelle (2026-08-15)
 - T-0039.2/.3 + T-0040 Design-Uebergabe, Stufenliste (2026-08-15)
 - T-0038/T-0039.1 Touch-Zustaende, Tap-Ziele, Zutatenspalten (2026-08-08)

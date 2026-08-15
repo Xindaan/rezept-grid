@@ -5,8 +5,8 @@
   "untertitel": "Vom Brett geschabt — vier Zutaten, der Rest ist Armkraft",
   "portionen": 4,
   "portionen_einheit": "Portionen",
-  "zeit_aktiv_s": 1500,
-  "zeit_gesamt_s": 3600,
+  "zeit_aktiv_s": 1680,
+  "zeit_gesamt_s": 2880,
   "gefaess": "Rührschüssel, weiter Topf, Spätzlebrett und Palette",
   "tags": ["schwäbisch", "beilage", "grundrezept", "vegetarisch"],
   "quelle": null,
@@ -94,7 +94,7 @@
       "anweisung": "Reichlich Wasser salzen und aufkochen. Danach die Hitze zurücknehmen, es soll sieden und nicht sprudeln.",
       "dauer_s": 600,
       "zutaten": ["z-kochwasser", "z-kochsalz"],
-      "vorstufen": ["s-ruhen"]
+      "vorstufen": []
     },
     {
       "id": "s-schaben",
@@ -102,7 +102,7 @@
       "anweisung": "Teig dünn auf das nasse Brett streichen und in schmalen Streifen ins Wasser schaben. Sobald sie oben schwimmen, abschöpfen und kalt abschrecken.",
       "dauer_s": 480,
       "zutaten": [],
-      "vorstufen": ["s-wasser"]
+      "vorstufen": ["s-ruhen", "s-wasser"]
     },
     {
       "id": "s-schwenken",

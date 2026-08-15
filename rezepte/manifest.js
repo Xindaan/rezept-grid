@@ -782,8 +782,8 @@ window.REZEPTE["spaetzle"] = {
   "untertitel": "Vom Brett geschabt — vier Zutaten, der Rest ist Armkraft",
   "portionen": 4,
   "portionen_einheit": "Portionen",
-  "zeit_aktiv_s": 1500,
-  "zeit_gesamt_s": 3600,
+  "zeit_aktiv_s": 1680,
+  "zeit_gesamt_s": 2880,
   "gefaess": "Rührschüssel, weiter Topf, Spätzlebrett und Palette",
   "tags": [
     "schwäbisch",
@@ -887,9 +887,7 @@ window.REZEPTE["spaetzle"] = {
         "z-kochwasser",
         "z-kochsalz"
       ],
-      "vorstufen": [
-        "s-ruhen"
-      ]
+      "vorstufen": []
     },
     {
       "id": "s-schaben",
@@ -898,6 +896,7 @@ window.REZEPTE["spaetzle"] = {
       "dauer_s": 480,
       "zutaten": [],
       "vorstufen": [
+        "s-ruhen",
         "s-wasser"
       ]
     },
