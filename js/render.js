@@ -375,21 +375,9 @@
     kopf.appendChild(el("h1", null, rezept.titel));
     if (rezept.untertitel) kopf.appendChild(el("p", "untertitel", rezept.untertitel));
 
-    // Eigener Absatz, nicht angehaengt an den Untertitel. Vorher war das
-    // ein <span> im Untertitel, getrennt nur durch ein CSS-::before.
-    // Generierter Inhalt wandert beim Markieren nicht in die
-    // Zwischenablage und wird nicht vorgelesen — kopiert bekam man
-    // "...mit EierkuchenRuehrschuessel, weiter Topf". Ausstattung ist
-    // ohnehin eine andere Sorte Information als die Einordnung.
-    if (rezept.gefaess) {
-      var geraet = el("p", "gefaess");
-      geraet.appendChild(el("span", "gefaess-label", "Ausstattung"));
-      // Das Leerzeichen gehoert in den Text, nicht in die CSS-Marge —
-      // sonst klebt beim Kopieren "AusstattungRuehrschuessel", also
-      // genau derselbe Fehler eine Zelle weiter rechts.
-      geraet.appendChild(document.createTextNode(" " + rezept.gefaess));
-      kopf.appendChild(geraet);
-    }
+    // Ausstattung und Merkmale stehen seit T-0039.3 unter dem Grid,
+    // siehe anhangBauen. Der Kopf traegt nur noch, was man braucht, um
+    // das Grid zu lesen: Titel, Einordnung, Zeiten, Portionen, Start.
 
     kopf.appendChild(kennzahlenBauen(rezept));
 
@@ -400,12 +388,6 @@
 
     var leiste = el("div", "kopf-leiste");
 
-    if (rezept.tags && rezept.tags.length) {
-      var tags = el("ul", "tags");
-      rezept.tags.forEach(function (t) { tags.appendChild(el("li", null, t)); });
-      leiste.appendChild(tags);
-    }
-
     if (beiKochstart) {
       var kochen = el("button", "koch-start", "Kochmodus starten");
       kochen.type = "button";
@@ -415,6 +397,38 @@
 
     kopf.appendChild(leiste);
     return kopf;
+  }
+
+  // Ausstattung und Merkmale (T-0039.3). Beides sind Angaben, die man
+  // einmal vor dem Kochen liest — sie standen zwischen dem Titel und der
+  // Sache selbst und haben auf 375 px den ersten Bildschirm mit gefuellt.
+  // Unter dem Grid stehen sie dort, wo man sie sucht: beim Nachschlagen,
+  // nicht beim Kochen.
+  //
+  // Das Leerzeichen gehoert weiter in den Text und nicht in die
+  // CSS-Marge, sonst klebt beim Kopieren "AusstattungRuehrschuessel"
+  // (T-0037).
+  function anhangBauen(rezept) {
+    var hatGefaess = !!rezept.gefaess;
+    var hatTags = !!(rezept.tags && rezept.tags.length);
+    if (!hatGefaess && !hatTags) return null;
+
+    var box = el("section", "rezept-anhang");
+
+    if (hatGefaess) {
+      var geraet = el("p", "gefaess");
+      geraet.appendChild(el("span", "gefaess-label", "Ausstattung"));
+      geraet.appendChild(document.createTextNode(" " + rezept.gefaess));
+      box.appendChild(geraet);
+    }
+
+    if (hatTags) {
+      var tags = el("ul", "tags");
+      rezept.tags.forEach(function (t) { tags.appendChild(el("li", null, t)); });
+      box.appendChild(tags);
+    }
+
+    return box;
   }
 
   function schritteBauen(rezept) {
@@ -475,12 +489,17 @@
   // selbst bleibt stehen — die Zeilen und Bloecke aendern sich nicht.
   function mengenAktualisieren(ziel, modell, portionen) {
     var faktor = portionen / modell.rezept.portionen;
+    // querySelectorAll, nicht querySelector: seit T-0040 stehen Tabelle
+    // und Stufenliste gleichzeitig im DOM, und beide tragen die Menge.
     modell.zeilen.forEach(function (zeile) {
-      var td = ziel.querySelector('td.menge[data-zutat="' + zeile.zutat.id + '"]');
-      if (!td) return;
       var text = P.mengeFormatieren(zeile.zutat, faktor);
-      td.textContent = text;
-      td.classList.toggle("menge-leer", !text);
+      Array.prototype.forEach.call(
+        ziel.querySelectorAll('.menge[data-zutat="' + zeile.zutat.id + '"]'),
+        function (zelle) {
+          zelle.textContent = text;
+          zelle.classList.toggle("menge-leer", !text);
+        }
+      );
     });
   }
 
@@ -497,11 +516,23 @@
     tdZutat.tabIndex = 0;
     tdZutat.setAttribute("aria-pressed", "false");
 
+    // Abgehakt wird die ZEILE, nicht die Zelle: seit T-0040 zeigt dieselbe
+    // Zutat in zwei Ansichten, und ein Haken, der nur in einer sitzt, ist
+    // beim Drehen des Telefons wieder weg. Ohne data-zeile (Einkaufsliste)
+    // bleibt es beim Paar.
     function umschalten() {
       var an = !tdZutat.classList.contains("abgehakt");
-      tdZutat.classList.toggle("abgehakt", an);
-      tdMenge.classList.toggle("abgehakt", an);
-      tdZutat.setAttribute("aria-pressed", String(an));
+      var r = tdZutat.dataset ? tdZutat.dataset.zeile : undefined;
+      var wurzel = tdZutat.closest(".rezept") || document;
+      var zellen = (r === undefined)
+        ? [tdMenge, tdZutat]
+        : wurzel.querySelectorAll('[data-zeile="' + r + '"]');
+      Array.prototype.forEach.call(zellen, function (zelle) {
+        zelle.classList.toggle("abgehakt", an);
+        if (zelle.getAttribute("role") === "button") {
+          zelle.setAttribute("aria-pressed", String(an));
+        }
+      });
     }
 
     tdZutat.addEventListener("click", umschalten);
@@ -772,6 +803,17 @@
     // selbst. Kein ResizeObserver, kein resize-Handler.
     breitenAnwenden(tabelle, modell);
 
+    // Dieselbe Rechnung, andere Kodierung: die Liste kommt aus demselben
+    // Modell wie die Tabelle (T-0040). Welche von beiden sichtbar ist,
+    // entscheidet stil.css — deshalb stehen beide im DOM und es gibt
+    // keinen resize-Handler.
+    if (global.RezeptStufenliste && global.RezeptStufenliste.stufenlisteBauen) {
+      ziel.appendChild(global.RezeptStufenliste.stufenlisteBauen(modell, portionen));
+    }
+
+    var anhang = anhangBauen(rezept);
+    if (anhang) ziel.appendChild(anhang);
+
     ziel.appendChild(schritteBauen(rezept));
     var hinweise = hinweiseBauen(rezept);
     if (hinweise) ziel.appendChild(hinweise);
@@ -786,6 +828,7 @@
     uebersichtRendern: uebersichtRendern,
     einkaufRendern: einkaufRendern,
     tabelleBauen: tabelleBauen,
+    abhakenVerdrahten: abhakenVerdrahten,
     mengenAktualisieren: mengenAktualisieren
   };
 })(window);

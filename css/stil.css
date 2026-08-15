@@ -324,7 +324,7 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-.schritt.ist-gekuerzt { border-right-style: dashed; }
+td.schritt.ist-gekuerzt { border-right-style: dashed; }
 
 .grid td {
   padding: .5rem .75rem;
@@ -350,8 +350,12 @@ body {
    Gezeichnet als inset box-shadow statt als border — Chrome laesst die
    Rahmen sticky-positionierter Zellen bei border-collapse: collapse
    verschwinden, die Schatten bleiben. (T-0023) */
-.menge,
-.zutat {
+/* Auf td eingeschraenkt seit T-0040: die Stufenliste benutzt .menge und
+   .zutat absichtlich weiter (Kochmodus, Abhaken, Daempfung greifen
+   dadurch ohne zweite Regelmenge), braucht aber keine Tabellengeometrie.
+   Getroffen waren und sind hier ausschliesslich Tabellenzellen. */
+td.menge,
+td.zutat {
   position: sticky;
   z-index: 2;
   background: var(--karte);
@@ -360,9 +364,9 @@ body {
 
 /* Achse links und rechts des Blocks — ebenfalls als Schatten, sonst
    verschwindet sie beim Scrollen mit. */
-.menge { left: 0; box-shadow: inset 0 -1px 0 var(--linie), inset 1px 0 0 var(--achse); }
-.zutat { box-shadow: inset 0 -1px 0 var(--linie), inset -1px 0 0 var(--achse); }
-.zutat { left: var(--zutat-links, 0); }
+td.menge { left: 0; box-shadow: inset 0 -1px 0 var(--linie), inset 1px 0 0 var(--achse); }
+td.zutat { box-shadow: inset 0 -1px 0 var(--linie), inset -1px 0 0 var(--achse); }
+td.zutat { left: var(--zutat-links, 0); }
 
 .grid tbody tr:first-child .menge {
   box-shadow: inset 0 -1px 0 var(--linie), inset 0 1px 0 var(--linie), inset 1px 0 0 var(--achse);
@@ -371,7 +375,7 @@ body {
   box-shadow: inset 0 -1px 0 var(--linie), inset 0 1px 0 var(--linie), inset -1px 0 0 var(--achse);
 }
 
-.menge {
+td.menge {
   white-space: nowrap;
   text-align: right;
   padding-left: .9rem;
@@ -399,7 +403,7 @@ body {
   vertical-align: 1px;
 }
 
-.zutat {
+td.zutat {
   /* Breite kommt aus dem colgroup (T-0020); width und min-width waeren
      unter table-layout: fixed ohnehin wirkungslos. */
   white-space: normal;
@@ -426,7 +430,7 @@ body {
   font-size: .76rem;
 }
 
-.schritt {
+td.schritt {
   /* Schmal genug, dass ein Rezept mit sechs Stufen auf einen
      Laptop-Bildschirm passt. Mehrzeilige Titel sind in der
      Chu-Notation normal. */
@@ -943,9 +947,225 @@ body.kochmodus .zutat.koch-neu { border-bottom-color: var(--akzent); }
    `!important` ist kein Notnagel, sondern der einzige Weg: die Breite
    steht als Inline-Stil am <col> und schlaegt sonst jede Regel. */
 @media (max-width: 939px) {
-  .grid > colgroup > col:nth-child(1) { width: 56px !important; }
-  .grid > colgroup > col:nth-child(2) { width: 104px !important; }
+  .grid > colgroup > col:nth-child(1) { width: 64px !important; }
+  .grid > colgroup > col:nth-child(2) { width: 120px !important; }
   /* Der sticky-Versatz der Zutatenspalte muss derselben Grenze folgen,
      sonst schiebt sie sich beim Querscrollen ueber die Menge. */
-  .grid { --zutat-links: 56px; }
+  .grid { --zutat-links: 64px; }
+
+  /* Die Breite allein reichte nicht: von 56 px gingen 24 px an Polster,
+     fuer den Text blieben 32 px. "150 ml" braucht 42,7 px und lief aus
+     der Zelle heraus — sichtbar, aber nicht als Ueberlauf messbar, weil
+     die Zelle `nowrap` bei `overflow: visible` ist. Erst 64 px minus
+     17,6 px Polster decken den laengsten Fall.
+     Das Polster ist hier kein Schmuck, sondern der Abstand zur Achse —
+     .55rem behaelt ihn zu beiden Seiten. */
+  .grid td.menge { padding-left: .55rem; padding-right: .55rem; }
+  .grid td.zutat { padding-right: .6rem; }
 }
+
+/* --- Kopf auf schmalen Schirmen (T-0039.2 und .3) -------------------- */
+
+/* Ausstattung und Merkmale unter dem Grid, siehe anhangBauen in
+   render.js. Bewusst ohne Medienabfrage: die Reihenfolge ist auf jedem
+   Schirm dieselbe Aussage — erst die Sache, dann das Nachschlagen. */
+.rezept-anhang {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .6rem 1.4rem;
+  margin: -1.2rem 0 2.2rem;
+}
+
+.rezept-anhang .gefaess { margin: 0; }
+
+/* Der Kennzahlenstreifen brach auf 2 + 1 und sah aus wie ein Fehler.
+   Er ist auch einer, aber ein arithmetischer: drei Kacheln mit
+   min-width 6,5 rem plus zwei Luecken brauchen mehr, als auf 375 px zur
+   Verfuegung steht (gemessen 366 gegen 327 px).
+
+   Die Untergrenze zu senken loest es nicht — dann rutscht
+   "1 Std 15 Min" aus seiner Kachel. Unter der Schwelle bekommt der
+   Streifen deshalb ein Raster, in dem die dritte Kachel den Rest nimmt.
+   Dass die Kacheln damit unterschiedlich breit sind, ist kein Mangel:
+   ihre Inhalte sind unterschiedlich lang, und lesbar soll die Zahl sein,
+   nicht die Kachel gleich. */
+@media (max-width: 480px) {
+  .kennzahlen {
+    display: grid;
+    grid-template-columns: auto auto 1fr;
+    align-items: stretch;
+  }
+
+  .kennzahl { min-width: 0; padding: .5rem .7rem; }
+  .kennzahl-wert { font-size: 1.1rem; }
+  .kennzahl-warnung { grid-column: 1 / -1; }
+
+  /* Der Kopf fuellte den ganzen ersten Bildschirm: das Grid begann bei
+     673 px, gemessen auf Maultaschen bei 375 x 812. Die Ueberschrift ist
+     dabei der teuerste Posten ohne Gegenwert — sie ist die einzige
+     Ueberschrift der Seite und braucht keinen Groessenkontrast, um als
+     solche gelesen zu werden. */
+  .rezept-kopf h1 { font-size: 1.65rem; }
+  .untertitel { margin-bottom: 1rem; font-size: .95rem; }
+  .rezept-kopf { margin-bottom: 1.2rem; }
+
+  /* Mit den Merkmalen im Anhang steht der Kochmodus allein in seiner
+     Zeile. Auf ganzer Breite ist er mit dem Daumen zu treffen und kostet
+     keine Zeile mehr als vorher. */
+  .kopf-leiste .koch-start { flex: 1 1 100%; }
+}
+/* An das ENDE von css/stil.css anhaengen (T-0040).
+   Bewusst kein Diff: der Block kommt hinter alles Vorhandene, und ein
+   Kontext am Dateiende kollidiert mit jedem spaeteren Anhang. */
+/* --- Stufenliste: die Tabelle hochkant (T-0040) ---------------------- */
+
+/* Beide Ansichten stehen im DOM, sichtbar ist immer genau eine. Die
+   Schwelle ist bewusst fest und nicht aus der Stufenzahl gerechnet:
+   unter 600 px ist die Tabelle bei JEDEM Rezept im Bestand breiter als
+   der Schirm, darueber traegt sie sich mit den gepinnten Zutatenspalten
+   und dem Querscrollen. Eine Schwelle je Rezept waere nur mit einem
+   generierten <style> oder Container Queries zu haben — das erste ist
+   Markup-Erzeugung fuer eine Aussage, die keine Daten hat, das zweite
+   traegt auf den Zielgeraeten noch nicht. */
+.stufenliste { display: none; }
+
+@media (max-width: 599px) {
+  .stufenliste { display: block; margin: 0 0 2.2rem; }
+  .grid-rahmen { display: none; }
+  /* Der Wortlaut steht jetzt in seiner Stufe. Der Abschnitt bleibt im
+     DOM: er ist das Sprungziel aus T-0038 und die Fassung zum Vorlesen
+     und Drucken. */
+  .anweisungen { display: none; }
+}
+
+/* Eine Stufe. Die linke Kante ist die Klammer der Tabelle, um 90 Grad
+   gedreht; der Einzug kommt aus stufenliste.js und ist gerechnet. */
+.stufe {
+  padding: 0 0 0 .8rem;
+  margin-bottom: .2rem;
+  border-left: 2px solid var(--gitter);
+}
+
+.stufe-kopf {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: .5rem;
+}
+
+/* In der Tabelle stehen Titel und Dauer untereinander, weil die Spalte
+   schmal ist. Hier ist Platz fuer eine Zeile. */
+.stufe .schritt-titel { font-size: 1.05rem; }
+
+.stufe .schritt-dauer,
+.stufe .schritt-temperatur {
+  margin-top: 0;
+  white-space: nowrap;
+}
+
+.stufe-marken {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .35rem;
+  margin-top: .4rem;
+}
+
+.stufe-marken .stufen-marke { margin-top: 0; }
+
+/* Neuer Strang und Ebenenangabe sind keine Wartezeit — also nicht in
+   Orange, sondern neutral. */
+.marke-strang {
+  border-color: var(--gitter);
+  color: var(--tinte2);
+}
+
+/* Die unbeaufsichtigte Stufe traegt dieselbe Flaeche wie in der Tabelle,
+   dazu Sanduhr und Text: die Farbe traegt auch hier nicht allein. */
+.stufe.schritt-unbeaufsichtigt {
+  padding: .6rem .8rem;
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+
+.stufe-zulauf {
+  margin: .5rem 0 0;
+  padding: .45rem .6rem;
+  border: 1px dashed var(--gitter);
+  border-radius: var(--radius);
+  background: var(--karte);
+  color: var(--tinte2);
+  font-size: .8rem;
+}
+
+.zulauf-label { font-weight: 600; }
+
+.stufe-ohne-zutaten {
+  margin: .5rem 0 0;
+  color: var(--gedaempft);
+  font-size: .82rem;
+}
+
+.stufe-zutaten {
+  margin-top: .5rem;
+  border: 1px solid var(--achse);
+  border-radius: var(--radius);
+  background: var(--karte);
+  overflow: hidden;
+}
+
+/* Eine Zutatenzeile ist ein Tap-Ziel (Abhaken) und haelt deshalb 44 pt.
+   Die Menge steht rechtsbuendig in einer eigenen Spur, damit Ziffern
+   untereinander stehen — dieselbe Absicht wie in der Tabelle, nur ohne
+   deren Breitenzwang. */
+.stufe-zutat {
+  display: grid;
+  grid-template-columns: 4rem 1fr;
+  align-items: center;
+  gap: .6rem;
+  min-height: 44px;
+  padding: .2rem .7rem;
+  border-bottom: 1px solid var(--linie);
+}
+
+.stufe-zutat:last-child { border-bottom: none; }
+
+.stufe-zutat .menge {
+  text-align: right;
+  white-space: nowrap;
+  font-size: .82rem;
+  color: var(--tinte);
+}
+
+.stufe-zutat .zutat { cursor: pointer; }
+.stufe-zutat .zutat-notiz { display: inline; margin-left: .4rem; }
+
+.stufe .anweisung-text {
+  display: block;
+  margin: .55rem 0 0;
+  color: var(--tinte2);
+  font-size: .88rem;
+}
+
+/* Die Gabel: zwei Kanten laufen zusammen und gehen als eine weiter.
+   Die Positionen setzt stufenliste.js aus den Tiefen der Straenge. */
+.stufen-gabel {
+  position: relative;
+  height: 26px;
+}
+
+.gabel-kante,
+.gabel-weiter,
+.gabel-quer {
+  position: absolute;
+  background: var(--gitter);
+}
+
+.gabel-kante { top: 0; width: 2px; height: 14px; }
+.gabel-quer { top: 12px; height: 2px; }
+.gabel-weiter { top: 12px; width: 2px; height: 14px; }
+
+/* Im Kochmodus tritt die Liste genauso zurueck wie die Tabelle. */
+body.kochmodus .stufe { opacity: .28; transition: opacity .15s; }
+body.kochmodus .stufe.koch-aktiv { opacity: 1; box-shadow: 0 0 0 2px var(--akzent); border-left-color: var(--akzent); }
+body.kochmodus .stufe.koch-erledigt { opacity: .45; }
+

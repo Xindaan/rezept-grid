@@ -30,9 +30,25 @@
   // Das ist dieselbe Fehlerklasse, gegen die MIN_PX die Stufenspalten
   // schuetzt: eine Groesse als Anteil definiert, die eine absolute
   // Untergrenze braucht. Fuer die Stufen gab es sie, fuer die Zutaten
-  // nicht. Werte aus der Messung, mit Luft fuer Polsterung: die laengste
-  // Menge im Bestand ist "4 Stiel", der laengste Name "Bratwurstbraet".
-  var ZUTATEN_MIN_PX = [56, 104];
+  // nicht.
+  //
+  // Die Werte sind AUSSENMASSE und muessen den Innenabstand mittragen —
+  // daran war die erste Fassung mit 56 / 104 px zu knapp. Nachgemessen an
+  // der Live-Seite: die Mengenzelle hat 24 px Polster, es blieben 32 px
+  // fuer den Text; "150 ml" braucht 42,7 px, "4 Stiel" 38,5 px, "400 g"
+  // 36,1 px. Sechs von vierzehn Mengen liefen aus ihrer Zelle heraus.
+  //
+  // Warum das die erste Pruefung nicht gefunden hat: `.menge` ist
+  // `white-space: nowrap` bei `overflow: visible`. Der Text bricht also
+  // nicht um und wird nicht abgeschnitten, sondern laeuft ueber — und
+  // genau dabei bleibt `scrollWidth` gleich `clientWidth`. Der Test auf
+  // Ueberlauf war blind fuer den einzigen Fall, der hier vorkommt.
+  // Richtig misst man die Textbreite per Range gegen die Innenbreite.
+  //
+  // 64 px, und stil.css nimmt im gepinnten Fall zusaetzlich Polster weg:
+  // 64 - 17,6 = 46,4 px fuer die Menge. Bei der Zutat lassen 120 px minus
+  // 21,6 px genug fuer "Bratwurstbraet" (89,1 px) in einer Zeile.
+  var ZUTATEN_MIN_PX = [64, 120];
 
   // Schmalste Tabelle, in der jede Stufe MIN_PX bekommt UND danach noch
   // RESERVE des Stufenbereichs frei bleibt, um die Dauern abzubilden.
