@@ -191,9 +191,19 @@
     var name = el("span", "zutat");
     name.dataset.zeile = r;
     name.appendChild(el("span", "zutat-name", zutat.name));
-    // Zweiter Traeger neben der gedaempften Schrift, wie in der Tabelle.
-    if (fest) name.appendChild(el("span", "marke-fix", "fix"));
-    if (zutat.notiz) name.appendChild(el("span", "zutat-notiz", zutat.notiz));
+    // Die Leerzeichen gehoeren in den Text, nicht in die CSS-Marge
+    // (T-0042). Ohne sie kopiert man "WasserFIXzum Kochen" — die drei
+    // Spannen sind inline, und was der Browser dazwischen zeichnet,
+    // landet nicht in der Zwischenablage. Im Browser nachgemessen:
+    // die Zeilenhoehe aendert sich dadurch nicht.
+    if (fest) {
+      name.appendChild(document.createTextNode(" "));
+      name.appendChild(el("span", "marke-fix", "fix"));
+    }
+    if (zutat.notiz) {
+      name.appendChild(document.createTextNode(" "));
+      name.appendChild(el("span", "zutat-notiz", zutat.notiz));
+    }
     box.appendChild(name);
 
     global.RezeptRender.abhakenVerdrahten(menge, name);

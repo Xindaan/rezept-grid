@@ -30,28 +30,38 @@
 
 ## Backlog
 
-- **T-0042** Zusammengesetzte Zeilen kleben beim Kopieren. Gefunden
-  beim Merge am 15.08., als das Omelett als erstes Rezept eine `quelle`
-  bekam: "einfachkochen.deMengen und Zeiten uebernommen". Das ist
-  behoben. Der Grep danach zeigte aber, dass **jede** Zutatenzeile der
-  Stufenliste dasselbe tut: "250 gWeizenmehlType 405", in allen fuenf
-  Rezepten. Auf dem Schirm steht alles getrennt, in der Zwischenablage
-  und fuer eine Vorlesehilfe nicht.
-  Dieselbe Klasse wie T-0037 — dort habe ich die Ausstattung repariert
-  und nicht geprueft, wer den Fehler sonst noch hat. Das ist jetzt der
-  dritte Fund derselben Sorte.
-  **Nicht mit Leerzeichen zu erschlagen**, deshalb offen statt schnell
-  gemacht: `.stufe-zutat` ist ein `display: grid`, ein loser Textknoten
-  darin wuerde zur eigenen Rasterzelle und das Layout zerlegen. Zwischen
-  `.zutat-name` (inline) und `.zutat-notiz` (block) waere ein Leerzeichen
-  wirkungslos, zwischen Name und `.marke-fix` (inline-block) dagegen
-  sichtbar. Der saubere Weg ist vermutlich ein `aria-label` je Zeile oder
-  ein visuell verstecktes Trennzeichen; das gehoert gemessen, nicht
-  geraten. Betrifft auch die Tabelle: `td.zutat` enthaelt dieselbe
-  Verschachtelung.
+- (leer)
 
 ## Done
 
+- **T-0042** (2026-08-15) Klebestellen beim Kopieren behoben, in der
+  Stufenliste und in der Tabelle.
+  **Meine Analyse im Task war in zwei Punkten falsch, beides im Browser
+  gemessen statt erschlossen:**
+  (a) Die Grenze Menge/Zutat war nie das Problem — beide sind
+  Rasterzellen, und der Browser setzt beim Kopieren von selbst einen
+  Zeilenumbruch dazwischen. Geklebt hat es **innerhalb** der Zutat.
+  (b) Meine Sorge, ein Textknoten wuerde das Raster zerlegen, gilt nur
+  fuer sichtbaren Text: ein Zeichen erzeugt eine dritte Rasterzelle
+  (Zeilenhoehe springt von 44 auf 84 px), ein reines Leerzeichen nicht.
+  Das Leerzeichen wird dafuer auch nicht mitkopiert — als Trenner
+  zwischen den Zellen also nutzlos.
+  Ebenfalls verworfen, weil gemessen: eine absolut positionierte,
+  per `clip-path` versteckte Spanne aendert das Layout nicht, landet aber
+  genauso wenig in der Zwischenablage.
+  **Was wirkt:** `.zutat-name`, `.marke-fix` und `.zutat-notiz` sind in
+  der Liste alle inline; ein Leerzeichen als Textknoten dazwischen
+  repariert die Kopie ("WasserFIXzum Kochen" -> "Wasser FIX zum Kochen")
+  und laesst die Zeilenhoehe bei 44 px. In der Tabelle ist die Notiz ein
+  Block und braeuchte es nicht — sie bekommt es trotzdem, damit beide
+  Erzeuger dieselbe Regel befolgen.
+  Gegenprobe alt gegen neu an derselben Breite: Zeilenhoehen und
+  Zutatenbreiten identisch, Desktop-Spalten identisch
+  (63/167/180/235/207/194). Keine Klebestelle mehr in allen fuenf
+  Rezepten, in beiden Ansichten.
+  Damit ist die Serie aus T-0037 (Ausstattung), der Quellenzeile und
+  hier abgeschlossen — dreimal derselbe Fehler, weil CSS die Trennung
+  malte und der Text sie nicht enthielt.
 - **T-0033** (2026-08-15) Spaetzle: "Wasser aufsetzen" haengt nicht mehr
   an der Teigruhe. `s-wasser` bekam `vorstufen: []` — Wasser setzt man
   auf, waehrend der Teig ruht.

@@ -32,10 +32,11 @@ konvertiert.
 
 ## Next actions
 
-- (nichts Dringendes offen; Backlog: T-0042 Klebestellen beim Kopieren)
+- (nichts offen)
 
 ## Letzte Done
 
+- T-0042 Klebestellen beim Kopieren behoben (2026-08-15)
 - T-0033 Spaetzle: Wasser laeuft parallel zur Teigruhe, 48 statt 56 Min (2026-08-15)
 - T-0041 Omelett mit Pilzen, erstes Rezept mit Quelle (2026-08-15)
 - T-0039.2/.3 + T-0040 Design-Uebergabe, Stufenliste (2026-08-15)

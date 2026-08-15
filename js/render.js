@@ -72,8 +72,20 @@
       // Zweiter Traeger neben der gedaempften Schrift: eine sichtbare
       // Marke. Wer Farbunterschiede nicht wahrnimmt, sieht sonst nicht,
       // dass diese Menge beim Portionswechsel stehen bleibt.
-      if (zeile.festeMenge) tdZutat.appendChild(el("span", "marke-fix", "fix"));
-      if (zutat.notiz) tdZutat.appendChild(el("span", "zutat-notiz", zutat.notiz));
+      // Trennzeichen als echter Text, dieselbe Begruendung wie in der
+      // Stufenliste (T-0042): die Marke ist inline-block, ohne Leerzeichen
+      // kopiert man "Salzfix". Die Notiz ist hier ein Block und braeuchte
+      // es nicht — sie bekommt es trotzdem, damit beide Erzeuger dieselbe
+      // Regel befolgen und der naechste Umbau sie nicht auseinanderlaufen
+      // laesst. Vor einem Block faellt das Leerzeichen ohnehin weg.
+      if (zeile.festeMenge) {
+        tdZutat.appendChild(document.createTextNode(" "));
+        tdZutat.appendChild(el("span", "marke-fix", "fix"));
+      }
+      if (zutat.notiz) {
+        tdZutat.appendChild(document.createTextNode(" "));
+        tdZutat.appendChild(el("span", "zutat-notiz", zutat.notiz));
+      }
       abhakenVerdrahten(tdMenge, tdZutat);
       tr.appendChild(tdZutat);
 
