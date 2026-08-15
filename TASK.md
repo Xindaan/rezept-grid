@@ -30,14 +30,6 @@
 
 ## Backlog
 
-- **T-0039** Mobiles Layout — **Punkt 1 erledigt** (siehe Done), die
-  Punkte 2 und 3 bleiben offen und gehoeren zur Design-Runde, die
-  parallel bei Claude Design laeuft. Nicht selbst anfassen, sonst
-  kollidieren die beiden Staende:
-  2. Der Kennzahlenstreifen bricht auf 375 px auf zwei Zeilen (2 + 1) und
-     sieht aus wie ein Fehler statt wie Absicht.
-  3. Der Kopf frisst den ganzen ersten Bildschirm; das Grid beginnt erst
-     nach rund 1250 px Scrollen.
 - **T-0036** Vorname in den Commit-Messages — 14 der 27 Commits, 20
   Fundstellen. Die Dateien sind seit T-0035 sauber, die Historie nicht.
   **Zeitkritisch:** solange nichts gepusht ist, ist ein Umschreiben per
@@ -65,6 +57,42 @@
 
 ## Done
 
+- **T-0039.2/.3 + T-0040** (2026-08-15) Design-Uebergabe "Rezept-Grid
+  Mobile Usability" eingespielt, auf Branch `design-mobil`.
+  **Zwei meiner Messungen waren falsch, beide hat die Uebergabe gefunden:**
+  (a) "Grid beginnt nach 1250 px" — nachgemessen 673 px. Ich hatte die
+  Zahl von einem Bildschirmfoto mit doppelter Punktdichte abgelesen und
+  Fotopixel als CSS-Pixel gemeldet. (b) T-0039.1 beseitigte das Kappen,
+  nicht den Ueberlauf: die Untergrenze war ein Aussenmass, von 56 px
+  gingen 24 px an Polster. Meine Pruefung war blind dafuer, weil `.menge`
+  `nowrap` bei `overflow: visible` ist — dabei bleibt `scrollWidth`
+  gleich `clientWidth`. Richtig misst man die Textbreite per Range.
+  Jetzt 64/120 px mit reduziertem Polster: 46,4 px Innenbreite gegen
+  42,7 px Bedarf ("150 ml"), kein Ueberlauf in allen vier Rezepten.
+  Kennzahlenstreifen einzeilig (Raster statt umbrechendem Flex),
+  Ueberschrift auf schmalen Schirmen 26,4 statt 46,4 px, Ausstattung und
+  Merkmale unter das Grid. Grid beginnt bei 433 statt 673 px.
+  **T-0040 Stufenliste:** unter 600 px ersetzt eine Liste die Tabelle.
+  Zeit laeuft nach unten, die Klammer wird Einrueckung, Zutaten stehen in
+  ihrer Stufe. Drei Groessen neu gerechnet und DOM-frei in
+  `js/stufenliste.js`: Einrueckungstiefe, Ruhefenster (Maultaschen:
+  "laeuft waehrend »Teig ruhen lassen«") und Gabeln (Zusammenlauf mit
+  Tiefen und Zutatenzahl der Straenge).
+  Beide Ansichten stehen gleichzeitig im DOM, stil.css waehlt — kein
+  resize-Handler, kein matchMedia. Abhaken, Portionswechsel und
+  Kochmodus greifen ueber `data-zeile`/`data-schritt` auf beiden.
+  Nachgemessen: Portionswechsel trifft beide, Abhaken markiert TD und
+  SPAN, Kochmodus laeuft ueber drei Schritte synchron durch Tabelle und
+  Liste. Desktop bei 1280 px Pixel fuer Pixel unveraendert
+  (63/167/180/235/207/194), Liste dort versteckt.
+  **Der Preis, bewusst bezahlt:** das Zeitmass hat in der Liste keine
+  Entsprechung. Breite = Dauer wird zur Zahl, Gleichzeitigkeit zum Satz.
+  Es ist die einzige Aussage der Chu-Notation, die auf dem Telefon
+  verloren geht.
+  Anwendung von Hand: die Diffs hatten unterwegs die fuehrenden
+  Leerzeichen leerer Kontextzeilen verloren, `git apply` und `patch`
+  scheitern beide daran.
+  136/136 gruen, davon 10 neue aus dem Paket plus 2 eigene.
 - **T-0038/T-0039.1** (2026-08-08) Touch-Bedienung und die gekappten
   Zutatenspalten. Gemeldet: "Die UI sieht auf iOS nicht so gut aus, und
   Mouseover wird nicht in Fingertippen uebersetzt, da kommen keine

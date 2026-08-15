@@ -1,6 +1,6 @@
 # STATE.md — rezept-grid
 
-Stand: 2026-08-08
+Stand: 2026-08-15
 
 ## Ziel
 
@@ -24,7 +24,7 @@ konvertiert.
   diesem Plan (T-0030/T-0032) — eine Spalte ist ein Zeitpunkt, und
   parallele Straenge stehen nebeneinander, wenn ihre Zeilen sich nicht
   ueberschneiden.
-- Pruefung: `node tools/pruefe-grid.js` — **126/126 gruen**. Laeuft ueber
+- Pruefung: `node tools/pruefe-grid.js` — **136/136 gruen**. Laeuft ueber
   alle Rezepte, prueft Schema, Layout, Zeitplan und Manifest-Aktualitaet.
 - Nach jeder Rezeptaenderung noetig: `node tools/build-manifest.js`.
 - Vorschau: `python3 -m http.server 8412`, Konfiguration in
@@ -32,14 +32,16 @@ konvertiert.
 
 ## Next actions
 
-- **Design-Runde laeuft parallel bei Claude Design** (mobiles Layout,
-  T-0039 Punkt 2 und 3). Bis deren Ergebnis da ist: Kennzahlenstreifen
-  und Kopfhoehe NICHT selbst anfassen, sonst kollidieren die Staende.
+- **Branch `design-mobil` wartet auf Ansicht.** Die Design-Uebergabe ist
+  eingespielt und geprueft: Kopf und Zutatenspalten korrigiert,
+  Stufenliste unter 600 px. NICHT auf `main` — `main` veroeffentlicht
+  sofort. Erst ansehen (iPhone), dann mergen.
 - **T-0033** Spaetzle-Daten: "Wasser aufsetzen" haengt unnoetig an der
   Teigruhe. Braucht eine Entscheidung, es ist ein Familienrezept.
 
 ## Letzte Done
 
+- T-0039.2/.3 + T-0040 Design-Uebergabe, Stufenliste (2026-08-15, Branch)
 - T-0038/T-0039.1 Touch-Zustaende, Tap-Ziele, Zutatenspalten (2026-08-08)
 - T-0037 Ausstattung als eigener Absatz (2026-08-08)
 - T-0035 Vorname aus den Steuerdateien entfernt (2026-08-03)

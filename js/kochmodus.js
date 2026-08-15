@@ -140,10 +140,14 @@
       });
 
       stufen.forEach(function (s) {
-        var td = ziel.querySelector('[data-schritt="' + s.schritt.id + '"]');
-        if (!td) return;
-        td.classList.toggle("koch-aktiv", s.index === aktiv);
-        td.classList.toggle("koch-erledigt", s.index < aktiv);
+        // Seit T-0040 tragen Tabellenzelle UND Listeneintrag die Stufe.
+        Array.prototype.forEach.call(
+          ziel.querySelectorAll('[data-schritt="' + s.schritt.id + '"]'),
+          function (knoten) {
+            knoten.classList.toggle("koch-aktiv", s.index === aktiv);
+            knoten.classList.toggle("koch-erledigt", s.index < aktiv);
+          }
+        );
       });
     }
 

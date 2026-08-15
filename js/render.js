@@ -489,12 +489,17 @@
   // selbst bleibt stehen — die Zeilen und Bloecke aendern sich nicht.
   function mengenAktualisieren(ziel, modell, portionen) {
     var faktor = portionen / modell.rezept.portionen;
+    // querySelectorAll, nicht querySelector: seit T-0040 stehen Tabelle
+    // und Stufenliste gleichzeitig im DOM, und beide tragen die Menge.
     modell.zeilen.forEach(function (zeile) {
-      var td = ziel.querySelector('td.menge[data-zutat="' + zeile.zutat.id + '"]');
-      if (!td) return;
       var text = P.mengeFormatieren(zeile.zutat, faktor);
-      td.textContent = text;
-      td.classList.toggle("menge-leer", !text);
+      Array.prototype.forEach.call(
+        ziel.querySelectorAll('.menge[data-zutat="' + zeile.zutat.id + '"]'),
+        function (zelle) {
+          zelle.textContent = text;
+          zelle.classList.toggle("menge-leer", !text);
+        }
+      );
     });
   }
 
@@ -511,11 +516,23 @@
     tdZutat.tabIndex = 0;
     tdZutat.setAttribute("aria-pressed", "false");
 
+    // Abgehakt wird die ZEILE, nicht die Zelle: seit T-0040 zeigt dieselbe
+    // Zutat in zwei Ansichten, und ein Haken, der nur in einer sitzt, ist
+    // beim Drehen des Telefons wieder weg. Ohne data-zeile (Einkaufsliste)
+    // bleibt es beim Paar.
     function umschalten() {
       var an = !tdZutat.classList.contains("abgehakt");
-      tdZutat.classList.toggle("abgehakt", an);
-      tdMenge.classList.toggle("abgehakt", an);
-      tdZutat.setAttribute("aria-pressed", String(an));
+      var r = tdZutat.dataset ? tdZutat.dataset.zeile : undefined;
+      var wurzel = tdZutat.closest(".rezept") || document;
+      var zellen = (r === undefined)
+        ? [tdMenge, tdZutat]
+        : wurzel.querySelectorAll('[data-zeile="' + r + '"]');
+      Array.prototype.forEach.call(zellen, function (zelle) {
+        zelle.classList.toggle("abgehakt", an);
+        if (zelle.getAttribute("role") === "button") {
+          zelle.setAttribute("aria-pressed", String(an));
+        }
+      });
     }
 
     tdZutat.addEventListener("click", umschalten);
@@ -786,6 +803,14 @@
     // selbst. Kein ResizeObserver, kein resize-Handler.
     breitenAnwenden(tabelle, modell);
 
+    // Dieselbe Rechnung, andere Kodierung: die Liste kommt aus demselben
+    // Modell wie die Tabelle (T-0040). Welche von beiden sichtbar ist,
+    // entscheidet stil.css — deshalb stehen beide im DOM und es gibt
+    // keinen resize-Handler.
+    if (global.RezeptStufenliste && global.RezeptStufenliste.stufenlisteBauen) {
+      ziel.appendChild(global.RezeptStufenliste.stufenlisteBauen(modell, portionen));
+    }
+
     var anhang = anhangBauen(rezept);
     if (anhang) ziel.appendChild(anhang);
 
@@ -803,6 +828,7 @@
     uebersichtRendern: uebersichtRendern,
     einkaufRendern: einkaufRendern,
     tabelleBauen: tabelleBauen,
+    abhakenVerdrahten: abhakenVerdrahten,
     mengenAktualisieren: mengenAktualisieren
   };
 })(window);

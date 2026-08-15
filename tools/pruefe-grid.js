@@ -15,10 +15,12 @@ eval(fs.readFileSync(path.join(wurzel, "js/grid.js"), "utf8"));
 eval(fs.readFileSync(path.join(wurzel, "js/portionen.js"), "utf8"));
 eval(fs.readFileSync(path.join(wurzel, "js/einkauf.js"), "utf8"));
 eval(fs.readFileSync(path.join(wurzel, "js/kochmodus.js"), "utf8"));
+eval(fs.readFileSync(path.join(wurzel, "js/stufenliste.js"), "utf8"));
 var G = globalThis.RezeptGrid;
 var P = globalThis.RezeptPortionen;
 var K = globalThis.RezeptKochmodus;
 var Z = globalThis.RezeptZeitmass;
+var S = globalThis.RezeptStufenliste;
 
 var fehler = 0;
 function pruefe(name, ist, soll) {
@@ -661,6 +663,54 @@ pruefe("Stueckzahl ohne Einheit wird als Bruch gerundet",
   P.mengeFormatieren({menge: 3, einheit: null}, 1.5), "4½");
 pruefe("Prise bleibt bei skalieren:false fix",
   P.mengeFormatieren({menge: 1, einheit: "Prise", skalieren: false}, 3), "1 Prise");
+
+
+// --- Stufenliste (T-0040) ---------------------------------------------
+// Maultaschen sind der Pruefstein: zwei Straenge, ein Zusammenlauf, eine
+// Ruhezeit, die einen zweiten Strang traegt.
+var mtM = G.gridModellBauen(maultaschen);
+
+pruefe("Stufenliste: Tiefen bei zwei Straengen", S.tiefen(mtM), [0, 1, 0, 2, 3]);
+pruefe("Stufenliste: Fuellung liegt in der Teigruhe",
+  S.ruhefenster(mtM), [null, null, "Teig ruhen lassen", null, null]);
+
+// Genau eine Stufe hat mehr als eine Vorstufe, und sie bringt die
+// Zeilenbloecke beider Straenge mit.
+var gab = S.gabeln(mtM);
+pruefe("Stufenliste: nur der Zusammenlauf hat eine Gabel",
+  gab.map(function (x) { return !!x; }), [false, false, false, true, false]);
+pruefe("Stufenliste: Gabel kennt die Tiefen der Straenge", gab[3].tiefen, [1, 0]);
+pruefe("Stufenliste: Gabel zaehlt die eingehenden Zutaten",
+  gab[3].teile.map(function (t) { return t.zutaten; }), [4, 12]);
+
+// Ein lineares Rezept muss eine Treppe ohne Luecken ergeben, sonst stimmt
+// die Einrueckung nicht mit der Klammer der Tabelle ueberein.
+var ekM = G.gridModellBauen(eier);
+pruefe("Stufenliste: lineares Rezept steigt um eins je Stufe",
+  S.tiefen(ekM), [0, 1, 2, 3, 4, 5]);
+pruefe("Stufenliste: lineares Rezept hat keinen Zusammenlauf",
+  S.gabeln(ekM).filter(Boolean).length, 0);
+
+// Die Einrueckung darf den Schirm nicht verlassen.
+pruefe("Stufenliste: Einrueckung ist begrenzt",
+  [S.einzug(3), S.einzug(12) === S.einzug(S.MAX_EBENEN)], [3 * S.EINZUG_PX, true]);
+pruefe("Stufenliste: tiefste Einrueckung laesst 250 px Inhalt",
+  343 - S.einzug(S.MAX_EBENEN) - 13 >= 250, true);
+
+// Eigener Zusatz: die Liste muss JEDE Stufe zeigen, sonst faellt auf dem
+// Telefon stillschweigend ein Arbeitsschritt weg. Gegen alle Rezepte.
+var listeLuecken = [];
+["eierkuchen", "pfannkuchen", "spaetzle", "maultaschen"].forEach(function (id) {
+  var r = JSON.parse(fs.readFileSync(path.join(rezeptOrdner, id + ".json"), "utf8"));
+  var mm = G.gridModellBauen(r);
+  if (S.tiefen(mm).length !== mm.spalten.length) listeLuecken.push(id + ": Tiefen unvollstaendig");
+  if (S.ruhefenster(mm).length !== mm.spalten.length) listeLuecken.push(id + ": Ruhefenster unvollstaendig");
+  // Eine Stufe darf nie in ihrem eigenen Ruhefenster liegen.
+  S.ruhefenster(mm).forEach(function (traeger, i) {
+    if (traeger && traeger === mm.spalten[i].schritt.titel) listeLuecken.push(id + ": " + traeger + " traegt sich selbst");
+  });
+});
+pruefe("Stufenliste: jede Stufe kommt in allen Rezepten vor", listeLuecken, []);
 
 console.log(fehler === 0 ? "\nALLE PRUEFUNGEN GRUEN" : "\n" + fehler + " FEHLER");
 process.exit(fehler ? 1 : 0);
