@@ -30,6 +30,33 @@
 
 ## Backlog
 
+- **T-0038** Touch-Bedienung. Gemessen auf 375x812 an der Live-Seite:
+  1. **Kein Tipp-Feedback.** Das Stylesheet hat 0 `:active`-Regeln, kein
+     `-webkit-tap-highlight-color`. Beim Tippen passiert sichtbar nichts —
+     das ist die gemeldete "keine Highlights".
+  2. **Hover-Regeln ohne Absicherung** (12 Stueck, kein
+     `@media (hover: hover)`). Auf Touch bleibt der Hover-Zustand nach dem
+     Tippen kleben, bis woanders getippt wird.
+  3. **`title`-Tooltip als einziger Traeger.** `render.js` haengt die
+     vollstaendige Anweisung an `td.title` der Stufenzelle. Auf iOS gibt
+     es dafuer keine Geste. Der Text steht zwar unten unter "Schritte im
+     Wortlaut", aber nicht dort, wo man tippt.
+  4. **Tap-Ziele unter 44x44 pt** (Apple HIG): Portionsknoepfe 38x34,
+     "Kochmodus starten" 171x38, Zurueck-Link 91x20, Zutatenzeilen 37 hoch.
+- **T-0039** Mobiles Layout. Ein echter Rechenfehler und zwei
+  Platzprobleme:
+  1. **Zutatenspalten werden abgeschnitten.** `ZUTATEN = [0.06, 0.16]` in
+     `zeitmass.js` sind Anteile der Tabellenbreite, und die richtet sich
+     nach der Stufenzahl, nicht nach dem Geraet. Auf dem Desktop sind
+     6 % rund 72 px, auf 375 px sind es **30 px** — "400 g" braucht 48 und
+     wird sichtbar gekappt ("40("), die Zutatenspalte 79 statt 91.
+     **Dieselbe Fehlerklasse wie MIN_PX bei den Stufenspalten**: eine
+     Groesse als Anteil definiert, die eine absolute Untergrenze braucht.
+     Die Untergrenze existiert fuer die Stufen und fehlt fuer die Zutaten.
+  2. Der Kennzahlenstreifen bricht auf zwei Zeilen (2 + 1), das sieht aus
+     wie ein Fehler und nicht wie Absicht.
+  3. Der Kopf frisst den ganzen ersten Bildschirm; das Grid — der Kern
+     der App — beginnt erst nach rund 1250 px Scrollen.
 - **T-0036** Vorname in den Commit-Messages — 14 der 27 Commits, 20
   Fundstellen. Die Dateien sind seit T-0035 sauber, die Historie nicht.
   **Zeitkritisch:** solange nichts gepusht ist, ist ein Umschreiben per
