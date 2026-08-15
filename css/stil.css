@@ -943,9 +943,71 @@ body.kochmodus .zutat.koch-neu { border-bottom-color: var(--akzent); }
    `!important` ist kein Notnagel, sondern der einzige Weg: die Breite
    steht als Inline-Stil am <col> und schlaegt sonst jede Regel. */
 @media (max-width: 939px) {
-  .grid > colgroup > col:nth-child(1) { width: 56px !important; }
-  .grid > colgroup > col:nth-child(2) { width: 104px !important; }
+  .grid > colgroup > col:nth-child(1) { width: 64px !important; }
+  .grid > colgroup > col:nth-child(2) { width: 120px !important; }
   /* Der sticky-Versatz der Zutatenspalte muss derselben Grenze folgen,
      sonst schiebt sie sich beim Querscrollen ueber die Menge. */
-  .grid { --zutat-links: 56px; }
+  .grid { --zutat-links: 64px; }
+
+  /* Die Breite allein reichte nicht: von 56 px gingen 24 px an Polster,
+     fuer den Text blieben 32 px. "150 ml" braucht 42,7 px und lief aus
+     der Zelle heraus — sichtbar, aber nicht als Ueberlauf messbar, weil
+     die Zelle `nowrap` bei `overflow: visible` ist. Erst 64 px minus
+     17,6 px Polster decken den laengsten Fall.
+     Das Polster ist hier kein Schmuck, sondern der Abstand zur Achse —
+     .55rem behaelt ihn zu beiden Seiten. */
+  .grid td.menge { padding-left: .55rem; padding-right: .55rem; }
+  .grid td.zutat { padding-right: .6rem; }
+}
+
+/* --- Kopf auf schmalen Schirmen (T-0039.2 und .3) -------------------- */
+
+/* Ausstattung und Merkmale unter dem Grid, siehe anhangBauen in
+   render.js. Bewusst ohne Medienabfrage: die Reihenfolge ist auf jedem
+   Schirm dieselbe Aussage — erst die Sache, dann das Nachschlagen. */
+.rezept-anhang {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .6rem 1.4rem;
+  margin: -1.2rem 0 2.2rem;
+}
+
+.rezept-anhang .gefaess { margin: 0; }
+
+/* Der Kennzahlenstreifen brach auf 2 + 1 und sah aus wie ein Fehler.
+   Er ist auch einer, aber ein arithmetischer: drei Kacheln mit
+   min-width 6,5 rem plus zwei Luecken brauchen mehr, als auf 375 px zur
+   Verfuegung steht (gemessen 366 gegen 327 px).
+
+   Die Untergrenze zu senken loest es nicht — dann rutscht
+   "1 Std 15 Min" aus seiner Kachel. Unter der Schwelle bekommt der
+   Streifen deshalb ein Raster, in dem die dritte Kachel den Rest nimmt.
+   Dass die Kacheln damit unterschiedlich breit sind, ist kein Mangel:
+   ihre Inhalte sind unterschiedlich lang, und lesbar soll die Zahl sein,
+   nicht die Kachel gleich. */
+@media (max-width: 480px) {
+  .kennzahlen {
+    display: grid;
+    grid-template-columns: auto auto 1fr;
+    align-items: stretch;
+  }
+
+  .kennzahl { min-width: 0; padding: .5rem .7rem; }
+  .kennzahl-wert { font-size: 1.1rem; }
+  .kennzahl-warnung { grid-column: 1 / -1; }
+
+  /* Der Kopf fuellte den ganzen ersten Bildschirm: das Grid begann bei
+     673 px, gemessen auf Maultaschen bei 375 x 812. Die Ueberschrift ist
+     dabei der teuerste Posten ohne Gegenwert — sie ist die einzige
+     Ueberschrift der Seite und braucht keinen Groessenkontrast, um als
+     solche gelesen zu werden. */
+  .rezept-kopf h1 { font-size: 1.65rem; }
+  .untertitel { margin-bottom: 1rem; font-size: .95rem; }
+  .rezept-kopf { margin-bottom: 1.2rem; }
+
+  /* Mit den Merkmalen im Anhang steht der Kochmodus allein in seiner
+     Zeile. Auf ganzer Breite ist er mit dem Daumen zu treffen und kostet
+     keine Zeile mehr als vorher. */
+  .kopf-leiste .koch-start { flex: 1 1 100%; }
 }

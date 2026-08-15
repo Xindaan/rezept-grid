@@ -375,21 +375,9 @@
     kopf.appendChild(el("h1", null, rezept.titel));
     if (rezept.untertitel) kopf.appendChild(el("p", "untertitel", rezept.untertitel));
 
-    // Eigener Absatz, nicht angehaengt an den Untertitel. Vorher war das
-    // ein <span> im Untertitel, getrennt nur durch ein CSS-::before.
-    // Generierter Inhalt wandert beim Markieren nicht in die
-    // Zwischenablage und wird nicht vorgelesen — kopiert bekam man
-    // "...mit EierkuchenRuehrschuessel, weiter Topf". Ausstattung ist
-    // ohnehin eine andere Sorte Information als die Einordnung.
-    if (rezept.gefaess) {
-      var geraet = el("p", "gefaess");
-      geraet.appendChild(el("span", "gefaess-label", "Ausstattung"));
-      // Das Leerzeichen gehoert in den Text, nicht in die CSS-Marge —
-      // sonst klebt beim Kopieren "AusstattungRuehrschuessel", also
-      // genau derselbe Fehler eine Zelle weiter rechts.
-      geraet.appendChild(document.createTextNode(" " + rezept.gefaess));
-      kopf.appendChild(geraet);
-    }
+    // Ausstattung und Merkmale stehen seit T-0039.3 unter dem Grid,
+    // siehe anhangBauen. Der Kopf traegt nur noch, was man braucht, um
+    // das Grid zu lesen: Titel, Einordnung, Zeiten, Portionen, Start.
 
     kopf.appendChild(kennzahlenBauen(rezept));
 
@@ -400,12 +388,6 @@
 
     var leiste = el("div", "kopf-leiste");
 
-    if (rezept.tags && rezept.tags.length) {
-      var tags = el("ul", "tags");
-      rezept.tags.forEach(function (t) { tags.appendChild(el("li", null, t)); });
-      leiste.appendChild(tags);
-    }
-
     if (beiKochstart) {
       var kochen = el("button", "koch-start", "Kochmodus starten");
       kochen.type = "button";
@@ -415,6 +397,38 @@
 
     kopf.appendChild(leiste);
     return kopf;
+  }
+
+  // Ausstattung und Merkmale (T-0039.3). Beides sind Angaben, die man
+  // einmal vor dem Kochen liest — sie standen zwischen dem Titel und der
+  // Sache selbst und haben auf 375 px den ersten Bildschirm mit gefuellt.
+  // Unter dem Grid stehen sie dort, wo man sie sucht: beim Nachschlagen,
+  // nicht beim Kochen.
+  //
+  // Das Leerzeichen gehoert weiter in den Text und nicht in die
+  // CSS-Marge, sonst klebt beim Kopieren "AusstattungRuehrschuessel"
+  // (T-0037).
+  function anhangBauen(rezept) {
+    var hatGefaess = !!rezept.gefaess;
+    var hatTags = !!(rezept.tags && rezept.tags.length);
+    if (!hatGefaess && !hatTags) return null;
+
+    var box = el("section", "rezept-anhang");
+
+    if (hatGefaess) {
+      var geraet = el("p", "gefaess");
+      geraet.appendChild(el("span", "gefaess-label", "Ausstattung"));
+      geraet.appendChild(document.createTextNode(" " + rezept.gefaess));
+      box.appendChild(geraet);
+    }
+
+    if (hatTags) {
+      var tags = el("ul", "tags");
+      rezept.tags.forEach(function (t) { tags.appendChild(el("li", null, t)); });
+      box.appendChild(tags);
+    }
+
+    return box;
   }
 
   function schritteBauen(rezept) {
@@ -771,6 +785,9 @@
     // Mindestbreite, der Browser rechnet den Rest bei jeder Fenstergroesse
     // selbst. Kein ResizeObserver, kein resize-Handler.
     breitenAnwenden(tabelle, modell);
+
+    var anhang = anhangBauen(rezept);
+    if (anhang) ziel.appendChild(anhang);
 
     ziel.appendChild(schritteBauen(rezept));
     var hinweise = hinweiseBauen(rezept);
