@@ -30,6 +30,26 @@
 
 ## Backlog
 
+- **T-0042** Zusammengesetzte Zeilen kleben beim Kopieren. Gefunden
+  beim Merge am 15.08., als das Omelett als erstes Rezept eine `quelle`
+  bekam: "einfachkochen.deMengen und Zeiten uebernommen". Das ist
+  behoben. Der Grep danach zeigte aber, dass **jede** Zutatenzeile der
+  Stufenliste dasselbe tut: "250 gWeizenmehlType 405", in allen fuenf
+  Rezepten. Auf dem Schirm steht alles getrennt, in der Zwischenablage
+  und fuer eine Vorlesehilfe nicht.
+  Dieselbe Klasse wie T-0037 — dort habe ich die Ausstattung repariert
+  und nicht geprueft, wer den Fehler sonst noch hat. Das ist jetzt der
+  dritte Fund derselben Sorte.
+  **Nicht mit Leerzeichen zu erschlagen**, deshalb offen statt schnell
+  gemacht: `.stufe-zutat` ist ein `display: grid`, ein loser Textknoten
+  darin wuerde zur eigenen Rasterzelle und das Layout zerlegen. Zwischen
+  `.zutat-name` (inline) und `.zutat-notiz` (block) waere ein Leerzeichen
+  wirkungslos, zwischen Name und `.marke-fix` (inline-block) dagegen
+  sichtbar. Der saubere Weg ist vermutlich ein `aria-label` je Zeile oder
+  ein visuell verstecktes Trennzeichen; das gehoert gemessen, nicht
+  geraten. Betrifft auch die Tabelle: `td.zutat` enthaelt dieselbe
+  Verschachtelung.
+
 - **T-0036** Vorname in den Commit-Messages — 14 der 27 Commits, 20
   Fundstellen. Die Dateien sind seit T-0035 sauber, die Historie nicht.
   **Zeitkritisch:** solange nichts gepusht ist, ist ein Umschreiben per

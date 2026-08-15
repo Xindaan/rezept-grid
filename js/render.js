@@ -471,7 +471,15 @@
     } else {
       p.appendChild(el("span", null, bezeichnung));
     }
-    if (q.hinweis) p.appendChild(el("span", "quelle-hinweis", q.hinweis));
+    // Trennzeichen als echter Text, nicht als CSS-Marge oder ::before —
+    // sonst klebt beim Kopieren "einfachkochen.deMengen und Zeiten".
+    // Derselbe Fehler wie bei der Ausstattung (T-0037); dort habe ich ihn
+    // behoben und nicht geprueft, wer ihn sonst noch hat. Sichtbar wurde
+    // er erst, als mit dem Omelett das erste Rezept eine `quelle` bekam.
+    if (q.hinweis) {
+      p.appendChild(document.createTextNode(" — "));
+      p.appendChild(el("span", "quelle-hinweis", q.hinweis));
+    }
     return p;
   }
 
