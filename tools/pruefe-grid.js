@@ -256,13 +256,22 @@ function zeitmassPruefen(name, dauern) {
   var soll = 1 - Z.ZUTATEN[0] - Z.ZUTATEN[1];
   if (Math.abs(summe - soll) > 0.001) maengel.push("Summe " + summe.toFixed(4) + " statt " + soll);
 
+  // T-0039: auf schmalen Schirmen pinnt stil.css die Zutatenspalten auf
+  // feste Pixel, und der Browser holt sich den Platz bei den
+  // Prozentspalten. Die Mindestbreite muss das aushalten — sonst
+  // rutschen die Stufen unter MIN_PX und die Titel werden unlesbar.
+  var nachPinnen = (breite - Z.ZUTATEN_MIN_PX[0] - Z.ZUTATEN_MIN_PX[1]) / n;
+  if (nachPinnen < Z.MIN_PX - 0.5) {
+    maengel.push("nach dem Pinnen der Zutatenspalten nur " + nachPinnen.toFixed(1)
+                 + " px je Stufe, noetig " + Z.MIN_PX);
+  }
+
   var schmalste = Math.min.apply(null, px);
   if (schmalste < Z.MIN_PX - 0.5) maengel.push("schmalste Spalte " + schmalste.toFixed(1) + " px < " + Z.MIN_PX);
 
   // Der wirksame Deckel ist nie schaerfer als der Gleichanteil: bei drei
   // Spalten sind 26 % je Spalte unvermeidlich, bei einer sind es 78 %.
-  var stufenAnteil = 1 - Z.ZUTATEN[0] - Z.ZUTATEN[1];
-  var wirksamerDeckel = Math.max(Z.DECKEL, stufenAnteil / n);
+  var wirksamerDeckel = Math.max(Z.DECKEL, soll / n);
   var breiteste = Math.max.apply(null, b.stufen);
   if (breiteste > wirksamerDeckel + 0.001) {
     maengel.push("breiteste Spalte " + (breiteste * 100).toFixed(1) + " % > Deckel " + (wirksamerDeckel * 100).toFixed(1) + " %");
@@ -371,6 +380,37 @@ pruefe("Zeitmass: Stufe ohne Dauer ueberholt keine mit Dauer",
 // Mindestbreite waechst mit der Stufenzahl — sonst scrollt nichts.
 pruefe("Zeitmass: Mindestbreite steigt mit der Stufenzahl",
   [Z.noetigeBreite(3) < Z.noetigeBreite(6), Z.noetigeBreite(6) < Z.noetigeBreite(12)], [true, true]);
+
+// --- Untergrenze der Zutatenspalten (T-0039) --------------------------
+// Der Fehler war, dass es sie nur fuer die Stufenspalten gab. Anteile
+// sind geraeteblind: 6 % von 493 px sind 30, "400 g" braucht 48.
+pruefe("Zutaten: Untergrenze plus MIN_PX je Stufe passen in die Tabelle",
+  [2, 3, 4, 6, 12].map(function (n) {
+    return Z.noetigeBreite(n) >= n * Z.MIN_PX + Z.ZUTATEN_MIN_PX[0] + Z.ZUTATEN_MIN_PX[1];
+  }), [true, true, true, true, true]);
+// Und die Untergrenze darf das breite Bild nicht anfassen: ab vier
+// Stufen — alles, was der Bestand hat — bleibt die Mindestbreite exakt
+// die von vor T-0039. Sonst verschieben sich die Stufenbreiten, und
+// genau das soll die CSS-Loesung vermeiden.
+pruefe("Zutaten: Mindestbreite ab vier Stufen unveraendert",
+  [4, 5, 6, 12].map(function (n) {
+    var alt = Math.ceil((n * Z.MIN_PX) / ((1 - Z.ZUTATEN[0] - Z.ZUTATEN[1]) * 0.75));
+    return Z.noetigeBreite(n) === alt;
+  }), [true, true, true, true]);
+// Die Untergrenze darf die Tabelle nicht aufblaehen: ueber den Anteil
+// gefordert (56 px muessen 6 % sein) kaeme sie schon bei drei Stufen auf
+// 934 px statt 448 — dreimal so viel Querscrollen wie noetig.
+pruefe("Zutaten: Untergrenze blaeht die Tabelle nicht auf",
+  Z.noetigeBreite(3) < Z.ZUTATEN_MIN_PX[0] / Z.ZUTATEN[0], true);
+// Auf breiten Schirmen zaehlt wieder der Anteil, nicht die Pixelgrenze.
+// Genau diese Umschaltung macht das CSS-max() in render.js.
+pruefe("Zutaten: Anteil schlaegt die Pixelgrenze, sobald Platz da ist",
+  [1400 * Z.ZUTATEN[0] > Z.ZUTATEN_MIN_PX[0],
+   1400 * Z.ZUTATEN[1] > Z.ZUTATEN_MIN_PX[1]], [true, true]);
+// Und die laengste Menge im Bestand muss hineinpassen. Gemessen wurden
+// 48 px fuer "400 g" bei 13 px Schrift; die Grenze hat Luft fuer Polster.
+pruefe("Zutaten: Untergrenze deckt die gemessene Textbreite",
+  [Z.ZUTATEN_MIN_PX[0] >= 48, Z.ZUTATEN_MIN_PX[1] >= 91], [true, true]);
 
 // --- 2f. Einkaufsliste (T-0026) ---------------------------------------
 var EK = globalThis.RezeptEinkauf;

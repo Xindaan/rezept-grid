@@ -193,8 +193,17 @@
     // Linker Rand der Zutatenspalte fuer position: sticky (T-0023).
     // Waagerecht gescrollt wird nur, wenn die Tabelle auf ihrer
     // Mindestbreite steht — genau dort stimmt dieser Wert exakt.
-    tabelle.style.setProperty("--zutat-links", Math.round(mass.zutaten[0] * noetig) + "px");
+    // Die tatsaechliche Breite, nicht der nominale Anteil: auf schmalen
+    // Geraeten steht die Mengenspalte auf ihrer Pixelgrenze, und ein
+    // Versatz aus dem Anteil wuerde die Zutatenspalte darueberschieben.
+    tabelle.style.setProperty("--zutat-links", Math.round(mass.zutatenPx[0]) + "px");
 
+    // Nominale Anteile wie bisher. Die Pixeluntergrenze der beiden
+    // Zutatenspalten setzt stil.css nur fuer schmale Schirme (T-0039) —
+    // `max(6%, 56px)` waere der naheliegende Weg und funktioniert NICHT:
+    // im Browser gemessen verwirft eine <col> jede min()/max()-Breite und
+    // faellt auf gleichmaessige Verteilung zurueck (beide Spalten 80 px
+    // statt 56 und 104). Reine Prozent- und reine Pixelwerte gelten.
     var spalten = tabelle.querySelectorAll("colgroup col");
     spalten[0].style.width = (mass.zutaten[0] * 100).toFixed(3) + "%";
     spalten[1].style.width = (mass.zutaten[1] * 100).toFixed(3) + "%";
@@ -219,6 +228,26 @@
     });
   }
 
+  // Tippen oder Enter auf einer Stufenzelle rollt zum Wortlaut und hebt
+  // ihn kurz hervor. Bewusst kein neues Fenster und keine Sprechblase:
+  // der Text steht bereits auf der Seite, es fehlte nur der Weg dorthin.
+  function anweisungSprungVerdrahten(td, schrittId) {
+    function springen() {
+      var ziel = document.getElementById("anweisung-" + schrittId);
+      if (!ziel) return;
+      ziel.scrollIntoView({ behavior: "smooth", block: "center" });
+      ziel.classList.remove("ist-angesprungen");
+      // Reflow erzwingen, sonst startet die Animation beim zweiten Tippen
+      // auf dieselbe Stufe nicht neu.
+      void ziel.offsetWidth;
+      ziel.classList.add("ist-angesprungen");
+    }
+    td.addEventListener("click", springen);
+    td.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); springen(); }
+    });
+  }
+
   function schrittZelleBauen(spalte, parallel) {
     var schritt = spalte.schritt;
     var klassen = "schritt";
@@ -228,8 +257,19 @@
 
     var td = el("td", klassen);
     td.rowSpan = spalte.hoehe;
+    // title bleibt fuer die Maus — aber es darf nicht der einzige Weg
+    // zur Anweisung sein. Auf einem Telefon gibt es keine Geste dafuer,
+    // und ein Screenreader liest es je nach Einstellung nicht vor. Die
+    // Zelle springt deshalb zum Wortlaut weiter unten (T-0038).
     td.title = schritt.anweisung || "";
     td.dataset.schritt = schritt.id;
+    if (schritt.anweisung) {
+      td.tabIndex = 0;
+      td.setAttribute("role", "button");
+      td.setAttribute("aria-label", schritt.titel + " — Anweisung anzeigen");
+      td.classList.add("schritt-tippbar");
+      anweisungSprungVerdrahten(td, schritt.id);
+    }
     td.appendChild(el("span", "schritt-titel", schritt.titel));
 
     var dauer = G.dauerFormatieren(schritt.dauer_s);
@@ -383,6 +423,8 @@
     var liste = el("ol");
     rezept.schritte.forEach(function (s) {
       var li = el("li");
+      // Sprungziel fuer die Stufenzelle im Grid (T-0038).
+      li.id = "anweisung-" + s.id;
       li.appendChild(el("strong", null, s.titel));
       li.appendChild(el("span", "anweisung-text", s.anweisung));
       liste.appendChild(li);

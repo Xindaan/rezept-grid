@@ -203,7 +203,7 @@ body {
   cursor: pointer;
 }
 
-.portionen-knopf:hover { color: var(--tinte); }
+@media (hover: hover) { .portionen-knopf:hover { color: var(--tinte); } }
 
 .portionen-knopf.ist-aktiv {
   background: var(--karte);
@@ -253,7 +253,7 @@ body {
   cursor: pointer;
 }
 
-.koch-start:hover { filter: brightness(1.08); }
+@media (hover: hover) { .koch-start:hover { filter: brightness(1.08); } }
 .koch-start:focus-visible { outline: 2px solid var(--akzent); outline-offset: 2px; }
 
 /* Weiche Pillen: leise genug, um nicht mit der Haupthandlung zu
@@ -560,9 +560,11 @@ body {
   text-decoration: none;
 }
 
-.rezept-karte:hover {
-  border-color: var(--gitter);
-  background: var(--flaeche2);
+@media (hover: hover) {
+  .rezept-karte:hover {
+    border-color: var(--gitter);
+    background: var(--flaeche2);
+  }
 }
 
 .rezept-karte:focus-visible { outline: 2px solid var(--akzent); outline-offset: 2px; }
@@ -602,7 +604,7 @@ body {
 }
 
 .zurueck-link::before { content: "← "; }
-.zurueck-link:hover { color: var(--tinte); }
+@media (hover: hover) { .zurueck-link:hover { color: var(--tinte); } }
 
 body.kochmodus .zurueck-link { visibility: hidden; }
 
@@ -656,7 +658,7 @@ body.kochmodus .zurueck-link { visibility: hidden; }
   border-bottom: 1px solid var(--achse);
 }
 
-.einkauf-quelle-name:hover { border-bottom-color: var(--akzent); color: var(--akzent); }
+@media (hover: hover) { .einkauf-quelle-name:hover { border-bottom-color: var(--akzent); color: var(--akzent); } }
 
 .einkauf-liste {
   margin: 0 0 1.2rem;
@@ -679,7 +681,7 @@ body.kochmodus .zurueck-link { visibility: hidden; }
 }
 
 .einkauf-posten:last-child { border-bottom: none; }
-.einkauf-posten:hover { background: var(--flaeche2); }
+@media (hover: hover) { .einkauf-posten:hover { background: var(--flaeche2); } }
 .einkauf-posten:focus-visible { outline: 2px solid var(--akzent); outline-offset: -2px; }
 
 .posten-menge {
@@ -834,7 +836,7 @@ body.kochmodus .zutat.koch-neu { border-bottom-color: var(--akzent); }
   cursor: pointer;
 }
 
-.koch-knopf:hover:not(:disabled) { border-color: var(--gitter); }
+@media (hover: hover) { .koch-knopf:hover:not(:disabled) { border-color: var(--gitter); } }
 .koch-knopf:focus-visible { outline: 2px solid var(--akzent); outline-offset: 1px; }
 .koch-knopf:disabled { opacity: .35; cursor: default; }
 
@@ -859,4 +861,91 @@ body.kochmodus .zutat.koch-neu { border-bottom-color: var(--akzent); }
   border-top: 1px solid var(--linie);
   color: var(--gedaempft);
   font-size: .8rem;
+}
+
+/* --- Beruehrung ------------------------------------------------------ */
+
+/* Bis T-0038 hatte das Stylesheet keine einzige :active-Regel. Auf einem
+   Zeigergeraet fiel das nicht auf, weil :hover die Rueckmeldung gab —
+   auf dem Telefon passierte beim Tippen sichtbar nichts.
+   Die :hover-Regeln stehen seither hinter @media (hover: hover), sonst
+   bleibt ihr Zustand nach dem Tippen kleben, bis woanders getippt wird. */
+
+/* Erst die Standard-Hervorhebung abschalten, dann eine eigene setzen —
+   die von iOS ist ein blaues Rechteck ueber der Zellenform und passt bei
+   gerundeten Flaechen nie. */
+.portionen-knopf,
+.koch-start,
+.koch-knopf,
+.rezept-karte,
+.zurueck-link,
+.einkauf-posten,
+.schritt-tippbar,
+.zutat[role="button"],
+.menge[role="button"] {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.portionen-knopf:active { background: var(--flaeche2); color: var(--tinte); }
+.koch-start:active { filter: brightness(.92); }
+.koch-knopf:active:not(:disabled) { background: var(--flaeche2); }
+.rezept-karte:active { border-color: var(--gitter); background: var(--flaeche2); }
+.zurueck-link:active { color: var(--tinte); }
+.einkauf-posten:active { background: var(--flaeche2); }
+.schritt-tippbar:active { box-shadow: inset 0 0 0 2px var(--akzent); }
+.zutat[role="button"]:active { background: var(--flaeche2); }
+
+/* Die Stufenzelle fuehrt zum Wortlaut. Kein eigener Rahmen und keine
+   Farbe: das Grid lebt von seinen Linien, ein weiteres Signal darin
+   waere Laerm. Der Zeiger und die Vorlesehilfe sagen es. */
+.schritt-tippbar { cursor: pointer; }
+.schritt-tippbar:focus-visible { outline: 2px solid var(--akzent); outline-offset: -3px; }
+
+/* Sprungziel im Wortlaut kurz hervorheben, damit klar ist, wo man
+   gelandet ist. Zweiter Traeger neben der Farbe ist die Bewegung. */
+.anweisungen li.ist-angesprungen {
+  animation: angesprungen 1.6s ease-out;
+  border-radius: var(--radius);
+}
+
+@keyframes angesprungen {
+  0%   { background: var(--akzent-flaeche); }
+  100% { background: transparent; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .anweisungen li.ist-angesprungen { animation-duration: .01s; }
+}
+
+/* Auf Fingergeraeten die Ziele auf Apples 44 pt bringen. Nur dort — auf
+   dem Desktop bleibt die Dichte, die die Design-Uebergabe gesetzt hat. */
+@media (pointer: coarse) {
+  .portionen-knopf { min-width: 44px; min-height: 44px; }
+  .koch-start { min-height: 44px; padding-inline: 1.4rem; }
+  .koch-knopf { min-height: 44px; }
+  .zurueck-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+  .grid td.menge,
+  .grid td.zutat { padding-block: .7rem; }
+  .einkauf-posten { min-height: 44px; }
+}
+
+/* Untergrenze der Zutatenspalten auf schmalen Schirmen (T-0039).
+   6 % und 16 % sind geraeteblind: auf 940 px ergeben sie 56 und 150 px,
+   auf einem 544 px breiten Grid nur 33 und 87 — "400 g" braucht 48 und
+   wurde gekappt. Unterhalb der Schwelle stehen deshalb feste Pixel.
+   Warum hier und nicht in JavaScript: so bleibt das Desktop-Bild Pixel
+   fuer Pixel wie vorher. Der Browser skaliert bei Platzmangel nur die
+   Prozentspalten und laesst feste Breiten in Ruhe — nachgemessen.
+   `!important` ist kein Notnagel, sondern der einzige Weg: die Breite
+   steht als Inline-Stil am <col> und schlaegt sonst jede Regel. */
+@media (max-width: 939px) {
+  .grid > colgroup > col:nth-child(1) { width: 56px !important; }
+  .grid > colgroup > col:nth-child(2) { width: 104px !important; }
+  /* Der sticky-Versatz der Zutatenspalte muss derselben Grenze folgen,
+     sonst schiebt sie sich beim Querscrollen ueber die Menge. */
+  .grid { --zutat-links: 56px; }
 }

@@ -1,6 +1,6 @@
 # STATE.md — rezept-grid
 
-Stand: 2026-08-03
+Stand: 2026-08-08
 
 ## Ziel
 
@@ -24,7 +24,7 @@ konvertiert.
   diesem Plan (T-0030/T-0032) — eine Spalte ist ein Zeitpunkt, und
   parallele Straenge stehen nebeneinander, wenn ihre Zeilen sich nicht
   ueberschneiden.
-- Pruefung: `node tools/pruefe-grid.js` — **121/121 gruen**. Laeuft ueber
+- Pruefung: `node tools/pruefe-grid.js` — **126/126 gruen**. Laeuft ueber
   alle Rezepte, prueft Schema, Layout, Zeitplan und Manifest-Aktualitaet.
 - Nach jeder Rezeptaenderung noetig: `node tools/build-manifest.js`.
 - Vorschau: `python3 -m http.server 8412`, Konfiguration in
@@ -32,15 +32,16 @@ konvertiert.
 
 ## Next actions
 
-- **T-0009 Verteilung** — entschieden: EIN oeffentliches Repo mit GitHub
-  Pages, kein Ableger (der haette den Personenbezug nicht zurueckgehalten,
-  er steckt in den Rezept-Hinweisen selbst). Vorbereitet sind `.nojekyll`
-  und der README-Abschnitt "Veroeffentlichen"; die Steuerdateien sind
-  seit T-0035 namensfrei. Offen, und nicht von mir zu machen: Repo
-  oeffentlich anlegen, pushen, Pages auf `main` / `/ (root)` stellen.
+- **Design-Runde laeuft parallel bei Claude Design** (mobiles Layout,
+  T-0039 Punkt 2 und 3). Bis deren Ergebnis da ist: Kennzahlenstreifen
+  und Kopfhoehe NICHT selbst anfassen, sonst kollidieren die Staende.
+- **T-0033** Spaetzle-Daten: "Wasser aufsetzen" haengt unnoetig an der
+  Teigruhe. Braucht eine Entscheidung, es ist ein Familienrezept.
 
 ## Letzte Done
 
+- T-0038/T-0039.1 Touch-Zustaende, Tap-Ziele, Zutatenspalten (2026-08-08)
+- T-0037 Ausstattung als eigener Absatz (2026-08-08)
 - T-0035 Vorname aus den Steuerdateien entfernt (2026-08-03)
 - T-0034 Rezepttexte entpersonalisiert, Tonregel in der Anleitung (2026-08-03)
 - T-0032 Zeitplan fuer eine Person treibt Grid und Achse (2026-08-03)

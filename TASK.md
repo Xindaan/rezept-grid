@@ -30,33 +30,14 @@
 
 ## Backlog
 
-- **T-0038** Touch-Bedienung. Gemessen auf 375x812 an der Live-Seite:
-  1. **Kein Tipp-Feedback.** Das Stylesheet hat 0 `:active`-Regeln, kein
-     `-webkit-tap-highlight-color`. Beim Tippen passiert sichtbar nichts —
-     das ist die gemeldete "keine Highlights".
-  2. **Hover-Regeln ohne Absicherung** (12 Stueck, kein
-     `@media (hover: hover)`). Auf Touch bleibt der Hover-Zustand nach dem
-     Tippen kleben, bis woanders getippt wird.
-  3. **`title`-Tooltip als einziger Traeger.** `render.js` haengt die
-     vollstaendige Anweisung an `td.title` der Stufenzelle. Auf iOS gibt
-     es dafuer keine Geste. Der Text steht zwar unten unter "Schritte im
-     Wortlaut", aber nicht dort, wo man tippt.
-  4. **Tap-Ziele unter 44x44 pt** (Apple HIG): Portionsknoepfe 38x34,
-     "Kochmodus starten" 171x38, Zurueck-Link 91x20, Zutatenzeilen 37 hoch.
-- **T-0039** Mobiles Layout. Ein echter Rechenfehler und zwei
-  Platzprobleme:
-  1. **Zutatenspalten werden abgeschnitten.** `ZUTATEN = [0.06, 0.16]` in
-     `zeitmass.js` sind Anteile der Tabellenbreite, und die richtet sich
-     nach der Stufenzahl, nicht nach dem Geraet. Auf dem Desktop sind
-     6 % rund 72 px, auf 375 px sind es **30 px** — "400 g" braucht 48 und
-     wird sichtbar gekappt ("40("), die Zutatenspalte 79 statt 91.
-     **Dieselbe Fehlerklasse wie MIN_PX bei den Stufenspalten**: eine
-     Groesse als Anteil definiert, die eine absolute Untergrenze braucht.
-     Die Untergrenze existiert fuer die Stufen und fehlt fuer die Zutaten.
-  2. Der Kennzahlenstreifen bricht auf zwei Zeilen (2 + 1), das sieht aus
-     wie ein Fehler und nicht wie Absicht.
-  3. Der Kopf frisst den ganzen ersten Bildschirm; das Grid — der Kern
-     der App — beginnt erst nach rund 1250 px Scrollen.
+- **T-0039** Mobiles Layout — **Punkt 1 erledigt** (siehe Done), die
+  Punkte 2 und 3 bleiben offen und gehoeren zur Design-Runde, die
+  parallel bei Claude Design laeuft. Nicht selbst anfassen, sonst
+  kollidieren die beiden Staende:
+  2. Der Kennzahlenstreifen bricht auf 375 px auf zwei Zeilen (2 + 1) und
+     sieht aus wie ein Fehler statt wie Absicht.
+  3. Der Kopf frisst den ganzen ersten Bildschirm; das Grid beginnt erst
+     nach rund 1250 px Scrollen.
 - **T-0036** Vorname in den Commit-Messages — 14 der 27 Commits, 20
   Fundstellen. Die Dateien sind seit T-0035 sauber, die Historie nicht.
   **Zeitkritisch:** solange nichts gepusht ist, ist ein Umschreiben per
@@ -84,6 +65,47 @@
 
 ## Done
 
+- **T-0038/T-0039.1** (2026-08-08) Touch-Bedienung und die gekappten
+  Zutatenspalten. Gemeldet: "Die UI sieht auf iOS nicht so gut aus, und
+  Mouseover wird nicht in Fingertippen uebersetzt, da kommen keine
+  Highlights."
+  **Der Highlight-Befund hatte eine andere Ursache als vermutet.** Nicht
+  iOS uebersetzt nicht — das Stylesheet hatte **null** `:active`-Regeln
+  und kein `-webkit-tap-highlight-color`. Beim Tippen passierte nichts,
+  weil nichts definiert war. Dazu 12 `:hover`-Regeln ohne
+  `@media (hover: hover)`; deren Zustand bleibt auf Touch nach dem
+  Tippen kleben. Beides behoben, Hover-Regeln stehen jetzt hinter der
+  Faehigkeitsabfrage.
+  **Der Tooltip war der einzige Weg zur Anweisung.** `td.title` hat auf
+  einem Telefon keine Geste. Die Stufenzelle ist jetzt antippbar
+  (`role="button"`, `tabindex`, Enter/Leertaste) und rollt zum Wortlaut
+  weiter unten, der kurz hervorgehoben wird. Bewusst kein neues Fenster
+  und keine Sprechblase: der Text stand schon auf der Seite, es fehlte
+  nur der Weg dorthin.
+  Tap-Ziele auf 44x44 pt, aber **nur unter `@media (pointer: coarse)`** —
+  die Desktop-Dichte aus der Design-Uebergabe bleibt unangetastet.
+  **Der Rechenfehler:** `ZUTATEN = [0.06, 0.16]` sind Anteile der
+  Tabellenbreite, und die richtet sich nach der Stufenzahl, nicht nach
+  dem Geraet. Auf 375 px waren das 30 px fuer eine Menge, die 48 braucht
+  — "400 g" wurde zu "40(". Dieselbe Klasse wie MIN_PX bei den
+  Stufenspalten: eine Groesse als Anteil definiert, die eine absolute
+  Untergrenze braucht.
+  **Zwei Sackgassen auf dem Weg, beide im Browser gemessen statt
+  erschlossen.** (a) `width: max(6%, 56px)` am `<col>` wird verworfen —
+  die Spalten landen bei 80/80 statt 56/104; reine Prozent- und reine
+  Pixelwerte gelten, `min()`/`max()` nicht. (b) Die Untergrenze in
+  JavaScript zu rechnen funktionierte, verschob aber das Desktop-Bild um
+  1,3 Prozentpunkte und spaeter die Stufenbreiten um bis zu 8 px. Beides
+  waere in der laufenden Design-Runde als fremde Aenderung aufgeschlagen.
+  **Geloest ueber eine Medienabfrage unter 940 px**, die die beiden
+  Zutatenspalten auf feste Pixel pinnt. Der Browser holt sich den Platz
+  dann nur bei den Prozentspalten. `noetigeBreite` bekam eine zweite
+  Forderung, die so formuliert ist, dass sie ab vier Stufen nie greift —
+  Gegenprobe gegen die Live-Seite: Desktop Pixel fuer Pixel identisch
+  (63/167/180/235/207/194).
+  Gemessen auf 375x812: keine gekappte Zelle in allen vier Rezepten, kein
+  Tap-Ziel unter 44 pt, sticky-Spalten ueberlappen beim Querscrollen
+  nicht, schmalste Stufenspalte 81 px. 126/126 gruen.
 - **T-0035** (2026-08-03) Vorname aus den Steuerdateien entfernt, vor der
   Veroeffentlichung. 26 Fundstellen in fuenf Dateien: `TASK.md` (20),
   `CLAUDE.md` (2), `STATE.md` (2), `docs/uebergabe-zeitmass.md` (1) und

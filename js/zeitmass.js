@@ -20,6 +20,20 @@
   var DECKEL = 0.24;        // Anteil der Tabellenbreite
   var ZUTATEN = [0.06, 0.16]; // Anteile der beiden Zutatenspalten
 
+  // Untergrenze der Zutatenspalten in Pixeln (T-0039).
+  //
+  // Die Anteile oben waren geraeteblind: die Tabellenbreite richtet sich
+  // nach der Stufenzahl, nicht nach dem Bildschirm. Auf dem Desktop sind
+  // 6 % rund 72 px, auf einem 375-px-Telefon dagegen 30 px — "400 g"
+  // braucht 48 und wurde sichtbar gekappt.
+  //
+  // Das ist dieselbe Fehlerklasse, gegen die MIN_PX die Stufenspalten
+  // schuetzt: eine Groesse als Anteil definiert, die eine absolute
+  // Untergrenze braucht. Fuer die Stufen gab es sie, fuer die Zutaten
+  // nicht. Werte aus der Messung, mit Luft fuer Polsterung: die laengste
+  // Menge im Bestand ist "4 Stiel", der laengste Name "Bratwurstbraet".
+  var ZUTATEN_MIN_PX = [56, 104];
+
   // Schmalste Tabelle, in der jede Stufe MIN_PX bekommt UND danach noch
   // RESERVE des Stufenbereichs frei bleibt, um die Dauern abzubilden.
   //
@@ -29,9 +43,23 @@
   // schmaler, waechst die Tabelle darueber hinaus und scrollt horizontal.
   var RESERVE = 0.25;
 
+  // Zwei Forderungen, es gewinnt die groessere.
+  //
+  // Die erste ist die alte: jede Stufe MIN_PX, dazu RESERVE, damit die
+  // Dauern sich in den Breiten ueberhaupt abbilden koennen.
+  //
+  // Die zweite kam mit T-0039 dazu. Auf schmalen Schirmen pinnt stil.css
+  // die Zutatenspalten auf feste Pixel und holt sich den Platz bei den
+  // Stufen — danach muessen die immer noch MIN_PX haben. Bewusst so
+  // formuliert, dass die erste Forderung fast immer gewinnt: bei vier
+  // Stufen bleibt es bei 493 px wie vor T-0039, das Bild auf breiten
+  // Schirmen aendert sich dadurch um keinen Pixel. Nur bei sehr wenigen
+  // Stufen greift die zweite.
   function noetigeBreite(anzahlStufen) {
     var stufenAnteil = 1 - ZUTATEN[0] - ZUTATEN[1];
-    return Math.ceil((anzahlStufen * MIN_PX) / (stufenAnteil * (1 - RESERVE)));
+    var ausZeitmass = (anzahlStufen * MIN_PX) / (stufenAnteil * (1 - RESERVE));
+    var ausUntergrenze = anzahlStufen * MIN_PX + ZUTATEN_MIN_PX[0] + ZUTATEN_MIN_PX[1];
+    return Math.ceil(Math.max(ausZeitmass, ausUntergrenze));
   }
 
   // Liefert { zutaten: [a,b], stufen: [...], gedeckelt: [bool], roh: [...] }
@@ -43,8 +71,18 @@
     // Nie schmaler rechnen als noetig — der Aufrufer setzt die Tabelle
     // entsprechend breit und laesst sie scrollen.
     var breite = Math.max(noetigeBreite(n), tabelleBreitePx || 0);
-    var stufenAnteil = 1 - ZUTATEN[0] - ZUTATEN[1];
-    var stufenPx = breite * stufenAnteil;
+
+    // Die Stufen behalten ihren festen Anteil — auf breiten Schirmen ist
+    // das Bild damit exakt wie vor T-0039. Auf schmalen setzt stil.css
+    // die beiden Zutatenspalten auf feste Pixel; der Browser skaliert
+    // dann nur die Prozentspalten und laesst die festen in Ruhe (im
+    // Browser gemessen). Deshalb steht die Untergrenze dort und nicht
+    // hier: sie darf das Desktop-Bild nicht anfassen.
+    var stufenPx = breite * (1 - ZUTATEN[0] - ZUTATEN[1]);
+    var zutatenPx = [
+      Math.max(ZUTATEN[0] * breite, ZUTATEN_MIN_PX[0]),
+      Math.max(ZUTATEN[1] * breite, ZUTATEN_MIN_PX[1])
+    ];
 
     var minPx = MIN_PX;
 
@@ -106,7 +144,12 @@
     });
 
     return {
+      // Nominale Anteile — render.js schreibt sie als max(Anteil, Grenze)
+      // ins CSS, damit auf breiten Schirmen wieder der Anteil zaehlt.
       zutaten: ZUTATEN.slice(),
+      // Und die tatsaechlichen Pixel an der Mindestbreite, fuer den
+      // sticky-Versatz der Zutatenspalte.
+      zutatenPx: zutatenPx,
       stufen: anteile,
       gedeckelt: gedeckelt,     // interne Deckelung, fuer Pruefungen
       gekuerzt: gekuerzt,       // sichtbarer Vermerk
@@ -289,6 +332,7 @@
     braucht2Haende: braucht2Haende,
     MIN_PX: MIN_PX,
     DECKEL: DECKEL,
-    ZUTATEN: ZUTATEN
+    ZUTATEN: ZUTATEN,
+    ZUTATEN_MIN_PX: ZUTATEN_MIN_PX
   };
 })(typeof window !== "undefined" ? window : globalThis);
