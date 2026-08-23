@@ -582,7 +582,7 @@ window.REZEPTE["pfannkuchen"] = {
   "portionen": 12,
   "portionen_einheit": "Stück",
   "zeit_aktiv_s": 2700,
-  "zeit_gesamt_s": 10800,
+  "zeit_gesamt_s": 9000,
   "gefaess": "Rührschüssel, weiter Topf mit hohem Rand, Spritzbeutel",
   "tags": [
     "hefeteig",
@@ -758,7 +758,7 @@ window.REZEPTE["pfannkuchen"] = {
       "id": "s-fuellen",
       "titel": "füllen und zuckern",
       "anweisung": "Lauwarm von der Seite her mit dem Spritzbeutel füllen, danach bestäuben. Heiß füllen geht schief, die Konfitüre läuft wieder heraus.",
-      "dauer_s": null,
+      "dauer_s": 900,
       "zutaten": [
         "z-konfituere",
         "z-puderzucker"

@@ -180,12 +180,54 @@
   // mischen" waehrend der Teig ruht — stumpf addiert kaeme die Tabelle
   // auf 90 Minuten statt der tatsaechlichen 75.
   //
+  // --- Vorstufen normalisieren (T-0049) --------------------------------
+  //
+  // Die Regel "fehlendes `vorstufen` = unmittelbarer Vorgaenger" stand bis
+  // T-0049 in vier Dateien: grid.js (ueber IDs), render.js, pruefe-grid.js
+  // (ueber Indizes) und hier zweimal als Argument-Default. Vier Kopien
+  // einer Semantik heisst: wer sie aendert, muss vier Stellen finden.
+  // Findet er drei, rechnen Grid, Kennzahlen und Pruefskript gegeneinander
+  // — und zwar lautlos, weil jede fuer sich plausibel bleibt.
+  //
+  // Jetzt steht sie hier, in zwei Formen fuer zwei Aufgaben:
+  //
+  //   vorstufenIds     — Rohform mit IDs, OHNE Filter. grid.js braucht
+  //                      auch die unbekannten IDs, weil es sie meldet.
+  //   vorstufenIndizes — Indexform, unbekannte IDs fallen weg. Fuer alle,
+  //                      die rechnen statt pruefen.
+  //   vorOder          — derselbe Default fuer ein bereits uebergebenes
+  //                      Index-Feld mit Luecken.
+  //
+  // Wer die Semantik aendert, aendert vorstufenIds und vorOder — und
+  // sonst nichts.
+  function vorstufenIds(schritte) {
+    return schritte.map(function (s, i) {
+      if (s.vorstufen === undefined || s.vorstufen === null) {
+        return i > 0 ? [schritte[i - 1].id] : [];
+      }
+      return s.vorstufen.slice();
+    });
+  }
+
+  function vorstufenIndizes(schritte) {
+    var nachId = {};
+    schritte.forEach(function (s, i) { nachId[s.id] = i; });
+    return vorstufenIds(schritte).map(function (ids) {
+      return ids.map(function (v) { return nachId[v]; })
+                .filter(function (j) { return j !== undefined; });
+    });
+  }
+
+  function vorOder(vorstufen, i) {
+    return (vorstufen && vorstufen[i]) ? vorstufen[i] : (i > 0 ? [i - 1] : []);
+  }
+
   // `vorstufen` ist ein Feld von Index-Feldern. Fehlt es, gilt die lineare
-  // Kette (jede Stufe wartet auf die vorherige).
+  // Kette (jede Stufe wartet auf die vorherige) — siehe vorOder().
   function startzeiten(dauern, vorstufen) {
     var start = [], ende = [];
     dauern.forEach(function (d, i) {
-      var vs = (vorstufen && vorstufen[i]) ? vorstufen[i] : (i > 0 ? [i - 1] : []);
+      var vs = vorOder(vorstufen, i);
       var t = 0;
       vs.forEach(function (j) {
         if (j >= 0 && j < i) t = Math.max(t, ende[j]);
@@ -217,9 +259,7 @@
   function plan(dauern, vorstufen, unbeaufsichtigt) {
     var n = dauern.length;
 
-    function vor(i) {
-      return (vorstufen && vorstufen[i]) ? vorstufen[i] : (i > 0 ? [i - 1] : []);
-    }
+    function vor(i) { return vorOder(vorstufen, i); }
     function betreut(i) { return !(unbeaufsichtigt && unbeaufsichtigt[i]); }
 
     // Restpfad HINTER der Stufe: wie lange es nach ihrem Ende mindestens
@@ -349,6 +389,8 @@
     MIN_PX: MIN_PX,
     DECKEL: DECKEL,
     ZUTATEN: ZUTATEN,
-    ZUTATEN_MIN_PX: ZUTATEN_MIN_PX
+    ZUTATEN_MIN_PX: ZUTATEN_MIN_PX,
+    vorstufenIds: vorstufenIds,
+    vorstufenIndizes: vorstufenIndizes
   };
 })(typeof window !== "undefined" ? window : globalThis);

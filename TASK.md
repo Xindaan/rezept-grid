@@ -6,33 +6,196 @@
 
 ## Next
 
-- **T-0009** Verteilung — **entschieden am 03.08.2026: EIN oeffentliches
-  Repo, GitHub Pages darauf.** Kein Ableger, kein `public-mirror`.
-  Vorgeschichte: Netlify raus (Abo gekuendigt), GitHub Pages kostenlos nur
-  fuer oeffentliche Repos.
-  Meine Ableger-Empfehlung vom 02.08. beruhte auf einer falschen Praemisse
-  — "der Personenbezug steckt in TASK/STATE/docs". Nachgeprueft: Vorname
-  und "Gaertringen" stehen in den **Rezept-Hinweisen** selbst
-  (`maultaschen.json`, `spaetzle.json`, `pfannkuchen.json`) und sind im UI
-  sichtbar. Ein Ableger haette sie mitgenommen und nur meine Arbeitsnotizen
-  zurueckgehalten. Der Schutz waere Theater gewesen, die zwei Stände echte
-  Pflegelast.
-  Was noch zu tun ist (nicht von mir, ich pushe nichts):
-  1. Repo `rezept-grid` oeffentlich anlegen, `git remote add origin`,
-     `git push -u origin main`.
-  2. Settings -> Pages -> Branch `main`, Ordner **`/ (root)`**, nicht
-     `/docs`.
-  Vorbereitet: `.nojekyll` und der README-Abschnitt "Veroeffentlichen"
-  mit dem Ein-Zeiler vom Rezept zum Livegang. Alle Pfade sind relativ,
-  der Unterpfad von Pages ist geprueft.
-  Commit-Mails sind bereits GitHub-Noreply (`112499291+Xindaan@...`), da
-  laeuft keine Adresse mit.
+- (leer)
 
 ## Backlog
 
 - (leer)
 
 ## Done
+
+- **T-0009** (2026-08-23) **Verteilung erledigt — beim Commit-Durchgang
+  nachgeprueft, der Task stand faelschlich noch offen.** Entschieden am
+  03.08.2026: EIN oeffentliches Repo, GitHub Pages darauf. Kein Ableger,
+  kein `public-mirror`.
+  Vorgeschichte: Netlify raus (Abo gekuendigt), GitHub Pages kostenlos nur
+  fuer oeffentliche Repos. Die Ableger-Empfehlung vom 02.08. beruhte auf
+  einer falschen Praemisse — „der Personenbezug steckt in TASK/STATE/docs".
+  Nachgeprueft: Vorname und „Gaertringen" stehen in den **Rezept-Hinweisen**
+  selbst und sind im UI sichtbar. Ein Ableger haette sie mitgenommen und
+  nur die Arbeitsnotizen zurueckgehalten — Schutz-Theater gegen zwei
+  Staende echte Pflegelast.
+  **Ist-Stand, am 23.08.2026 ueber die GitHub-API gemessen statt
+  angenommen:** Repo `Xindaan/rezept-grid` existiert und ist `PUBLIC`,
+  `origin` ist gesetzt, `main` deckt sich mit `origin/main`, und Pages
+  laeuft — Quelle `main` / `/ (root)`, Status `built`, HTTPS erzwungen,
+  erreichbar unter https://xindaan.github.io/rezept-grid/.
+  Damit sind beide offenen Punkte des Tasks erledigt; sie standen nur
+  noch da, weil sie niemand nachgezogen hat. Auch der Vermerk „nicht von
+  mir, ich pushe nichts" ist ueberholt: Andre hat den Push am 23.08.
+  ausdruecklich beauftragt.
+  Commit-Mails sind GitHub-Noreply (`112499291+Xindaan@...`), da laeuft
+  keine Adresse mit.
+
+- **T-0053** (2026-08-23) Kennzahlen des Pfannkuchens gehen wieder auf.
+  Vorher: 45 Min Arbeit + 1 Std 45 Min ohne Zutun = 2 Std 30 Min, daneben
+  „gesamt 2 Std 15 Min". Ursache war, dass „Arbeit" aus dem JSON-Feld
+  kommt und „ohne Zutun" aus dem gerechneten Plan — und `s-fuellen`
+  („fuellen und zuckern") mit `dauer_s: null` dazwischen stand.
+  **Entschieden (Entscheidungsvorlage, Option B): Fuellen und Zuckern
+  dauert 15 Minuten** — Andres Angabe fuer 12 Stueck mit dem
+  Spritzbeutel. Damit `dauer_s: 900` und `zeit_gesamt_s` auf 9000;
+  `zeit_aktiv_s` bleibt bei 2700 und ist jetzt genau die Summe der
+  beaufsichtigten Stufen. Kopf zeigt 45 Min / 1 Std 45 Min / 2 Std 30 Min.
+  Rueckblickend war die alte 2700 also richtig — falsch war, dass die
+  Arbeit nirgends im Plan stand.
+  **Neue Pruefung, und sie fand sofort einen zweiten Fall:**
+  `tools/testdaten/linsen-eintopf.json` hatte dieselbe Krankheit
+  (`s-abschmecken` ohne Dauer, 1200 + 2100 = 3300 gegen 3000). Dort ist
+  die Wahl umgekehrt gefallen — `zeit_aktiv_s` auf 900 statt dem
+  Abschmecken eine Dauer zu geben: die Datei sagt im eigenen Untertitel
+  „Ein Topf, 50 Minuten", und eine Dauer haette auch den aendern muessen.
+  Bei einer Testvorlage ist die Variante mit weniger Erfindung die
+  richtige. **Falls Du das anders siehst, ist es eine Zeile.**
+  Zwei unabhaengige Netze halten die Klasse jetzt: die Datenpruefung
+  (`zeit_aktiv_s` + freie Zeit darf `zeit_gesamt_s` nicht ueberschreiten)
+  und eine Pruefung auf der ANZEIGE, die die drei Kacheln addiert. In der
+  Negativprobe faengt die zweite den Fehler auch dann, wenn man die erste
+  ausbaut.
+  Nachzug in der Zeitachse: der Pfannkuchen hat dadurch erstmals ein
+  Planende hinter der letzten Startmarke (135 gegen 150) — die in T-0052
+  vorhergesagte Kopplung. Sie faellt nicht auf, weil T-0052 vorher
+  erledigt war. Dabei kam eine Layout-Grenze heraus: bei
+  `table-layout: fixed` ist die letzte Spalte so breit wie ihre Stufe
+  dauert, hier 15 von 150 Minuten — „135" und „150 Min" stiessen
+  aneinander. Geloest mit `flex-wrap` und `margin-left: auto`, das Ende
+  rutscht dann auf eine zweite Zeile und bleibt rechtsbuendig. Auf voller
+  Breite sind alle fuenf Rezepte einzeilig und kollisionsfrei (im Browser
+  gemessen).
+  197/197 gruen.
+
+- **T-0052** (2026-08-23) Zeitachse: die letzte Marke ist wieder eine
+  Startzeit, und das Planende steht daneben. Vorher trug nur sie eine
+  Einheit und las sich damit als Gesamtdauer — beim Eierkuchen stand
+  „35 Min", waehrend das Rezept 60 Minuten braucht (Maultaschen 60 gegen
+  75, Spaetzle 46 gegen 48, Omelett 16 gegen 17).
+  Gewaehlt wurde Option D aus der Entscheidungsvorlage: die letzte Zelle
+  traegt links weiter ihren Start, rechts an der Spaltenkante das Ende
+  des Plans. Im Browser nachgemessen: die rechte Kante der Kopfzelle
+  deckt sich mit der rechten Kante der letzten Spalte (784 px), das Ende
+  passt in allen fuenf Rezepten zur Kennzahl „gesamt".
+  **Beim Umsetzen eine dokumentierte Messung widerlegt.** Der Zusatz fuer
+  Screenreader stand zuerst als versteckter Textknoten (`.nur-vorlesen`),
+  gestuetzt auf den Satz aus T-0042, so etwas lande nicht in der
+  Zwischenablage. Nachgemessen stimmt das hier nicht — kopiert wurde
+  "35\nPlanende60 Min", also genau die Klebestelle, gegen die T-0037 bis
+  T-0042 angetreten sind. Jetzt steht der Zusatz als `aria-label` an
+  jeder Marke („ab 35 Minuten, Planende 60 Minuten"); Attribute werden
+  nie kopiert. Nachtrag am T-0042-Eintrag und Warnung am CSS-Selektor
+  hinterlegt.
+  Nebenbei: alle Marken bekommen das Label, nicht nur die letzte — sonst
+  spricht eine Spaltenueberschrift anders als ihre Nachbarn, und die
+  blanken Zahlen haetten vorgelesen gar keine Einheit. Numerus stimmt
+  („ab 1 Minute").
+  Isomorphie-Check: die uebrigen Sonderfaelle fuer erstes/letztes Element
+  (`render.js:44`, `.grid tbody tr:first-child`, `:last-child` im CSS,
+  `dauerFormatieren` bei vollen Stunden) sind geometrisch oder
+  sprachlich — keiner aendert die BEDEUTUNG eines Elements. Kein zweiter
+  Fall.
+  196/196 gruen.
+
+- **T-0043 bis T-0051** (2026-08-23) **Externer Code-Review
+  aufgearbeitet.** Quelle: `~/src/ox-review/reviews/rezept-grid.md` (Ox
+  Alpha via OpenRouter, 22.08.2026, hat den Code nur gelesen, nichts
+  ausgefuehrt). Zehn Befunde, jede Fundstelle selbst nachgelesen und
+  nachgerechnet: **zehn bestaetigt, keiner widerlegt.** Neun umgesetzt,
+  T-0052 (Beschriftung der letzten Achsenmarke) bewusst offen — das ist
+  Gestaltung, keine Korrektur.
+  Pruefungen 137 -> **188 gruen**. Der Zuwachs ist der eigentliche
+  Ertrag: er deckt eine Schicht ab, die vorher gar nicht geprueft war.
+
+  - **T-0043** Quellenzeile zeigte zwei Gedankenstriche.
+    `.quelle-hinweis::before` stand seit T-0001 im Stylesheet und blieb
+    beim Umbau auf den Textknoten (Commit 6c50cb4) stehen. Ausgerechnet
+    der T-0042-Eintrag darueber erklaert diese Fehlerserie fuer
+    abgeschlossen — hier malten seitdem beide.
+    Neu: eine Inventur ueber alle `content:`-Regeln im Stylesheet. Erlaubt
+    ist genau `.zurueck-link::before` (dekorativer Pfeil); wer eine neue
+    anlegt, faellt auf und muss sich entscheiden.
+
+  - **T-0044** Einkaufsliste warf beim Portionswechsel alle Haken weg.
+    Der Callback rief `einkaufRendern` neu auf, und das beginnt mit
+    `ziel.textContent = ""`. Jetzt gleicht `postenSchreiben` ab statt neu
+    zu bauen; Identitaet ist der Schluessel aus `einkauf.js`, der dafuer
+    am Posten mitgeliefert wird.
+    **Dafuer war eine DOM-Attrappe noetig** (`tools/dom-attrappe.js`) —
+    die DOM-Schicht war bis dahin ungeprueft, und genau dort sass ein
+    Fehler, den keine Zahlenpruefung findet, weil die Zahlen stimmten.
+    Bewusst kein jsdom: das Projekt hat keine Abhaengigkeiten.
+    Lehre aus der Negativprobe: mein erster Test war zu schwach. Nimmt man
+    den Schluessel weg, verliert die Liste keine Haken — sie **verdoppelt
+    sich** (20 -> 39 Eintraege), und die Haken-Pruefung blieb gruen. Erst
+    die zusaetzliche Zeile auf die Postenzahl biss.
+
+  - **T-0045** Kochmodus-Countdown zaehlte Ticks. Gemessen am echten Modul
+    mit gedrosseltem Interval: nach 400 s Wanduhr auf einer 360-s-Stufe
+    standen noch **5:54** auf der Uhr, und sie lief weiter. Jetzt haengt
+    die Rechnung an `Date.now()`; das Interval treibt nur noch die
+    Anzeige und darf ausfallen.
+    Die Rechnung sitzt als `countdownBauen` DOM-frei und mit
+    injizierbarer Uhr vor dem headless-Ausstieg von `kochmodus.js` — acht
+    Pruefungen fahren sie ohne echte Wartezeit durch.
+
+  - **T-0046** `zeit_gesamt_s` wurde bei linearen Rezepten nie nach oben
+    geprueft: der Check hing an `allein < summe`, was dort nie wahr ist.
+    Durchgerutscht waren Pfannkuchen (10800 gegen Plan 8100) und der
+    Linsen-Eintopf (3900 gegen 3000, waehrend der eigene Untertitel „50
+    Minuten" sagt). Beide korrigiert. Obergrenze jetzt ohne Sonderfall,
+    asymmetrisch: unter dem Plan hart verboten, darueber 10 % Luft — die
+    braucht der Eierkuchen fuer seine Rundung 3570 -> 3600.
+    Isomorphie-Fund: **`zeit_aktiv_s` stand ueberhaupt nicht im
+    Pruefskript**, obwohl `docs/schema.md` und `docs/konvertierung.md`
+    eine Untergrenze dafuer nennen. Nachgeholt, plus Obergrenze gegen
+    `zeit_gesamt_s`. Zweiter Fund: die Vorlage unter `tools/testdaten/`
+    haengt jetzt mit in der Schema-Pruefung — sie ist der Anker der halben
+    Suite und war selbst nie geprueft.
+
+  - **T-0047** `rezeptLaden` fiel bei jedem Fetch-Fehler stumm aufs
+    Manifest zurueck. Jetzt nur noch bei `file:`; ueber http zeigt die App
+    den Fehler. Im Browser gegengeprueft: ein ueberzaehliges Komma in
+    `spaetzle.json` bringt die rote Box mit Position und Zeile, statt
+    kommentarlos die alte Manifest-Fassung.
+
+  - **T-0048** Tote Regel `.untertitel + .gefaess` geloescht. Ueber alle
+    Rezepte gemessen: fuenf `.gefaess`-Elemente, null Treffer. Die
+    Nachfolgeregel `.rezept-anhang .gefaess` haette ohnehin gewonnen.
+
+  - **T-0049** Vorstufen-Normalisierung von vier Dateien auf eine
+    gezogen: `vorstufenIds` (ID-Form, ungefiltert — grid.js meldet
+    unbekannte IDs und braucht sie deshalb), `vorstufenIndizes`
+    (gefiltert, zum Rechnen) und `vorOder` (Argument-Default), alle in
+    `zeitmass.js`.
+    **Dabei einen eigenen Fehler produziert und gefunden:** in `grid.js`
+    stand `Z.vorstufenIds(...)`, aber grid.js hat gar kein `Z`. Das lief
+    gruen durch, weil `eval` den Scope des Pruefskripts teilt — im Browser
+    waere es abgestuerzt. Genau der Fall, den T-0050 beschreibt.
+    Zweiter Nebenbefund: eine Negativprobe an `render.js` warf keinen
+    einzigen Test um — der **Kennzahlenstreifen war ungeprueft**.
+    Nachgeholt (das ist die Klasse „Formel korrigiert, Bild vergessen").
+
+  - **T-0050** `eval` durch `require` ersetzt. Beide Vorteile einzeln
+    belegt: der `Z`-Fehler aus T-0049 meldet jetzt
+    `ReferenceError ... at js/grid.js:65`, unter `eval` lief er durch;
+    ein Syntaxfehler nennt `js/portionen.js:117` statt der eval-Stelle.
+
+  - **T-0051** Kochleiste ist eine Live-Region. `.koch-text` bekommt
+    `aria-live="polite"` + `aria-atomic`, die Uhr `role="timer"` —
+    **bewusst ohne** `aria-live`, sonst spricht der Screenreader jede
+    Sekunde. Das Ablaufen sagt eine eigene Statuszeile einmal an
+    (`.koch-alarm`, versteckt ueber die neue Klasse `.nur-vorlesen`).
+    Isomorphie-Fund: in der Uebersicht taucht die Auswahlleiste „N
+    Rezepte gewaehlt" ebenso lautlos auf — der Zaehler ist jetzt
+    ebenfalls Live-Region.
 
 - **T-0042** (2026-08-15) Klebestellen beim Kopieren behoben, in der
   Stufenliste und in der Tabelle.
@@ -49,6 +212,15 @@
   Ebenfalls verworfen, weil gemessen: eine absolut positionierte,
   per `clip-path` versteckte Spanne aendert das Layout nicht, landet aber
   genauso wenig in der Zwischenablage.
+  **Nachtrag 23.08.2026 (T-0052): dieser letzte Satz gilt so nicht.** In
+  der Zeitachse habe ich genau diese Konstruktion gebaut und gemessen —
+  `Selection.toString()` auf der Zelle lieferte "35\nPlanende60 Min", der
+  versteckte Text wurde also mitgenommen. Welcher Unterschied die beiden
+  Messungen trennt (Raster- statt Flex-Zelle, anderer Browser, echte
+  Zwischenablage gegen Selection-API), ist offen. Praktische Regel steht
+  jetzt am Selektor `.nur-vorlesen` in `css/stil.css`: **nicht** in
+  Inhalten verwenden, die jemand markiert — dort gehoert der Zusatz in
+  ein `aria-label`.
   **Was wirkt:** `.zutat-name`, `.marke-fix` und `.zutat-notiz` sind in
   der Liste alle inline; ein Leerzeichen als Textknoten dazwischen
   repariert die Kopie ("WasserFIXzum Kochen" -> "Wasser FIX zum Kochen")

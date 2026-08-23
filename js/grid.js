@@ -59,12 +59,13 @@
     var zeilenVonSchritt = new Map(); // schritt-id -> Set<zeilenindex>
     var spalten = [];
 
+    // Die Default-Regel steht in zeitmass.js (T-0049). Hier wird die
+    // ID-Form gebraucht, nicht die gefilterte Indexform: unbekannte
+    // Vorstufen sollen gemeldet werden, nicht verschwinden.
+    var vorstufenJeSchritt = global.RezeptZeitmass.vorstufenIds(rezept.schritte);
+
     rezept.schritte.forEach(function (schritt, index) {
-      // vorstufen ist optional: Default ist der unmittelbare Vorgaenger.
-      var vorstufen = schritt.vorstufen;
-      if (vorstufen === undefined || vorstufen === null) {
-        vorstufen = index > 0 ? [rezept.schritte[index - 1].id] : [];
-      }
+      var vorstufen = vorstufenJeSchritt[index];
 
       var meine = new Set();
       // Zeilen der Zutaten, die genau bei diesem Schritt dazukommen —

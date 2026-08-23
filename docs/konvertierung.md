@@ -33,7 +33,7 @@ Ist eine Seite technisch nicht abrufbar (chefkoch.de war es am
 von Hand hereingeben oder ein Grundrezept eigenständig formulieren und
 `quelle: null` setzen.
 
-## Die zehn Fallstricke
+## Die elf Fallstricke
 
 Alle aus echten Konvertierungen, nicht ausgedacht.
 
@@ -102,7 +102,11 @@ Drei Faustregeln:
   hält die Stufe die Hände besetzt, und alles Parallele rutscht dahinter.
 - `zeit_gesamt_s` ist das Ende dieses Plans, nicht die Summe der Dauern
   und auch nicht der reine kritische Pfad. `pruefe-grid.js` meldet es,
-  wenn beides auseinanderfällt.
+  wenn beides auseinanderfällt: **unter** dem Plan ist ein harter Fehler
+  (unmöglich), **über** dem Plan sind 10 % Puffer erlaubt und alles
+  darüber ein Fehler. Die 10 % sind für ehrliche Rundungen da (Eierkuchen
+  rundet 3570 auf 3600), nicht für Schätzungen — wer 3 Stunden schreibt,
+  wo der Plan bei 2:15 endet, bekommt seit T-0046 ein FAIL.
 
 **8. Gleiches Produkt, gleicher Name — über Rezepte hinweg.**
 Die Einkaufsliste fasst Posten über `name` + `einheit` zusammen. Heißt
@@ -143,6 +147,21 @@ das: Pilze schneiden, braten, würzen — und erst dann „Eier verquirlen",
 obwohl einfachkochen.de mit den Eiern anfängt. Kochen kann man trotzdem
 in beliebiger Reihenfolge; das Grid zeigt den Weg für eine Person.
 
+**11. `dauer_s: null` heißt „kostet keine Zeit", nicht „weiß ich nicht".**
+Ein Schritt ohne Dauer geht mit **null** Minuten in den Plan ein — und
+damit auch in die Kachel „ohne Zutun", die als Gesamtzeit minus
+Arbeitszeit gerechnet wird. Steht die Arbeit dann trotzdem in
+`zeit_aktiv_s`, ergeben die drei Kacheln im Kopf zusammen mehr als das
+Ganze. Genau so beim Pfannkuchen passiert (T-0053): „füllen und zuckern"
+hatte keine Dauer, `zeit_aktiv_s` rechnete die 15 Minuten aber mit — im
+Kopf standen 45 + 105 gegen 135.
+
+`null` ist richtig für Schritte, die wirklich keine Zeit brauchen
+(„servieren", „mit Petersilie bestreuen"). Kostet ein Schritt Arbeit,
+bekommt er eine Dauer, und `zeit_gesamt_s` wächst mit. `pruefe-grid.js`
+meldet den Widerspruch seit T-0053 — auf den Rohdaten **und** noch einmal
+auf den gerenderten Kacheln.
+
 ## Plausibilität prüfen
 
 Vor dem Commit kurz gegenlesen:
@@ -150,11 +169,12 @@ Vor dem Commit kurz gegenlesen:
 - Ergeben die Mengen die angegebene Portionszahl? 300 g Linsen für vier
   Personen ja, für zwölf nicht.
 - Passt `zeit_gesamt_s` zum **Ablauf für eine Person** plus Vorbereitung?
-  Bei parallelen Strängen ist das weniger als die Summe der Dauern — das
-  Prüfskript meldet es, wenn die Stränge beim Addieren übersehen wurden,
-  und ebenso, wenn der Wert unter dem geplanten Ablauf liegt.
+  Bei parallelen Strängen ist das weniger als die Summe der Dauern. Das
+  Prüfskript hält den Wert nach unten hart gegen den Plan und nach oben
+  gegen Plan + 10 %.
 - Ist `zeit_aktiv_s` mindestens so groß wie die Summe der Stufen **ohne**
-  `unbeaufsichtigt`?
+  `unbeaufsichtigt` — und nicht größer als `zeit_gesamt_s`? Beides prüft
+  das Skript seit T-0046 selbst; vorher stand die Regel nur hier.
 - Sind die Schritt-Titel Handlungen in ein bis vier Wörtern? Sie stehen
   als Überschrift in der Grid-Zelle und in der Kochleiste.
 
@@ -231,6 +251,5 @@ Danach fuehre bitte aus:
   node tools/build-manifest.js
   node tools/pruefe-grid.js
 und melde mir das Ergebnis. Pruefe ausserdem selbst, ob die Mengen zur
-Portionszahl passen und ob zeit_aktiv_s mindestens die Summe der Stufen
-ohne unbeaufsichtigt ist.
+Portionszahl passen; zeit_aktiv_s und zeit_gesamt_s prueft das Skript.
 ```

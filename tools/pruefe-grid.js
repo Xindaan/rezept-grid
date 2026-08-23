@@ -10,17 +10,42 @@
 "use strict";
 var fs = require("fs"), path = require("path");
 var wurzel = path.resolve(__dirname, "..");
-eval(fs.readFileSync(path.join(wurzel, "js/zeitmass.js"), "utf8"));
-eval(fs.readFileSync(path.join(wurzel, "js/grid.js"), "utf8"));
-eval(fs.readFileSync(path.join(wurzel, "js/portionen.js"), "utf8"));
-eval(fs.readFileSync(path.join(wurzel, "js/einkauf.js"), "utf8"));
-eval(fs.readFileSync(path.join(wurzel, "js/kochmodus.js"), "utf8"));
-eval(fs.readFileSync(path.join(wurzel, "js/stufenliste.js"), "utf8"));
+
+// Minimal-DOM anmelden, BEVOR die Browser-Module geladen werden (T-0044).
+// Ohne das laedt kochmodus.js nur seinen headless-Teil und render.js gar
+// nicht — und genau dort sass ein Fehler, den keine Zahlenpruefung
+// findet. Siehe tools/dom-attrappe.js.
+var DOM = require("./dom-attrappe.js");
+DOM.anmelden();
+
+// require statt eval (T-0050). Jedes Modul endet auf
+// `(typeof window !== "undefined" ? window : globalThis)` bzw. `(window)`
+// und setzt seine Globals selbst — require reicht also, und zwar aus zwei
+// Gruenden, die beide in dieser Sitzung konkret wurden:
+//
+// 1. Stack-Traces nennen Datei und Zeile der QUELLE. Ein Syntaxfehler in
+//    js/portionen.js meldete unter eval nur die eval-Stelle hier.
+// 2. **eval teilt den Scope dieser Datei.** Beim Umbau fuer T-0049 habe
+//    ich in js/grid.js `Z.vorstufenIds(...)` geschrieben — grid.js hat
+//    aber gar kein `Z`. Unter eval lief es trotzdem gruen, weil das `Z`
+//    aus DIESER Datei sichtbar war; im Browser waere es abgestuerzt.
+//    Ein Pruefskript, das dem Produktionscode heimlich eigene Variablen
+//    leiht, prueft nicht das, was ausgeliefert wird.
+require("../js/zeitmass.js");
+require("../js/grid.js");
+require("../js/portionen.js");
+require("../js/einkauf.js");
+require("../js/kochmodus.js");
+require("../js/stufenliste.js");
+require("../js/render.js");
+require("../js/app.js");
 var G = globalThis.RezeptGrid;
 var P = globalThis.RezeptPortionen;
 var K = globalThis.RezeptKochmodus;
 var Z = globalThis.RezeptZeitmass;
 var S = globalThis.RezeptStufenliste;
+var R = globalThis.RezeptRender;
+var A = globalThis.RezeptApp;
 
 var fehler = 0;
 function pruefe(name, ist, soll) {
@@ -153,6 +178,60 @@ pruefe("Uhr unter einer Minute", K.zeitFormatieren(45), "0:45");
 pruefe("Uhr ueber einer Stunde", K.zeitFormatieren(3900), "1:05:00");
 pruefe("Uhr bei 0", K.zeitFormatieren(0), "0:00");
 pruefe("Uhr wird nicht negativ", K.zeitFormatieren(-5), "0:00");
+
+// --- 2c2. Countdown haengt an der Wanduhr (T-0045) --------------------
+// Bis T-0045 zaehlte der Timer Ticks. Im gedrosselten Hintergrund-Tab
+// feuert setInterval nur noch etwa einmal pro Minute — die Uhr blieb
+// dann fast stehen, waehrend das Essen im Topf weiterlief. Gemessen am
+// echten Modul: nach 400 s Wanduhr auf einer 360-s-Stufe standen noch
+// 5:54 auf der Uhr. Deshalb wird hier nicht der Quelltext geprueft,
+// sondern die Rechnung mit gestellter Uhr durchgespielt.
+var jetzt = 1000000000000;
+function uhrStellen() { return jetzt; }
+function warten(sekunden) { jetzt += sekunden * 1000; }
+
+var cd = K.countdownBauen(uhrStellen);
+cd.setzen(60);
+pruefe("Countdown: gesetzt, steht", [cd.stand(), cd.laeuft()], [60, false]);
+cd.starten();
+warten(10);
+pruefe("Countdown: nach 10 s laeuft er und zeigt 50", [cd.stand(), cd.laeuft()], [50, true]);
+
+// Der Kern des Befunds: KEIN Tick dazwischen, nur Wanduhr.
+warten(70);
+pruefe("Countdown: 80 s auf 60-s-Stufe ohne Tick -> abgelaufen",
+  [cd.stand(), cd.laeuft()], [0, false]);
+
+// Pause haelt die Zeit an, auch wenn die Wanduhr weiterlaeuft.
+var cd2 = K.countdownBauen(uhrStellen);
+cd2.setzen(300);
+cd2.starten();
+warten(120);
+cd2.pausieren();
+warten(600);
+pruefe("Countdown: Pause haelt an, Wanduhr laeuft weiter",
+  [cd2.stand(), cd2.laeuft()], [180, false]);
+cd2.starten();
+warten(60);
+pruefe("Countdown: nach Pause laeuft er ab dem gehaltenen Rest weiter",
+  cd2.stand(), 120);
+
+// Abgelaufen + Start = wieder von vorn (Knopf "Neu").
+var cd3 = K.countdownBauen(uhrStellen);
+cd3.setzen(45);
+cd3.starten();
+warten(200);
+pruefe("Countdown: abgelaufen", cd3.stand(), 0);
+cd3.starten();
+pruefe("Countdown: Neustart nach Ablauf beginnt bei der vollen Dauer", cd3.stand(), 45);
+
+// Stufe ohne Zeit bleibt ohne Zeit, egal was gedrueckt wird.
+var cd4 = K.countdownBauen(uhrStellen);
+cd4.setzen(null);
+cd4.starten();
+warten(500);
+pruefe("Countdown: Stufe ohne dauer_s hat keine Uhr",
+  [cd4.stand(), cd4.laeuft()], [null, false]);
 
 // --- 2d2. Spaltenzuordnung (T-0030) -----------------------------------
 // Stufen teilen sich eine Spalte, wenn ihre Zeilenbloecke sich nicht
@@ -503,6 +582,58 @@ var mp = G.gridModellBauen(parallel);
 pruefe("nicht-linear: genau 1 Zusammenhangs-Problem",
   mp.probleme.filter(function (p) { return p.indexOf("zusammenhaengenden") > -1; }).length, 1);
 
+// --- 4b. Vorstufen-Normalisierung, eine Quelle (T-0049) ---------------
+// Die Regel "fehlendes `vorstufen` = unmittelbarer Vorgaenger" stand in
+// vier Dateien. Diese Pruefung haelt fest, dass alle Wege dieselbe Kette
+// sehen — sie ist die Alarmanlage gegen ein Wiederauseinanderlaufen.
+(function () {
+  function schritt(id, vorstufen) {
+    var s = { id: id, titel: id, anweisung: "", dauer_s: 60, zutaten: ["z-" + id] };
+    if (vorstufen !== undefined) s.vorstufen = vorstufen;
+    return s;
+  }
+  function rezept(schritte) {
+    return {
+      id: "t", titel: "t", portionen: 1, zeit_aktiv_s: null, zeit_gesamt_s: null,
+      zutaten: schritte.map(function (s) {
+        return { id: "z-" + s.id, name: s.id, menge: 1, einheit: "g" };
+      }),
+      schritte: schritte
+    };
+  }
+
+  // Ganz ohne vorstufen-Feld: lineare Kette.
+  var ohne = rezept([schritt("a"), schritt("b"), schritt("c")]);
+  pruefe("Vorstufen: ID-Form ohne Feld ist die lineare Kette",
+    Z.vorstufenIds(ohne.schritte), [[], ["a"], ["b"]]);
+  pruefe("Vorstufen: Indexform ohne Feld ist die lineare Kette",
+    Z.vorstufenIndizes(ohne.schritte), [[], [0], [1]]);
+  pruefe("Vorstufen: grid.js uebernimmt dieselbe Kette",
+    G.gridModellBauen(ohne).spalten.map(function (sp) { return sp.vorstufen; }),
+    [[], ["a"], ["b"]]);
+  pruefe("Vorstufen: zeitmass rechnet dieselbe Kette (3x60 s hintereinander)",
+    Z.gesamtdauer([60, 60, 60], Z.vorstufenIndizes(ohne.schritte)), 180);
+
+  // Leeres Feld ist NICHT dasselbe wie fehlendes Feld.
+  var leer = rezept([schritt("a"), schritt("b", []), schritt("c", ["a", "b"])]);
+  pruefe("Vorstufen: leeres Feld heisst 'faengt neu an', nicht 'Vorgaenger'",
+    Z.vorstufenIndizes(leer.schritte), [[], [], [0, 1]]);
+  pruefe("Vorstufen: zeitmass laesst die beiden parallel laufen",
+    Z.gesamtdauer([60, 60, 60], Z.vorstufenIndizes(leer.schritte)), 120);
+
+  // Unbekannte ID: die ID-Form behaelt sie (grid.js meldet sie),
+  // die Indexform wirft sie weg (sie laesst sich nicht rechnen).
+  var kaputt = rezept([schritt("a"), schritt("b", ["gibts-nicht"])]);
+  pruefe("Vorstufen: unbekannte ID bleibt in der ID-Form",
+    Z.vorstufenIds(kaputt.schritte), [[], ["gibts-nicht"]]);
+  pruefe("Vorstufen: unbekannte ID faellt aus der Indexform",
+    Z.vorstufenIndizes(kaputt.schritte), [[], []]);
+  pruefe("Vorstufen: grid.js meldet die unbekannte ID",
+    G.gridModellBauen(kaputt).probleme.filter(function (pr) {
+      return pr.indexOf("gibts-nicht") > -1;
+    }).length, 1);
+})();
+
 // --- 5. Alle Rezepte gegen die Schema-Regeln --------------------------
 // Laeuft ueber rezepte/*.json, nicht nur ueber das Beispiel. Damit faellt
 // auf, wenn ein neu konvertiertes Rezept das Schema verletzt (Teil von
@@ -511,8 +642,22 @@ var rezeptOrdner = path.join(wurzel, "rezepte");
 var dateien = fs.readdirSync(rezeptOrdner).filter(function (d) { return d.endsWith(".json"); }).sort();
 pruefe("mindestens zwei Rezepte vorhanden", dateien.length >= 2, true);
 
-dateien.forEach(function (datei) {
-  var r = JSON.parse(fs.readFileSync(path.join(rezeptOrdner, datei), "utf8"));
+// Die Vorlage unter tools/testdaten/ haengt mit dran (T-0046). Sie ist
+// der Anker der Abschnitte 1 bis 3, wurde aber selbst nie gegen das
+// Schema gehalten — und war falsch: zeit_gesamt_s 3900, waehrend der
+// eigene Plan bei 3000 endet und der eigene Untertitel "50 Minuten"
+// sagt. Eine Vorlage, die sich selbst widerspricht, ist ein schlechter
+// Anker. `dateien` bleibt unveraendert, die Manifest-Pruefung weiter
+// unten darf die Testdatei nicht sehen.
+var zuPruefen = dateien.map(function (d) {
+  return { ordner: rezeptOrdner, datei: d };
+}).concat([
+  { ordner: path.join(wurzel, "tools/testdaten"), datei: "linsen-eintopf.json" }
+]);
+
+zuPruefen.forEach(function (eintrag) {
+  var datei = eintrag.datei;
+  var r = JSON.parse(fs.readFileSync(path.join(eintrag.ordner, datei), "utf8"));
   var name = datei.replace(".json", "");
   var maengel = [];
 
@@ -583,22 +728,72 @@ dateien.forEach(function (datei) {
   // laufen und ist deshalb zu optimistisch. Deutlich zu gross heisst
   // meistens: jemand hat die Dauern stumpf addiert und die parallelen
   // Straenge uebersehen.
-  var idx = {};
-  r.schritte.forEach(function (s, i) { idx[s.id] = i; });
-  var vorstufen = r.schritte.map(function (s, i) {
-    if (s.vorstufen === undefined || s.vorstufen === null) return i > 0 ? [i - 1] : [];
-    return s.vorstufen.map(function (v) { return idx[v]; })
-                      .filter(function (j) { return j !== undefined; });
-  });
+  //
+  // Die Obergrenze hing bis T-0046 an `allein < summe` und griff deshalb
+  // NUR bei Rezepten mit parallelen Straengen. Bei einem linearen Rezept
+  // ist `allein === summe`, die Bedingung nie wahr — und jede beliebig
+  // grosse Zahl lief durch. So kamen Pfannkuchen (10800 gegen Plan 8100)
+  // und der Linsen-Eintopf (3900 gegen 3000, waehrend der eigene
+  // Untertitel "50 Minuten" sagt) durch alle 137 gruenen Pruefungen.
+  //
+  // Jetzt gilt die Obergrenze immer. Asymmetrisch mit Absicht: weniger
+  // als der Plan ist physikalisch unmoeglich und bleibt hart verboten,
+  // mehr als der Plan ist plausibler Puffer (Ofen vorheizen, Anrichten)
+  // und bekommt 10 % Luft. Der Eierkuchen braucht sie: 3600 gegen Plan
+  // 3570 ist eine ehrliche Rundung auf die volle Stunde.
+  var vorstufen = Z.vorstufenIndizes(r.schritte);
   var dauern = r.schritte.map(function (s) { return s.dauer_s; });
   var unbeauf = r.schritte.map(function (s) { return !!s.unbeaufsichtigt; });
   var allein = Z.realeGesamtdauer(dauern, vorstufen, unbeauf);
   var summe = dauern.reduce(function (a, d) { return a + (d || 0); }, 0);
+  var TOLERANZ_OBEN = 0.10;
   if (r.zeit_gesamt_s && r.zeit_gesamt_s < allein) {
     maengel.push("zeit_gesamt_s " + r.zeit_gesamt_s + " < Einpersonen-Plan " + allein);
   }
-  if (allein < summe && r.zeit_gesamt_s >= summe) {
-    maengel.push("zeit_gesamt_s " + r.zeit_gesamt_s + " ignoriert die parallelen Straenge (Einpersonen-Plan " + allein + ", Summe " + summe + ")");
+  var obergrenze = Math.round(allein * (1 + TOLERANZ_OBEN));
+  if (r.zeit_gesamt_s && r.zeit_gesamt_s > obergrenze) {
+    maengel.push("zeit_gesamt_s " + r.zeit_gesamt_s + " > Einpersonen-Plan " + allein +
+                 " + " + Math.round(TOLERANZ_OBEN * 100) + " % (max " + obergrenze + ")" +
+                 (allein < summe
+                   ? " — sieht nach stumpf addierten Dauern aus (Summe " + summe + ")"
+                   : ""));
+  }
+
+  // Und die drei Kacheln im Kopf duerfen zusammen nicht mehr ergeben als
+  // das Ganze (T-0053). Der Leser sieht "Arbeit", "ohne Zutun" und
+  // "gesamt" nebeneinander und addiert die ersten beiden — beim
+  // Pfannkuchen kamen 45 Min + 1 Std 45 Min = 2 Std 30 Min heraus,
+  // waehrend daneben 2 Std 15 Min stand.
+  //
+  // Die Ursache ist, dass die beiden Zahlen aus verschiedenen Quellen
+  // kommen: "Arbeit" aus dem JSON-Feld, "ohne Zutun" aus dem gerechneten
+  // Plan. Solange ein Arbeitsschritt `dauer_s: null` hat, kann das
+  // auseinanderlaufen, ohne dass eine der Einzelpruefungen anschlaegt —
+  // beide Werte sind fuer sich plausibel.
+  var frei = Z.freieZeit(dauern, vorstufen, unbeauf);
+  if (r.zeit_aktiv_s && r.zeit_gesamt_s && r.zeit_aktiv_s + frei > r.zeit_gesamt_s) {
+    maengel.push("Kennzahlen widersprechen sich: zeit_aktiv_s " + r.zeit_aktiv_s +
+                 " + freie Zeit " + frei + " = " + (r.zeit_aktiv_s + frei) +
+                 " > zeit_gesamt_s " + r.zeit_gesamt_s +
+                 " (Arbeitsschritt ohne dauer_s?)");
+  }
+
+  // zeit_aktiv_s stand bis T-0046 ueberhaupt nicht im Pruefskript, obwohl
+  // docs/schema.md und docs/konvertierung.md dafuer eine Untergrenze
+  // nennen. Dieselbe Fehlerklasse wie oben, ein Feld weiter: eine
+  // Kennzahl im Rezeptkopf, die niemand gegen den Plan haelt.
+  var betreut = r.schritte.reduce(function (a, s2) {
+    return a + (s2.unbeaufsichtigt ? 0 : (s2.dauer_s || 0));
+  }, 0);
+  if (r.zeit_aktiv_s !== null && r.zeit_aktiv_s !== undefined) {
+    if (r.zeit_aktiv_s < betreut) {
+      maengel.push("zeit_aktiv_s " + r.zeit_aktiv_s +
+                   " < Summe der beaufsichtigten Stufen " + betreut);
+    }
+    if (r.zeit_gesamt_s && r.zeit_aktiv_s > r.zeit_gesamt_s) {
+      maengel.push("zeit_aktiv_s " + r.zeit_aktiv_s +
+                   " > zeit_gesamt_s " + r.zeit_gesamt_s);
+    }
   }
 
   // Und jede Menge muss bei jeder waehlbaren Portionszahl sauber sein.
@@ -639,6 +834,364 @@ Object.keys(imManifest).forEach(function (id) {
   if (dateien.indexOf(id + ".json") === -1) manifestMaengel.push(id + " steht im Manifest, hat aber keine Datei");
 });
 pruefe("Manifest aktuell (sonst: node tools/build-manifest.js)", manifestMaengel, []);
+
+// --- 5a2. Einkaufsliste im DOM (T-0044) -------------------------------
+// Der Abhak-Zustand lebt nur als Klasse am Listeneintrag. Bis T-0044 warf
+// der Portionswechsel die Liste weg und baute sie neu — Haken, Scroll und
+// Fokus gingen mit. Hier laeuft das echte einkaufRendern gegen die
+// DOM-Attrappe, weil der Fehler nur im Verhalten sichtbar ist.
+(function () {
+  var sp = JSON.parse(fs.readFileSync(path.join(rezeptOrdner, "spaetzle.json"), "utf8"));
+  var mt = JSON.parse(fs.readFileSync(path.join(rezeptOrdner, "maultaschen.json"), "utf8"));
+  var auswahl = [
+    { rezept: sp, portionen: sp.portionen },
+    { rezept: mt, portionen: mt.portionen }
+  ];
+  var ziel = DOM.knotenBauen("div");
+  R.einkaufRendern(auswahl, ziel);
+
+  function posten() { return ziel.querySelectorAll(".einkauf-posten"); }
+  function haken() {
+    return ziel.querySelectorAll(".einkauf-posten.abgehakt").map(function (li) {
+      return li.querySelector(".posten-name").textContent;
+    }).sort();
+  }
+  function menge(name) {
+    var treffer = posten().filter(function (li) {
+      return li.querySelector(".posten-name").textContent === name;
+    })[0];
+    return treffer ? treffer.querySelector(".posten-menge").textContent : null;
+  }
+
+  pruefe("Einkauf/DOM: Liste hat Posten", posten().length > 0, true);
+
+  [0, 2, 4].forEach(function (i) { posten()[i].ausloesen("click"); });
+  var vorher = haken();
+  var anzahlVorher = posten().length;
+  pruefe("Einkauf/DOM: drei Posten abgehakt", vorher.length, 3);
+  // Spaetzlemehl kommt nur aus dem ersten Rezept und skaliert mit.
+  pruefe("Einkauf/DOM: Menge bei 4 Portionen", menge("Spätzlemehl"), "400 g");
+
+  // Portionswechsel auf 8 beim ersten Rezept (Knopf 2/4/6/8 -> Index 3).
+  ziel.querySelectorAll(".portionen-knopf")[3].ausloesen("click");
+
+  pruefe("Einkauf/DOM: Haken ueberleben den Portionswechsel", haken(), vorher);
+  // Ohne diese Zeile geht ein kaputter Schluessel durch: die Liste
+  // verdoppelt sich dann, statt Haken zu verlieren, und die Haken-Pruefung
+  // allein bliebe gruen. Beim ersten Anlauf ist mir genau das passiert.
+  pruefe("Einkauf/DOM: die Liste verdoppelt sich dabei nicht",
+    posten().length, anzahlVorher);
+  // Gegenprobe zum Fix selbst: die Haken duerfen nicht deshalb stehen
+  // bleiben, weil ueberhaupt nichts mehr passiert.
+  pruefe("Einkauf/DOM: die Menge wird trotzdem fortgeschrieben",
+    menge("Spätzlemehl"), "800 g");
+
+  // Zweimal Abhaken schaltet wieder aus, und aria-pressed geht mit.
+  var einer = posten()[0];
+  var warAn = einer.classList.contains("abgehakt");
+  einer.ausloesen("click");
+  pruefe("Einkauf/DOM: Abhaken schaltet um, aria-pressed folgt",
+    [einer.classList.contains("abgehakt"), einer.getAttribute("aria-pressed")],
+    [!warAn, String(!warAn)]);
+})();
+
+// Der Kennzahlenstreifen, wie er wirklich im DOM landet (T-0049).
+// Die Rechnung dahinter war geprueft, die Anzeige nicht — auffaellig
+// geworden, weil eine Negativprobe an render.js keinen einzigen Test
+// umwarf. Genau die Luecke, in der eine korrigierte Formel und ein
+// stehengebliebenes Bild nebeneinander leben koennen.
+(function () {
+  function kacheln(id) {
+    var r = JSON.parse(fs.readFileSync(path.join(rezeptOrdner, id + ".json"), "utf8"));
+    var ziel = DOM.knotenBauen("div");
+    ziel.className = "rezept";
+    R.rezeptRendern(r, ziel);
+    return ziel.querySelectorAll(".kennzahl").map(function (k) {
+      return k.querySelector(".kennzahl-label").textContent + "=" +
+             k.querySelector(".kennzahl-wert").textContent;
+    });
+  }
+  pruefe("Kennzahlen/DOM: Maultaschen",
+    kacheln("maultaschen"),
+    ["Arbeit=1 Std", "ohne Zutun=15 Min", "gesamt=1 Std 15 Min"]);
+  pruefe("Kennzahlen/DOM: Spaetzle",
+    kacheln("spaetzle"),
+    ["Arbeit=28 Min", "ohne Zutun=20 Min", "gesamt=48 Min"]);
+
+  // Die eigentliche Zusage aus T-0053: was der Leser addiert, geht auf.
+  // Auf der ANZEIGE geprueft, nicht auf den Rohwerten — dort entsteht der
+  // Widerspruch, den jemand sieht.
+  function alsMinuten(text) {
+    var std = /(\d+)\s*Std/.exec(text), min = /(\d+)\s*Min/.exec(text);
+    return (std ? parseInt(std[1], 10) * 60 : 0) + (min ? parseInt(min[1], 10) : 0);
+  }
+  var widersprueche = dateien.map(function (d) { return d.replace(".json", ""); })
+    .map(function (id) {
+      var w = kacheln(id).map(function (k) { return alsMinuten(k.split("=")[1]); });
+      return w[0] + w[1] === w[2]
+        ? null
+        : id + ": " + w[0] + " + " + w[1] + " = " + (w[0] + w[1]) + " statt " + w[2];
+    }).filter(Boolean);
+  pruefe("Kennzahlen/DOM: Arbeit + ohne Zutun ergibt gesamt, in jedem Rezept",
+    widersprueche, []);
+  // Pfannkuchen zweimal korrigiert: T-0046 nahm die falschen 3 Std auf das
+  // Planende zurueck, T-0053 gab dem Fuellen seine 15 Minuten und hob das
+  // Planende entsprechend an. 45 + 105 = 150 Min.
+  pruefe("Kennzahlen/DOM: Pfannkuchen",
+    kacheln("pfannkuchen"),
+    ["Arbeit=45 Min", "ohne Zutun=1 Std 45 Min", "gesamt=2 Std 30 Min"]);
+})();
+
+// --- 5a6. Zeitachse: Start UND Planende (T-0052) ----------------------
+// Alle Marken sind Startzeiten, aber nur die letzte trug eine Einheit —
+// und las sich damit als Gesamtdauer. Gemessen war die Luecke beim
+// Eierkuchen am groessten: Achse endete auf 35 Min, gesamt sind 60.
+// Jetzt traegt die letzte Zelle beides: links weiter den Start ihrer
+// Spalte, rechts das Ende des Plans.
+(function () {
+  function achse(id) {
+    var r = JSON.parse(fs.readFileSync(path.join(rezeptOrdner, id + ".json"), "utf8"));
+    var ziel = DOM.knotenBauen("div");
+    ziel.className = "rezept";
+    R.rezeptRendern(r, ziel);
+    var marken = ziel.querySelectorAll(".zeitachse-marke");
+    return {
+      starts: marken.map(function (m) {
+        return m.querySelector(".zeitachse-start").textContent;
+      }),
+      ende: ziel.querySelector(".zeitachse-ende").textContent,
+      vorgelesen: marken.map(function (m) { return m.getAttribute("aria-label"); }),
+      // Was beim Kopieren herauskommt: nur echte Textknoten.
+      kopiert: marken.map(function (m) { return m.textContent; }),
+      gesamt: ziel.querySelectorAll(".kennzahl").map(function (k) {
+        return k.querySelector(".kennzahl-label").textContent === "gesamt"
+          ? k.querySelector(".kennzahl-wert").textContent : null;
+      }).filter(Boolean)[0]
+    };
+  }
+
+  // Keine Marke behauptet mehr eine Summe: alle Starts sind blanke Zahlen.
+  pruefe("Zeitachse: Startmarken tragen keine Einheit",
+    achse("maultaschen").starts, ["0", "10", "40", "60"]);
+  pruefe("Zeitachse: die Startzeit der letzten Stufe bleibt erhalten",
+    achse("eierkuchen").starts.slice(-1)[0], "35");
+
+  // Das Planende steht rechts in derselben Zelle — und muss zur Kennzahl
+  // passen, sonst widerspricht sich der Kopf wieder selbst.
+  pruefe("Zeitachse: Planende beim Eierkuchen", achse("eierkuchen").ende, "60 Min");
+  pruefe("Zeitachse: Planende bei den Maultaschen", achse("maultaschen").ende, "75 Min");
+  // Vorgelesen bekommt jede Marke ihre Einheit, die letzte zusaetzlich
+  // das Planende — als aria-label, damit nichts davon beim Kopieren
+  // mitgeht (gemessen: ein versteckter Textknoten wird mitgenommen).
+  pruefe("Zeitachse: jede Marke wird mit Einheit vorgelesen",
+    achse("maultaschen").vorgelesen,
+    ["ab 0 Minuten", "ab 10 Minuten", "ab 40 Minuten",
+     "ab 60 Minuten, Planende 75 Minuten"]);
+  // Eierkuchen hat eine Marke bei 1 — dort muss der Numerus stimmen.
+  pruefe("Zeitachse: Einzahl bei einer Minute",
+    achse("eierkuchen").vorgelesen[1], "ab 1 Minute");
+  pruefe("Zeitachse: kopiert wird nur, was man sieht",
+    achse("maultaschen").kopiert, ["0", "10", "40", "6075 Min"]);
+
+  var abweichungen = dateien.map(function (d) { return d.replace(".json", ""); })
+    .map(function (id) {
+      var a = achse(id);
+      // "1 Std 15 Min" gegen "75 Min" — ueber die Minuten vergleichen.
+      var minuten = parseInt(a.ende, 10);
+      var k = a.gesamt;
+      var std = /(\d+)\s*Std/.exec(k);
+      var min = /(\d+)\s*Min/.exec(k);
+      var kMinuten = (std ? parseInt(std[1], 10) * 60 : 0) + (min ? parseInt(min[1], 10) : 0);
+      return minuten === kMinuten ? null : id + ": Achse " + minuten + " gegen Kennzahl " + kMinuten;
+    }).filter(Boolean);
+  pruefe("Zeitachse: das Planende deckt sich in jedem Rezept mit der Kennzahl",
+    abweichungen, []);
+})();
+
+// Isomorphie-Gegenprobe zu T-0044: dieselbe Fehlerklasse im Rezept-Grid.
+// Auch dort lebt der Haken nur als Klasse im DOM, und auch dort gibt es
+// einen Portionswechsel. Der Weg ist ein anderer (mengenAktualisieren
+// schreibt in place statt neu zu bauen) und deshalb heil — aber das war
+// vorher nirgends festgehalten.
+(function () {
+  var sp = JSON.parse(fs.readFileSync(path.join(rezeptOrdner, "spaetzle.json"), "utf8"));
+  var ziel = DOM.knotenBauen("div");
+  ziel.className = "rezept";
+  R.rezeptRendern(sp, ziel);
+
+  var zutaten = ziel.querySelectorAll(".zutat");
+  [0, 1].forEach(function (i) { zutaten[i].ausloesen("click"); });
+  var hakenVorher = ziel.querySelectorAll(".abgehakt").length;
+  var mengeVorher = ziel.querySelectorAll(".menge")[0].textContent;
+  pruefe("Grid: zwei Zeilen abgehakt (beide Ansichten, Menge + Zutat)", hakenVorher, 8);
+
+  ziel.querySelectorAll(".portionen-knopf")[3].ausloesen("click");
+  pruefe("Grid: Haken ueberleben den Portionswechsel",
+    ziel.querySelectorAll(".abgehakt").length, hakenVorher);
+  pruefe("Grid: Mengen werden dabei verdoppelt",
+    [mengeVorher, ziel.querySelectorAll(".menge")[0].textContent], ["400 g", "800 g"]);
+})();
+
+// Und der Abgleich selbst: weggefallene Posten verschwinden, neue kommen
+// dazu, die Reihenfolge stimmt, und wer bleibt, behaelt seinen Knoten.
+(function () {
+  var liste = DOM.knotenBauen("ul");
+  function schreiben(namen) {
+    R.postenSchreiben(liste, namen.map(function (n) {
+      return { schluessel: n + "|g|skaliert", name: n, einheit: "g", menge: 100,
+               menge_bis: null, mengenlos: false, fix: false, quellen: ["X"] };
+    }));
+  }
+  function namen() {
+    return liste.children.map(function (li) {
+      return li.querySelector(".posten-name").textContent;
+    });
+  }
+  schreiben(["Butter", "Mehl", "Zucker"]);
+  var mehlKnoten = liste.children[1];
+  mehlKnoten.classList.add("abgehakt");
+
+  schreiben(["Apfel", "Mehl", "Zimt"]);
+  pruefe("Einkauf/Abgleich: Reihenfolge nach dem Wechsel",
+    namen(), ["Apfel", "Mehl", "Zimt"]);
+  pruefe("Einkauf/Abgleich: der bleibende Posten behaelt Knoten und Haken",
+    [liste.children[1] === mehlKnoten, mehlKnoten.classList.contains("abgehakt")],
+    [true, true]);
+
+  schreiben([]);
+  pruefe("Einkauf/Abgleich: leere Liste raeumt alles weg", liste.children.length, 0);
+})();
+
+// --- 5a3. Trennzeichen stehen im Text, nicht im Stylesheet (T-0043) ---
+// Die Serie T-0037 / Quellenzeile / T-0042 hatte dreimal dieselbe
+// Ursache: CSS malte eine Trennung, die der Text nicht enthielt — beim
+// Kopieren klebten die Woerter zusammen. Beim Umbau der Quellenzeile
+// wurde der Textknoten ergaenzt und die alte CSS-Regel stehen gelassen;
+// seitdem stand dort ein Gedankenstrich doppelt, sichtbar im Omelett.
+//
+// Zwei Pruefungen: der gerenderte Text darf den Strich nur einmal haben,
+// und im Stylesheet darf kein `content` mit sichtbarem Text stehen,
+// ausser den bewusst behaltenen. Wer einen neuen anlegt, faellt hier auf
+// und muss sich entscheiden.
+(function () {
+  var om = JSON.parse(fs.readFileSync(path.join(rezeptOrdner, "omelett-mit-pilzen.json"), "utf8"));
+  var ziel = DOM.knotenBauen("div");
+  R.rezeptRendern(om, ziel);
+  var quelle = ziel.querySelector(".quelle");
+  var striche = (quelle.textContent.match(/—/g) || []).length;
+  // Einer trennt Titel und Autor, einer den Hinweis.
+  pruefe("Quelle: Gedankenstriche im gerenderten Text", striche, 2);
+
+  var css = fs.readFileSync(path.join(wurzel, "css/stil.css"), "utf8");
+  var erlaubt = [".zurueck-link::before"];  // rein dekorativer Pfeil
+  var mitInhalt = [];
+  css.replace(/([^{}]+)\{([^}]*)\}/g, function (_, auswahl, block) {
+    var treffer = block.match(/(^|[;\s])content:\s*("[^"]*"|'[^']*')/);
+    if (!treffer) return "";
+    var text = treffer[2].slice(1, -1).trim();
+    if (text) mitInhalt.push(auswahl.trim());
+    return "";
+  });
+  pruefe("CSS: kein Pseudo-Inhalt ausser den bewusst behaltenen",
+    mitInhalt.filter(function (a) { return erlaubt.indexOf(a) === -1; }), []);
+})();
+
+// --- 5a4. Wo .gefaess wirklich steht (T-0048) -------------------------
+// Bis T-0048 stand im Stylesheet `.untertitel + .gefaess` mit einer
+// negativen Marge und einem Kommentar, der ein Layout beschrieb, das es
+// seit T-0039.3 nicht mehr gibt: die Ausstattung sitzt in
+// section.rezept-anhang unter dem Grid, nie direkt hinter dem Untertitel.
+// Gemessen ueber alle Rezepte: fuenf .gefaess-Elemente, null Treffer.
+// Diese Pruefung haelt den Zustand fest — zieht jemand die Ausstattung
+// zurueck nach oben, faellt es hier auf und nicht erst am Abstand.
+(function () {
+  var stellen = [];
+  dateien.forEach(function (datei) {
+    var r = JSON.parse(fs.readFileSync(path.join(rezeptOrdner, datei), "utf8"));
+    var ziel = DOM.knotenBauen("div");
+    ziel.className = "rezept";
+    R.rezeptRendern(r, ziel);
+    ziel.querySelectorAll(".gefaess").forEach(function (g) {
+      var geschwister = g.elternteil.children;
+      var davor = geschwister[geschwister.indexOf(g) - 1];
+      stellen.push({
+        eltern: g.elternteil.className,
+        davorUntertitel: !!(davor && davor.classList.contains("untertitel"))
+      });
+    });
+  });
+  pruefe("Ausstattung: jedes Rezept hat genau eine", stellen.length, dateien.length);
+  pruefe("Ausstattung: steht in .rezept-anhang, nie hinter dem Untertitel",
+    stellen.filter(function (o) {
+      return o.eltern !== "rezept-anhang" || o.davorUntertitel;
+    }), []);
+})();
+
+// --- 5a5. Kochleiste ist eine Live-Region (T-0051) --------------------
+// Im Kochmodus ist das ganze Feedback reine Textaenderung: "Schritt 3 von
+// 6", die neue Anweisung, das Ablaufen der Uhr. Ohne aria-live sagt ein
+// Screenreader davon nichts — und der Countdown-Alarm, der einzige Grund
+// fuer den Timer, ist fuer blinde Nutzer schlicht nicht da. Im ganzen
+// Repo gab es bis T-0051 kein einziges aria-live.
+(function () {
+  var sp = JSON.parse(fs.readFileSync(path.join(rezeptOrdner, "spaetzle.json"), "utf8"));
+  var ziel = DOM.knotenBauen("div");
+  ziel.className = "rezept";
+  R.rezeptRendern(sp, ziel);
+  var km = K.kochmodusBauen(G.gridModellBauen(sp), ziel);
+  km.starten();
+
+  var leiste = document.body.querySelector(".koch-leiste");
+  var text = leiste.querySelector(".koch-text");
+  pruefe("Kochleiste: Schrittwechsel wird angesagt",
+    [text.getAttribute("aria-live"), text.getAttribute("aria-atomic")],
+    ["polite", "true"]);
+  pruefe("Kochleiste: die Uhr ist als Timer ausgezeichnet",
+    leiste.querySelector(".koch-uhr").getAttribute("role"), "timer");
+  // Die Uhr selbst darf NICHT live sein — sonst liest der Screenreader
+  // jede Sekunde vor. Angesagt wird nur das Ablaufen, einmal.
+  pruefe("Kochleiste: die Uhr tickt nicht in die Ansage",
+    leiste.querySelector(".koch-uhr").getAttribute("aria-live"), null);
+
+  var alarm = leiste.querySelector(".koch-alarm");
+  pruefe("Kochleiste: es gibt eine Statuszeile fuer den Ablauf",
+    alarm.getAttribute("role"), "status");
+  pruefe("Kochleiste: sie schweigt, solange nichts abgelaufen ist",
+    alarm.textContent, "");
+
+  // Timer starten, Wanduhr ueber das Ende schieben, den Tick von Hand
+  // ausloesen — genau der Ablauf im gedrosselten Tab. Ein zweiter
+  // Knopfdruck taete es NICHT: der startet nach Ablauf wieder von vorn.
+  var echtInterval = globalThis.setInterval, echtClear = globalThis.clearInterval;
+  var tick = null;
+  globalThis.setInterval = function (fn) { tick = fn; return 1; };
+  globalThis.clearInterval = function () {};
+  km.timerUmschalten();
+  var echteUhr = Date.now;
+  Date.now = function () { return echteUhr() + 999999; };
+  tick();
+  Date.now = echteUhr;
+  globalThis.setInterval = echtInterval;
+  globalThis.clearInterval = echtClear;
+
+  pruefe("Kochleiste: abgelaufen wird einmal angesagt",
+    leiste.querySelector(".koch-alarm").textContent, "Zeit abgelaufen");
+
+  km.beenden();
+})();
+
+// Isomorphie-Fund zu T-0051: dieselbe Klasse in der Uebersicht. Beim
+// Anhaken eines Rezepts taucht die Leiste "N Rezepte gewaehlt" auf —
+// eine Zustandsaenderung, die vorher nur zu sehen war.
+(function () {
+  var rezepte = dateien.map(function (d) {
+    return JSON.parse(fs.readFileSync(path.join(rezeptOrdner, d), "utf8"));
+  });
+  var ziel = DOM.knotenBauen("div");
+  R.uebersichtRendern(rezepte, ziel);
+  pruefe("Uebersicht: der Auswahlzaehler wird angesagt",
+    ziel.querySelector(".einkauf-zaehler").getAttribute("aria-live"), "polite");
+})();
 
 // --- 5b. Das zweite Rezept im Detail ----------------------------------
 var eier = JSON.parse(fs.readFileSync(path.join(rezeptOrdner, "eierkuchen.json"), "utf8"));
@@ -712,5 +1265,70 @@ var listeLuecken = [];
 });
 pruefe("Stufenliste: jede Stufe kommt in allen Rezepten vor", listeLuecken, []);
 
-console.log(fehler === 0 ? "\nALLE PRUEFUNGEN GRUEN" : "\n" + fehler + " FEHLER");
-process.exit(fehler ? 1 : 0);
+// --- 6. Ladeweg: wann darf das Manifest einspringen? (T-0047) ---------
+// Ueber file:// ist der Fallback der Ladeweg, ueber http(s) ein Fehler,
+// der wie ein Erfolg aussieht: bis T-0047 zeigte jeder HTTP-500, jeder
+// Netzwerkabbruch und jede kaputte JSON kommentarlos die von Hand
+// erzeugte Manifest-Kopie. Deshalb hier mit gestelltem fetch durchgespielt.
+function ladewegPruefen() {
+  var echt = { id: "spaetzle", titel: "frisch vom Server" };
+  var manifest = { spaetzle: { id: "spaetzle", titel: "alte Manifest-Fassung" } };
+  globalThis.REZEPTE = manifest;
+
+  function fetchStellen(art) {
+    globalThis.fetch = function () {
+      if (art === "ok") {
+        return Promise.resolve({ ok: true, json: function () { return Promise.resolve(echt); } });
+      }
+      if (art === "500") return Promise.resolve({ ok: false, status: 500 });
+      if (art === "kaputt") {
+        return Promise.resolve({
+          ok: true,
+          json: function () { return Promise.reject(new SyntaxError("Unexpected token }")); }
+        });
+      }
+      // file:// — der Browser laesst fetch gar nicht erst zu
+      return Promise.reject(new TypeError("Failed to fetch"));
+    };
+  }
+
+  function lauf(name, art, protokoll, pruefung) {
+    fetchStellen(art);
+    return A.rezeptLaden("spaetzle", protokoll)
+      .then(function (r) { pruefe(name, pruefung(null, r), true); })
+      .catch(function (e) { pruefe(name, pruefung(e, null), true); });
+  }
+
+  pruefe("Ladeweg: Fallback nur ueber file://",
+    [A.fallbackErlaubt("file:"), A.fallbackErlaubt("http:"), A.fallbackErlaubt("https:")],
+    [true, false, false]);
+
+  return Promise.resolve()
+    .then(function () {
+      return lauf("Ladeweg: http + alles gut -> Fassung vom Server", "ok", "http:",
+        function (e, r) { return !e && r.titel === "frisch vom Server"; });
+    })
+    .then(function () {
+      return lauf("Ladeweg: http + HTTP 500 -> Fehler statt alter Kopie", "500", "http:",
+        function (e, r) { return !r && !!e && e.message.indexOf("HTTP 500") > -1; });
+    })
+    .then(function () {
+      return lauf("Ladeweg: http + kaputte JSON -> Fehler statt alter Kopie", "kaputt", "http:",
+        function (e, r) { return !r && !!e && e.message.indexOf("Unexpected token") > -1; });
+    })
+    .then(function () {
+      return lauf("Ladeweg: file:// + fetch blockiert -> Manifest springt ein", "blockiert", "file:",
+        function (e, r) { return !e && r.titel === "alte Manifest-Fassung"; });
+    })
+    .then(function () {
+      globalThis.REZEPTE = {};
+      return lauf("Ladeweg: nichts da -> \"nicht gefunden\"", "blockiert", "file:",
+        function (e, r) { return !r && !!e && e.message.indexOf("nicht gefunden") > -1; });
+    })
+    .then(function () { globalThis.REZEPTE = manifest; });
+}
+
+ladewegPruefen().then(function () {
+  console.log(fehler === 0 ? "\nALLE PRUEFUNGEN GRUEN" : "\n" + fehler + " FEHLER");
+  process.exit(fehler ? 1 : 0);
+});

@@ -112,11 +112,6 @@ body {
   font-size: .95rem;
 }
 
-/* Nur wenn ein Untertitel davorsteht, wird dessen Abstand zurueckgenommen.
-   Als feste negative Marge auf .gefaess wuerde sie ohne Untertitel in die
-   Ueberschrift ziehen — `untertitel` ist laut Schema optional. */
-.untertitel + .gefaess { margin-top: -1.1rem; }
-
 .gefaess-label {
   margin-right: .5rem;
   color: var(--tinte2);
@@ -313,6 +308,32 @@ body {
 }
 
 .zeitachse-marke { font-variant-numeric: tabular-nums; }
+
+/* Die letzte Zelle traegt zwei Zahlen (T-0052): links der Start ihrer
+   Spalte wie ueberall, rechts an der Kante das Ende des Plans. `space-
+   between` setzt das Ende genau dorthin, wo die Zeitachse aufhoert —
+   im Browser nachgemessen, rechte Kante der Marke deckt sich mit der
+   rechten Kante der letzten Spalte. Das Ende ist gedaempft, damit die
+   Reihe der Startzeiten optisch weiter durchlaeuft. */
+.zeitachse-marke-letzte {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0 .5rem;
+}
+
+/* `margin-left: auto` haelt das Ende rechts, auch wenn es umbricht.
+   Umbrechen MUSS es koennen: die Tabelle laeuft mit `table-layout: fixed`,
+   die letzte Spalte ist so breit wie ihre Stufe dauert — beim Pfannkuchen
+   sind das 15 von 150 Minuten. Ohne Umbruch stossen dort "135" und
+   "150 Min" aneinander (im Browser gesehen). `nowrap` haelt wenigstens
+   Zahl und Einheit zusammen. */
+.zeitachse-ende {
+  margin-left: auto;
+  color: var(--tinte2);
+  font-weight: 400;
+  white-space: nowrap;
+}
 
 /* Vermerk auf gedeckelten Stufen: die Breite entspricht hier nicht der
    Dauer, und das soll man nicht raten muessen. */
@@ -519,8 +540,6 @@ td.schritt {
   color: var(--gedaempft);
   font-size: .85rem;
 }
-
-.quelle-hinweis::before { content: " — "; }
 
 .probleme {
   margin-bottom: 2rem;
@@ -822,6 +841,30 @@ body.kochmodus .zutat.koch-neu { border-bottom-color: var(--akzent); }
   font-size: 1.9rem;
   font-variant-numeric: tabular-nums;
   letter-spacing: -.02em;
+}
+
+/* Nur fuer Screenreader (T-0051). Nicht display:none und nicht
+   visibility:hidden — beides nimmt den Knoten aus dem Baum, den
+   Hilfsmittel lesen. Die 1px-Klammer mit clip ist der Weg, der ueberall
+   funktioniert.
+
+   ACHTUNG (gemessen 23.08.2026, T-0052): dieser Text WIRD beim Kopieren
+   mitgenommen. `Selection.toString()` auf einer Zelle mit so einer
+   Spanne lieferte "35\nPlanende60 Min" — die Klebestelle aus T-0037.
+   Also nur dort verwenden, wo niemand kopiert (Statusansagen der
+   Kochleiste). In Inhalten, die jemand markiert, gehoert der Zusatz in
+   ein `aria-label`, nicht in einen Textknoten. */
+.nur-vorlesen {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }
 
 .koch-uhr.laeuft { font-weight: 600; }

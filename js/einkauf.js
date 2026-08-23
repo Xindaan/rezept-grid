@@ -41,6 +41,9 @@
 
         if (!vorhanden) {
           vorhanden = {
+            // Identitaet des Postens, auch fuer die Anzeige (T-0044):
+            // was denselben Schluessel behaelt, behaelt seinen Haken.
+            schluessel: k,
             name: z.name,
             einheit: mengenlos ? null : z.einheit,
             menge: mengenlos ? null : 0,

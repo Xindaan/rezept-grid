@@ -1,6 +1,6 @@
 # STATE.md — rezept-grid
 
-Stand: 2026-08-15
+Stand: 2026-08-23
 
 ## Ziel
 
@@ -24,18 +24,32 @@ konvertiert.
   diesem Plan (T-0030/T-0032) — eine Spalte ist ein Zeitpunkt, und
   parallele Straenge stehen nebeneinander, wenn ihre Zeilen sich nicht
   ueberschneiden.
-- Pruefung: `node tools/pruefe-grid.js` — **137/137 gruen**. Laeuft ueber
-  alle Rezepte, prueft Schema, Layout, Zeitplan und Manifest-Aktualitaet.
+- Pruefung: `node tools/pruefe-grid.js` — **197/197 gruen**. Laeuft ueber
+  alle Rezepte (samt der Vorlage in `tools/testdaten/`) und prueft Schema,
+  Layout, Zeitplan, Manifest — und seit T-0044 auch die DOM-Schicht:
+  Einkaufsliste, Kennzahlenstreifen, Kochleiste und Ladeweg laufen gegen
+  `tools/dom-attrappe.js` (kein jsdom, keine Abhaengigkeiten).
 - Nach jeder Rezeptaenderung noetig: `node tools/build-manifest.js`.
 - Vorschau: `python3 -m http.server 8412`, Konfiguration in
   `.claude/launch.json`.
 
 ## Next actions
 
-- (nichts offen)
+- (nichts offen). Der externe Code-Review ist vollstaendig abgearbeitet,
+  Backlog und Next sind leer. T-0009 war beim Nachpruefen bereits erledigt:
+  Repo ist oeffentlich, Pages laeuft unter
+  https://xindaan.github.io/rezept-grid/ (Quelle `main` / root).
 
 ## Letzte Done
 
+- T-0009 Verteilung: Repo oeffentlich, Pages laeuft (2026-08-23,
+  nachgeprueft — der Task stand faelschlich noch offen)
+- T-0053 Kennzahlen des Pfannkuchens gehen auf; Fuellen dauert 15 Min,
+  zweiter Fall in der Testvorlage gleich mitgefunden (2026-08-23)
+- T-0052 Zeitachse zeigt Startzeit und Planende; dabei eine Messung aus
+  T-0042 widerlegt (versteckter Text WIRD kopiert) (2026-08-23)
+- T-0043 bis T-0051 Externer Code-Review aufgearbeitet: zehn Befunde
+  geprueft, zehn bestaetigt, neun umgesetzt (2026-08-23)
 - T-0042 Klebestellen beim Kopieren behoben (2026-08-15)
 - T-0033 Spaetzle: Wasser laeuft parallel zur Teigruhe, 48 statt 56 Min (2026-08-15)
 - T-0041 Omelett mit Pilzen, erstes Rezept mit Quelle (2026-08-15)

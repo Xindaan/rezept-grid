@@ -113,7 +113,10 @@ kein Timer.
 **`unbeaufsichtigt`** trennt Wartezeit von Arbeitszeit: `true` bei
 Schritten, die von allein laufen (koecheln, backen, ruhen, marinieren),
 `false` (Default) bei allem, wo man am Topf steht. Die Summe der
-`false`-Dauern ist die Untergrenze von `zeit_aktiv_s`.
+`false`-Dauern ist die Untergrenze von `zeit_aktiv_s`; nach oben ist
+`zeit_gesamt_s` die Grenze. `zeit_gesamt_s` selbst liegt zwischen dem
+Ende des Einpersonen-Plans und diesem Ende plus 10 %. Alle drei Grenzen
+prueft `tools/pruefe-grid.js` seit T-0046.
 
 Seit T-0032 ist das Feld kein Etikett mehr, sondern **treibt den
 Zeitplan und damit das Grid**: der Renderer plant fuer EINE Person, und

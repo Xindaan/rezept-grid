@@ -41,10 +41,65 @@
     return minuten + ":" + zwei(rest);
   }
 
+  // Countdown-Rechnung (T-0045). DOM-frei, ohne eigenen Timer, mit
+  // injizierbarer Uhr — damit sie sich pruefen laesst, ohne echte
+  // Minuten zu warten.
+  //
+  // Bis T-0045 zaehlte der Timer Ticks: `verbleibend -= 1` je
+  // setInterval-Lauf. Browser drosseln setInterval im Hintergrund-Tab auf
+  // etwa einmal pro Minute (Chrome) oder halten es ganz an (iOS Safari) —
+  // und genau dorthin gehoert dieses Geraet: Handy weglegen, kochen,
+  // zurueckkommen. Gemessen mit dem echten Modul: nach 400 s Wanduhr auf
+  // einer 360-s-Stufe standen noch 5:54 auf der Uhr, und sie lief weiter.
+  //
+  // Jetzt wird die Zeit abgelesen statt gezaehlt. `endeAt` ist der Anker
+  // auf der Wanduhr, solange der Countdown laeuft; bei Pause wird der
+  // Rest zurueckgerechnet und der Anker geloescht. Das Interval treibt
+  // dann nur noch die Anzeige, nicht mehr die Rechnung — es darf
+  // ausfallen, ohne dass die Uhr falsch geht.
+  function countdownBauen(jetzt) {
+    var uhr = jetzt || function () { return Date.now(); };
+    var dauer = null;   // Sollzeit der aktuellen Stufe, null = ohne Zeit
+    var rest = null;    // Rest im Ruhezustand (angehalten)
+    var endeAt = null;  // Wanduhr-Anker, nur waehrend es laeuft
+
+    function stand() {
+      if (rest === null) return null;
+      if (endeAt === null) return rest;
+      return Math.max(0, Math.round((endeAt - uhr()) / 1000));
+    }
+
+    return {
+      // Neue Stufe: Zeit setzen, angehalten.
+      setzen: function (d) {
+        dauer = (d === null || d === undefined) ? null : d;
+        rest = dauer;
+        endeAt = null;
+      },
+      starten: function () {
+        if (rest === null) return;
+        if (stand() <= 0) rest = dauer;  // abgelaufen -> wieder von vorn
+        endeAt = uhr() + rest * 1000;
+      },
+      pausieren: function () {
+        if (rest === null) return;
+        rest = stand();
+        endeAt = null;
+      },
+      // Abgelaufen zaehlt nicht mehr als laufend — die Anzeige schaltet
+      // damit von selbst auf "Neu" um, auch wenn der Tick spaet kommt.
+      laeuft: function () { return endeAt !== null && stand() > 0; },
+      stand: stand
+    };
+  }
+
+  // Alles ab hier braucht das DOM. countdownBauen steht bewusst davor:
+  // die Rechnung ist DOM-frei und muss auch headless pruefbar sein.
   if (typeof document === "undefined") {
     global.RezeptKochmodus = {
       kochSchritteBauen: kochSchritteBauen,
-      zeitFormatieren: zeitFormatieren
+      zeitFormatieren: zeitFormatieren,
+      countdownBauen: countdownBauen
     };
     return;
   }
@@ -63,8 +118,7 @@
     if (!stufen.length) return null;
 
     var aktiv = 0;
-    var laeuft = false;
-    var verbleibend = null;
+    var countdown = countdownBauen();
     var ticker = null;
     var leiste = null;
     var felder = {};
@@ -76,27 +130,22 @@
 
     function timerSetzen() {
       tickerStoppen();
-      laeuft = false;
-      var dauer = stufen[aktiv].schritt.dauer_s;
-      verbleibend = (dauer === null || dauer === undefined) ? null : dauer;
+      countdown.setzen(stufen[aktiv].schritt.dauer_s);
       timerZeichnen();
     }
 
     function timerUmschalten() {
-      if (verbleibend === null) return;
-      if (laeuft) {
+      if (countdown.stand() === null) return;
+      if (countdown.laeuft()) {
+        countdown.pausieren();
         tickerStoppen();
-        laeuft = false;
       } else {
-        if (verbleibend <= 0) verbleibend = stufen[aktiv].schritt.dauer_s;
-        laeuft = true;
+        countdown.starten();
+        // Das Interval treibt nur die Anzeige. Faellt es aus oder wird
+        // es gedrosselt, rechnet der naechste Tick den Stand wieder aus
+        // der Wanduhr — er holt also auf, statt hinterherzuhinken.
         ticker = setInterval(function () {
-          verbleibend -= 1;
-          if (verbleibend <= 0) {
-            verbleibend = 0;
-            tickerStoppen();
-            laeuft = false;
-          }
+          if (!countdown.laeuft()) tickerStoppen();
           timerZeichnen();
         }, 1000);
       }
@@ -105,9 +154,12 @@
 
     function timerZeichnen() {
       if (!leiste) return;
+      var verbleibend = countdown.stand();
+      var laeuft = countdown.laeuft();
       if (verbleibend === null) {
         felder.uhr.textContent = "ohne Zeit";
         felder.uhr.classList.remove("laeuft", "abgelaufen");
+        if (felder.alarm.textContent !== "") felder.alarm.textContent = "";
         felder.timerKnopf.hidden = true;
         felder.balken.hidden = true;
         return;
@@ -122,6 +174,10 @@
       felder.balkenFuellung.style.width = (Math.min(1, Math.max(0, anteil)) * 100) + "%";
       felder.uhr.classList.toggle("laeuft", laeuft);
       felder.uhr.classList.toggle("abgelaufen", verbleibend === 0);
+      // Nur bei Wechsel schreiben, sonst wiederholt der Screenreader die
+      // Ansage bei jedem Tick.
+      var ansage = verbleibend === 0 ? "Zeit abgelaufen" : "";
+      if (felder.alarm.textContent !== ansage) felder.alarm.textContent = ansage;
       felder.timerKnopf.textContent = laeuft ? "Pause" : (verbleibend === 0 ? "Neu" : "Start");
     }
 
@@ -184,7 +240,14 @@
     function leisteBauen() {
       var box = el("div", "koch-leiste");
 
+      // Live-Region (T-0051). Im Kochmodus ist das ganze Feedback reine
+      // Textaenderung — Zaehler, Titel, Anweisung. Ohne aria-live sagt
+      // ein Screenreader beim "Weiter" nichts, und man kocht blind an
+      // einer Anweisung vorbei. `atomic`, weil die drei Teile zusammen
+      // einen Satz ergeben und einzeln vorgelesen Unsinn waeren.
       var text = el("div", "koch-text");
+      text.setAttribute("aria-live", "polite");
+      text.setAttribute("aria-atomic", "true");
       felder.zaehler = el("span", "koch-zaehler");
       felder.titel = el("strong", "koch-titel");
       felder.anweisung = el("p", "koch-anweisung");
@@ -203,11 +266,22 @@
 
       var uhrBox = el("div", "koch-uhr-box");
       felder.uhr = el("span", "koch-uhr");
+      // `timer` beschreibt, was das Ding ist. Bewusst OHNE aria-live:
+      // eine live geschaltete Uhr laesst den Screenreader jede Sekunde
+      // sprechen, und der Kochmodus waere unbenutzbar.
+      felder.uhr.setAttribute("role", "timer");
       felder.timerKnopf = el("button", "koch-knopf", "Start");
       felder.timerKnopf.type = "button";
       felder.timerKnopf.addEventListener("click", timerUmschalten);
       uhrBox.appendChild(felder.uhr);
       uhrBox.appendChild(felder.timerKnopf);
+
+      // Angesagt wird deshalb nur das Ereignis, das zaehlt: dass die Zeit
+      // um ist. Sichtbar traegt das die Farbe (.abgelaufen) — und Farbe
+      // allein traegt nie.
+      felder.alarm = el("p", "koch-alarm nur-vorlesen");
+      felder.alarm.setAttribute("role", "status");
+      uhrBox.appendChild(felder.alarm);
 
       var steuerung = el("div", "koch-steuerung");
       felder.zurueck = el("button", "koch-knopf", "Zurück");
@@ -257,7 +331,12 @@
       timerUmschalten: timerUmschalten,
       stufen: stufen,
       zustand: function () {
-        return { aktiv: aktiv, laeuft: laeuft, verbleibend: verbleibend, offen: !!leiste };
+        return {
+          aktiv: aktiv,
+          laeuft: countdown.laeuft(),
+          verbleibend: countdown.stand(),
+          offen: !!leiste
+        };
       }
     };
   }
@@ -265,6 +344,7 @@
   global.RezeptKochmodus = {
     kochSchritteBauen: kochSchritteBauen,
     zeitFormatieren: zeitFormatieren,
+    countdownBauen: countdownBauen,
     kochmodusBauen: kochmodusBauen
   };
 })(typeof window !== "undefined" ? window : globalThis);

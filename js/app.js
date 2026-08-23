@@ -21,15 +21,37 @@
     return Object.keys(alle).map(function (id) { return alle[id]; });
   }
 
-  function rezeptLaden(id) {
+  // Der Fallback aufs Manifest ist der file://-Weg, kein Allzweck-Netz
+  // (T-0047).
+  //
+  // Ueber file:// blockiert jeder Browser fetch auf lokale Dateien —
+  // dort IST das Manifest der Ladeweg, und der Fallback ist richtig.
+  // Ueber http(s) ist er falsch: bis T-0047 fing der Catch alles ab, was
+  // schiefgehen kann — HTTP 500, Netzwerkabbruch, Syntaxfehler in der
+  // JSON. Alle drei zeigten kommentarlos die Manifest-Kopie, und die
+  // wird von Hand erzeugt (tools/build-manifest.js). Der Nutzer sah dann
+  // alte Mengen ohne jeden Hinweis. Das ist die schlechteste Sorte
+  // Fehler: er sieht aus wie ein Erfolg.
+  function fallbackErlaubt(protokoll) {
+    return protokoll === "file:";
+  }
+
+  function rezeptLaden(id, protokoll) {
+    var prot = protokoll || global.location.protocol;
     return fetch("rezepte/" + id + ".json", { cache: "no-store" })
       .then(function (antwort) {
         if (!antwort.ok) throw new Error("HTTP " + antwort.status);
         return antwort.json();
       })
-      .catch(function () {
+      .catch(function (fehler) {
         var eingebettet = (global.REZEPTE || {})[id];
-        if (eingebettet) return eingebettet;
+        if (eingebettet && fallbackErlaubt(prot)) return eingebettet;
+        if (eingebettet) {
+          throw new Error('Rezept "' + id + '" konnte nicht geladen werden: ' +
+            fehler.message + '. Im Manifest steht eine Fassung, sie wird ' +
+            'aber nicht gezeigt — sie kann veraltet sein. Neu erzeugen mit: ' +
+            'node tools/build-manifest.js');
+        }
         throw new Error('Rezept "' + id + '" nicht gefunden — weder als rezepte/' + id + '.json erreichbar noch im Manifest.');
       });
   }
@@ -90,6 +112,13 @@
         fehlerZeigen(ziel, fehler);
       });
   }
+
+  // Fuer tools/pruefe-grid.js greifbar — der Ladeweg ist Logik und
+  // gehoert geprueft, nicht nur im Browser durchgeklickt (T-0047).
+  global.RezeptApp = {
+    rezeptLaden: rezeptLaden,
+    fallbackErlaubt: fallbackErlaubt
+  };
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", start);

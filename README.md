@@ -92,6 +92,16 @@ im Unterverzeichnis von Pages als auch per Doppelklick auf
 `rezepte/manifest.js` ist nicht aktuell. `node tools/build-manifest.js`
 ausführen. `node tools/pruefe-grid.js` meldet diesen Fall auch.
 
+**Rote Box "Rezept konnte nicht geladen werden" mit einer HTTP- oder
+Syntax-Meldung.**
+Über einen Server (`http://`) holt die App die JSON-Datei direkt. Schlägt
+das fehl — Datei weg, HTTP-Fehler, Komma zu viel im JSON — zeigt sie den
+Fehler, statt hinter Deinem Rücken die ältere Fassung aus
+`rezepte/manifest.js` einzusetzen (T-0047). Die Meldung nennt die
+Ursache; nach dem Beheben `node tools/build-manifest.js` nachziehen.
+Per Doppelklick (`file://`) ist das Manifest der reguläre Ladeweg, dort
+springt es weiterhin ein.
+
 **Rote Box "Probleme im Rezept" über der Tabelle.**
 Das Rezept verletzt eine Schema-Regel — der Text nennt Zutat bzw.
 Schritt. Häufigster Fall: eine Zutat ist in mehreren Schritten gelistet.
@@ -113,6 +123,14 @@ node tools/pruefe-grid.js      # Layout, Skalierung, Kochmodus, alle Rezepte
 node tools/build-manifest.js   # rezepte/*.json -> rezepte/manifest.js
 ```
 
+`pruefe-grid.js` prüft seit T-0044 auch die DOM-Schicht — Einkaufsliste,
+Kennzahlenstreifen, Kochleiste, Ladeweg. Dafür gibt es
+`tools/dom-attrappe.js`: so viel DOM, wie die Prüfungen anfassen, und kein
+jsdom, weil das Projekt ohne Abhängigkeiten auskommt. Versteht ein
+Selektor nicht, **wirft** sie — eine leere Trefferliste würde wie „kein
+Problem" aussehen. Wer mehr braucht, erweitert sie dort und sieht dabei,
+was er voraussetzt.
+
 Steuerdateien: `TASK.md` (Backlog), `STATE.md` (Stand + nächste Schritte).
 
 ## Architektur
@@ -121,7 +139,10 @@ Steuerdateien: `TASK.md` (Backlog), `STATE.md` (Stand + nächste Schritte).
   Zeilenreihenfolge nach Erstverwendung, Zeilenblock je Schritt,
   `rowspan`s und Lücken. Kein DOM, dadurch headless prüfbar.
 - `js/portionen.js` — Skalierung und metrische Rundung.
-- `js/kochmodus.js` — Stufen-Navigation und Countdown.
+- `js/kochmodus.js` — Stufen-Navigation und Countdown. Die
+  Countdown-Rechnung (`countdownBauen`) hängt an der Wanduhr statt an
+  gezählten Ticks und ist DOM-frei, damit sie ohne echte Wartezeit
+  prüfbar ist (T-0045).
 - `js/render.js` — Modell in DOM, Übersicht und Einzelrezept.
 - `js/app.js` — Laden und Verdrahtung.
 
@@ -129,4 +150,5 @@ Steuerdateien: `TASK.md` (Backlog), `STATE.md` (Stand + nächste Schritte).
 Browser `fetch` auf lokale Dateien. Quelle der Wahrheit bleiben die
 `.json`-Dateien; `rezepte/manifest.js` ist die daraus erzeugte Fassung,
 die ohne Server lesbar ist. Über http wird sie für Einzelrezepte nicht
-benutzt — dort kommen die JSON-Dateien direkt.
+benutzt — dort kommen die JSON-Dateien direkt, und wenn das schiefgeht,
+gibt es eine Fehlermeldung statt der stillen Manifest-Kopie (T-0047).

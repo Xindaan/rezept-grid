@@ -164,12 +164,49 @@
     beschriftung.scope = "row";
     tr.appendChild(beschriftung);
 
+    // Jede Marke ist der START ihrer Spalte, linksbuendig genau dort, wo
+    // die Spalte beginnt. Bis T-0052 trug nur die letzte eine Einheit und
+    // las sich dadurch als Gesamtdauer — beim Eierkuchen stand "35 Min",
+    // waehrend das Rezept 60 Minuten braucht.
+    //
+    // Die Einheit allein wegzulassen haette die Luege beseitigt, aber die
+    // Frage offen gelassen, die der Leser stellt. Deshalb traegt die
+    // letzte Zelle beides: links weiter ihren Start, rechts an der
+    // Spaltenkante das Ende des Plans — dort, wo die Zeit wirklich
+    // ausgeht, und passend zur Kennzahl "gesamt".
+    var planende = 0;
+    modell.spalten.forEach(function (sp) { if (sp.ende > planende) planende = sp.ende; });
+
     var zeiten = spaltenZeiten(modell);
     zeiten.starts.forEach(function (sekunden, c) {
-      var minuten = Math.round(sekunden / 60);
-      var letzte = c === zeiten.starts.length - 1;
-      var th = el("th", "zeitachse-marke", letzte ? minuten + " Min" : String(minuten));
+      var th = el("th", "zeitachse-marke");
       th.scope = "col";
+      var start = Math.round(sekunden / 60);
+      th.appendChild(el("span", "zeitachse-start", String(start)));
+      // Vorgelesen, nicht gelesen — deshalb ausgeschriebene Einheit mit
+      // richtigem Numerus ("ab 1 Minute", nicht "ab 1 Minuten").
+      function minuten(n) { return n + (n === 1 ? " Minute" : " Minuten"); }
+      var vorgelesen = "ab " + minuten(start);
+
+      if (c === zeiten.starts.length - 1) {
+        th.classList.add("zeitachse-marke-letzte");
+        var ende = Math.round(planende / 60);
+        th.appendChild(el("span", "zeitachse-ende", ende + " Min"));
+        vorgelesen += ", Planende " + minuten(ende);
+      }
+
+      // Der Zusatz fuer Hilfsmittel steht als `aria-label`, NICHT als
+      // versteckter Text. Eine per .nur-vorlesen weggeklappte Spanne
+      // waere hier falsch: sie wird beim Kopieren mitgenommen. Gemessen
+      // am 23.08.2026 mit `Selection.toString()` auf dieser Zelle —
+      // heraus kam "35\nPlanende60 Min", also genau die Klebestelle aus
+      // T-0037/T-0042. Attribute landen dagegen nie in der Ablage.
+      //
+      // Alle Marken bekommen ihn, nicht nur die letzte: sonst spricht
+      // eine Spaltenueberschrift anders als ihre Nachbarn, und die
+      // blanken Zahlen haetten vorgelesen ueberhaupt keine Einheit.
+      th.setAttribute("aria-label", vorgelesen);
+
       tr.appendChild(th);
     });
     kopf.appendChild(tr);
@@ -334,23 +371,12 @@
   // und was das zusammen bedeutet. "ohne Zutun" ist neu und rechnet sich
   // aus den Stufen mit unbeaufsichtigt: true — die Zahl beantwortet die
   // Frage "kann ich nebenher etwas anderes machen".
-  // Vorstufen eines Rezepts als Schritt-Indizes. Wie in grid.js: fehlt
-  // das Feld, gilt der unmittelbare Vorgaenger.
-  function vorstufenAusRezept(rezept) {
-    var idx = {};
-    rezept.schritte.forEach(function (s, i) { idx[s.id] = i; });
-    return rezept.schritte.map(function (s, i) {
-      if (s.vorstufen === undefined || s.vorstufen === null) return i > 0 ? [i - 1] : [];
-      return s.vorstufen.map(function (v) { return idx[v]; })
-                        .filter(function (j) { return j !== undefined; });
-    });
-  }
-
   function kennzahlenBauen(rezept) {
     var Z = global.RezeptZeitmass;
     var dauern = rezept.schritte.map(function (s) { return s.dauer_s; });
     var unbeauf = rezept.schritte.map(function (s) { return !!s.unbeaufsichtigt; });
-    var vorstufen = vorstufenAusRezept(rezept);
+    // Default-Regel zentral in zeitmass.js (T-0049).
+    var vorstufen = Z.vorstufenIndizes(rezept.schritte);
 
     // NICHT die Summe der unbeaufsichtigten Stufen: waehrend der Teig
     // ruht, mischt man die Fuellung — diese Zeit ist nicht frei. Frei
@@ -612,6 +638,81 @@
     });
   }
 
+  // Baut einen Posten-Eintrag. Alles, was der Schluessel festlegt (Name,
+  // Einheit, fix/mengenlos), steht damit fest — beim Portionswechsel
+  // aendert sich nur die Menge.
+  function postenBauen(p) {
+    var eintrag = el("li", "einkauf-posten");
+    eintrag.dataset.schluessel = p.schluessel;
+    eintrag.setAttribute("role", "button");
+    eintrag.tabIndex = 0;
+    eintrag.setAttribute("aria-pressed", "false");
+
+    eintrag.appendChild(el("span", "posten-menge"));
+
+    var text = el("span", "posten-text");
+    text.appendChild(el("span", "posten-name", p.name));
+    if (p.fix) text.appendChild(el("span", "marke-fix", "fix"));
+    text.appendChild(el("span", "posten-quellen", p.quellen.join(" · ")));
+    eintrag.appendChild(text);
+
+    function umschalten() {
+      var an = !eintrag.classList.contains("abgehakt");
+      eintrag.classList.toggle("abgehakt", an);
+      eintrag.setAttribute("aria-pressed", String(an));
+    }
+    eintrag.addEventListener("click", umschalten);
+    eintrag.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); umschalten(); }
+    });
+
+    return eintrag;
+  }
+
+  function mengeSchreiben(eintrag, p) {
+    var menge = p.mengenlos ? "" : P.mengeFormatieren({
+      menge: p.menge, menge_bis: p.menge_bis, einheit: p.einheit
+    }, 1);
+    var zelle = eintrag.querySelector(".posten-menge");
+    zelle.textContent = menge;
+    zelle.className = "posten-menge" + (menge ? "" : " menge-leer");
+  }
+
+  // Schreibt die Posten in `liste`, ohne bestehende Knoten wegzuwerfen
+  // (T-0044).
+  //
+  // Der Abhak-Zustand lebt ausschliesslich in der Klasse `abgehakt` am
+  // Listeneintrag — es gibt kein Modell daneben. Bis T-0044 rief der
+  // Portionswechsel `einkaufRendern` komplett neu auf, und das beginnt
+  // mit `ziel.textContent = ""`: mit den Knoten waren alle Haken weg,
+  // dazu Scrollposition und Fokus. Gemessen: drei Haken vor dem Klick,
+  // null danach.
+  //
+  // Deshalb wird abgeglichen statt neu gebaut. Der Schluessel aus
+  // einkauf.js (Name, Einheit, fix/mengenlos) ist die Identitaet des
+  // Postens; wer ihn behaelt, behaelt seinen Knoten und damit seinen
+  // Haken. Nur die Menge wird nachgeschrieben.
+  function postenSchreiben(liste, posten) {
+    var alt = {};
+    Array.prototype.forEach.call(liste.children, function (li) {
+      alt[li.dataset.schluessel] = li;
+    });
+
+    posten.forEach(function (p, i) {
+      var eintrag = alt[p.schluessel];
+      if (eintrag) delete alt[p.schluessel];
+      else eintrag = postenBauen(p);
+      mengeSchreiben(eintrag, p);
+      // Steht er schon an der richtigen Stelle, passiert nichts; sonst
+      // wandert er dorthin. Was uebrig bleibt, ist weggefallen.
+      if (liste.children[i] !== eintrag) {
+        liste.insertBefore(eintrag, liste.children[i] || null);
+      }
+    });
+
+    Object.keys(alt).forEach(function (k) { alt[k].remove(); });
+  }
+
   // Einkaufsliste (T-0026). `auswahl` ist [{rezept, portionen}].
   function einkaufRendern(auswahl, ziel) {
     var E = global.RezeptEinkauf;
@@ -636,6 +737,10 @@
       return;
     }
 
+    // Steht vor der Portionswahl, weil deren Callback sie fortschreibt
+    // statt die Seite neu zu zeichnen (T-0044).
+    var liste = el("ul", "einkauf-liste");
+
     // Je Rezept die Portionszahl einstellbar — die Liste soll das
     // abbilden, was tatsaechlich gekocht wird, nicht die Basisgroesse.
     var quellen = el("section", "einkauf-quellen");
@@ -652,43 +757,15 @@
           return { id: a.rezept.id, portionen: a.portionen };
         }));
         global.history.replaceState(null, "", "index.html?einkauf=" + text);
-        einkaufRendern(auswahl, ziel);
+        // Nur die Mengen fortschreiben — Haken, Scrollposition und Fokus
+        // bleiben, wo sie sind.
+        postenSchreiben(liste, E.listeBauen(auswahl));
       }));
       quellen.appendChild(zeile);
     });
     ziel.appendChild(quellen);
 
-    var posten = E.listeBauen(auswahl);
-    var liste = el("ul", "einkauf-liste");
-    posten.forEach(function (p) {
-      var eintrag = el("li", "einkauf-posten");
-      eintrag.setAttribute("role", "button");
-      eintrag.tabIndex = 0;
-      eintrag.setAttribute("aria-pressed", "false");
-
-      var menge = p.mengenlos ? "" : P.mengeFormatieren({
-        menge: p.menge, menge_bis: p.menge_bis, einheit: p.einheit
-      }, 1);
-      eintrag.appendChild(el("span", "posten-menge" + (menge ? "" : " menge-leer"), menge));
-
-      var text = el("span", "posten-text");
-      text.appendChild(el("span", "posten-name", p.name));
-      if (p.fix) text.appendChild(el("span", "marke-fix", "fix"));
-      text.appendChild(el("span", "posten-quellen", p.quellen.join(" · ")));
-      eintrag.appendChild(text);
-
-      function umschalten() {
-        var an = !eintrag.classList.contains("abgehakt");
-        eintrag.classList.toggle("abgehakt", an);
-        eintrag.setAttribute("aria-pressed", String(an));
-      }
-      eintrag.addEventListener("click", umschalten);
-      eintrag.addEventListener("keydown", function (e) {
-        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); umschalten(); }
-      });
-
-      liste.appendChild(eintrag);
-    });
+    postenSchreiben(liste, E.listeBauen(auswahl));
     ziel.appendChild(liste);
 
     var hinweis = el("p", "einkauf-hinweis",
@@ -762,7 +839,12 @@
     // Leiste, die erst erscheint, wenn etwas gewaehlt ist.
     var leiste = el("div", "einkauf-leiste");
     leiste.hidden = true;
+    // Isomorphie zu T-0051: hier aendert sich ebenfalls nur Text, und die
+    // ganze Leiste taucht auf. Das Kontrollkaestchen meldet seinen eigenen
+    // Zustand, aber nicht, dass daraufhin ein Weg zur Einkaufsliste
+    // entstanden ist. Die Zahl ist die kuerzeste Ansage, die das sagt.
     var zaehler = el("span", "einkauf-zaehler");
+    zaehler.setAttribute("aria-live", "polite");
     var knopf = el("a", "koch-start", "Einkaufsliste öffnen");
     leiste.appendChild(zaehler);
     leiste.appendChild(knopf);
@@ -847,6 +929,7 @@
     rezeptRendern: rezeptRendern,
     uebersichtRendern: uebersichtRendern,
     einkaufRendern: einkaufRendern,
+    postenSchreiben: postenSchreiben,
     tabelleBauen: tabelleBauen,
     abhakenVerdrahten: abhakenVerdrahten,
     mengenAktualisieren: mengenAktualisieren
