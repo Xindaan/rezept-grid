@@ -62,6 +62,20 @@
 
 * { box-sizing: border-box; }
 
+/* `hidden` muss verbergen (T-0067).
+   Der Browser bringt dafuer `[hidden] { display: none }` mit — eine
+   Regel aus seinem eigenen Stylesheet, und die verliert gegen JEDE Regel
+   von uns, unabhaengig von der Spezifitaet. Wer also einer Klasse ein
+   `display` gibt und denselben Knoten spaeter per `.hidden = true`
+   ausblendet, blendet nichts aus.
+   Genau das war bei `.einkauf-leiste` der Fall: `display: flex` in der
+   Klasse, `leiste.hidden = true` im Code, und die Leiste stand seit
+   T-0026 immer da — 88,8 px hoch, im Browser nachgemessen. Die
+   Pruefungen sahen `hidden === true` und waren zufrieden; sie kennen
+   kein CSS.
+   Deshalb hier einmal fuer alle, statt an jeder Klasse einzeln. */
+[hidden] { display: none !important; }
+
 /* Ein Schriftstack fuer alles — ersetzt Serif, Sans und Monospace.
    Tabellenziffern global, damit Mengen und Zeiten ohne eigene Schrift
    buendig stehen; --zahlen entfaellt dadurch ersatzlos. */
@@ -438,8 +452,8 @@ td.zutat {
 .abgehakt .zutat-notiz { text-decoration: line-through; }
 .menge.abgehakt { text-decoration: line-through; }
 
-.zutat[role="button"] { cursor: pointer; }
-.zutat[role="button"]:focus-visible {
+.zutat[role="checkbox"] { cursor: pointer; }
+.zutat[role="checkbox"]:focus-visible {
   outline: 2px solid var(--akzent);
   outline-offset: -2px;
 }
@@ -456,10 +470,44 @@ td.schritt {
      Laptop-Bildschirm passt. Mehrzeilige Titel sind in der
      Chu-Notation normal. */
   min-width: 6.25rem;
+  /* Bezugsrahmen fuer die Trefferflaeche des Knopfes, siehe
+     .schritt-knopf::after. */
+  position: relative;
   padding: .5rem .55rem;
   border: 1px solid var(--gitter);
   background: transparent;
   text-align: center;
+}
+
+/* Der Knopf IN der Stufenzelle (T-0060). Er traegt den Inhalt und fuellt
+   die Zelle aus, damit das Tippziel so gross bleibt wie vorher — die
+   Zelle selbst bleibt dabei eine Tabellenzelle und behaelt ihre Rolle im
+   Raster. Alles Knopfhafte wird abgeraeumt: eigener Rahmen, eigene
+   Flaeche und eigene Schrift wuerden das Gitter zerschneiden, von dem
+   die Chu-Notation lebt. */
+.schritt-knopf {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: inherit;
+}
+
+/* Die Trefferflaeche ist die ganze ZELLE, nicht nur der Text darin.
+   Eine Stufenzelle ist wegen der rowspans hoch — bei den Maultaschen
+   180 x 208 px, der Text darin misst 161 x 43. Bis T-0060 war die Zelle
+   selbst der Knopf und damit das ganze Rechteck tippbar; ein Knopf um
+   den Text herum haette das Ziel auf ein Fuenftel verkleinert (im
+   Browser nachgemessen, deshalb steht es hier und nicht als Vermutung).
+   Die leere Flaeche legt es wieder ueber die volle Zelle. */
+.schritt-knopf::after {
+  content: "";
+  position: absolute;
+  inset: 0;
 }
 
 .schritt-titel {
@@ -928,8 +976,7 @@ body.kochmodus .zutat.koch-neu { border-bottom-color: var(--akzent); }
 .zurueck-link,
 .einkauf-posten,
 .schritt-tippbar,
-.zutat[role="button"],
-.menge[role="button"] {
+.zutat[role="checkbox"] {
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -939,14 +986,17 @@ body.kochmodus .zutat.koch-neu { border-bottom-color: var(--akzent); }
 .rezept-karte:active { border-color: var(--gitter); background: var(--flaeche2); }
 .zurueck-link:active { color: var(--tinte); }
 .einkauf-posten:active { background: var(--flaeche2); }
-.schritt-tippbar:active { box-shadow: inset 0 0 0 2px var(--akzent); }
-.zutat[role="button"]:active { background: var(--flaeche2); }
+.schritt-tippbar:active::after { box-shadow: inset 0 0 0 2px var(--akzent); }
+.zutat[role="checkbox"]:active { background: var(--flaeche2); }
 
 /* Die Stufenzelle fuehrt zum Wortlaut. Kein eigener Rahmen und keine
    Farbe: das Grid lebt von seinen Linien, ein weiteres Signal darin
    waere Laerm. Der Zeiger und die Vorlesehilfe sagen es. */
 .schritt-tippbar { cursor: pointer; }
-.schritt-tippbar:focus-visible { outline: 2px solid var(--akzent); outline-offset: -3px; }
+/* Der Rahmen gehoert an die Zelle, nicht an den Text — sonst zeigt die
+   Tastaturnavigation ein anderes Ziel an, als die Maus trifft. */
+.schritt-tippbar:focus-visible { outline: none; }
+.schritt-tippbar:focus-visible::after { outline: 2px solid var(--akzent); outline-offset: -3px; }
 
 /* Sprungziel im Wortlaut kurz hervorheben, damit klar ist, wo man
    gelandet ist. Zweiter Traeger neben der Farbe ist die Bewegung. */
@@ -1212,3 +1262,127 @@ body.kochmodus .stufe { opacity: .28; transition: opacity .15s; }
 body.kochmodus .stufe.koch-aktiv { opacity: 1; box-shadow: 0 0 0 2px var(--akzent); border-left-color: var(--akzent); }
 body.kochmodus .stufe.koch-erledigt { opacity: .45; }
 
+
+/* --- Druck (T-0065) -------------------------------------------------- */
+
+/* Ein Rezept auf Papier ist der zweite Weg, es in die Kueche zu bringen —
+   und der einzige, der nicht ausgeht, wenn das Telefon sperrt. Bis hierher
+   druckte die Seite, was der Bildschirm gerade zeigte: Bedienelemente,
+   Schatten, im Dunkelmodus weisse Schrift auf schwarzem Grund.
+
+   Drei Entscheidungen stecken darin:
+
+   1. Gedruckt wird die TABELLE, nicht die Stufenliste. Das Grid ist die
+      Kodierung des Rezepts; auf Papier gibt es kein Scrollen, dafuer
+      Breite. Die Mindestbreite faellt deshalb weg — das Zeitmass wird
+      dabei ungenauer, die Treppenform bleibt.
+   2. Farben werden festgelegt statt geerbt. Der Dunkelmodus ist eine
+      Aussage ueber Bildschirme; auf Papier waere er eine Tonerbestellung.
+   3. Zeilen und Stufen duerfen nicht ueber den Seitenrand brechen. Eine
+      halbe Klammer auf Seite eins und der Rest auf Seite zwei ist genau
+      der Zusammenhang, den die Notation herstellen soll. */
+@media print {
+  :root {
+    --papier: #ffffff;
+    --karte: #ffffff;
+    --flaeche2: #ffffff;
+    --tinte: #000000;
+    --tinte2: #1a1a1a;
+    --gedaempft: #444444;
+    --linie: #bbbbbb;
+    --achse: #999999;
+    --gitter: #555555;
+    --fuehrung: #cccccc;
+    --akzent: #000000;
+    --akzent-flaeche: #ffffff;
+    --block-ruhe: #f0f0f0;
+    --block-ruhe-rand: #666666;
+    --ruhe-tinte: #333333;
+    --schatten-ruhe: none;
+    --schatten-leiste: none;
+  }
+
+  body {
+    padding: 0;
+    font-size: 10pt;
+  }
+
+  /* Was auf Papier nichts tut: alles Bedienbare. Die Portionswahl bleibt
+     sichtbar — welche Zahl gewaehlt war, gehoert zum Ausdruck, sonst
+     stehen Mengen ohne Bezug da. */
+  .koch-start,
+  .zurueck-link,
+  .einkauf-leiste,
+  .karte-wahl,
+  .koch-leiste,
+  .fuss {
+    display: none !important;
+  }
+
+  .portionen-knopf { border: 1px solid var(--linie); }
+  .portionen-knopf.ist-aktiv { border-color: var(--tinte); font-weight: 700; }
+
+  /* Beide Ansichten stehen im DOM; auf Papier gilt die Tabelle. Die
+     Regeln dafuer stehen in Medienabfragen nach Breite, und die Breite
+     einer Druckseite ist keine verlaessliche Aussage darueber. */
+  .stufenliste { display: none !important; }
+  .grid-rahmen {
+    display: block !important;
+    overflow: visible;
+    padding: 0;
+    border: none;
+    box-shadow: none;
+  }
+
+  /* Die Mindestbreite steht als Inline-Stil an der Tabelle (render.js) —
+     nur !important kommt dagegen an. Ohne das laeuft die Tabelle ueber
+     den Seitenrand hinaus und wird abgeschnitten. */
+  .grid {
+    min-width: 0 !important;
+    width: 100% !important;
+    font-size: 8.5pt;
+  }
+
+  .grid td.menge,
+  .grid td.zutat {
+    position: static;
+    box-shadow: none;
+    border-bottom: 1px solid var(--linie);
+  }
+
+  /* Der Zusammenhang darf nicht auf zwei Seiten fallen. */
+  .grid tr,
+  .stufe,
+  .kennzahl,
+  .anweisungen li,
+  .hinweise li,
+  .einkauf-posten {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .rezept-kopf h1 { font-size: 18pt; }
+  .anweisungen { display: block !important; }
+  .anweisungen h2,
+  .hinweise h2 { break-after: avoid; page-break-after: avoid; }
+
+  /* Abgehakt ist ein Zustand der Sitzung, kein Teil des Rezepts. Auf
+     Papier soll die Liste vollstaendig sein — man hakt mit dem Stift ab. */
+  .abgehakt { opacity: 1; }
+  .abgehakt .zutat-name,
+  .abgehakt .zutat-notiz,
+  .menge.abgehakt,
+  .einkauf-posten.abgehakt .posten-name,
+  .einkauf-posten.abgehakt .posten-menge { text-decoration: none; }
+
+  /* Hervorhebungen aus Kopplung und Kochmodus gehoeren dem Bildschirm. */
+  .gekoppelt,
+  .koch-neu,
+  .koch-im-topf,
+  .koch-aktiv,
+  .koch-erledigt {
+    background: none !important;
+    box-shadow: none !important;
+    opacity: 1 !important;
+  }
+}

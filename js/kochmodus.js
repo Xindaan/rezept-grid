@@ -93,13 +93,108 @@
     };
   }
 
+  // Der Alarm (T-0063).
+  //
+  // Bis hierher war der Countdown eine Zahl, die man ansehen muss. Genau
+  // das kann man beim Kochen nicht: das Telefon liegt mit dem Display
+  // nach unten neben dem Herd, oder der Bildschirm ist laengst aus. Ein
+  // Timer, der nur zusieht, wie die Zeit ablaeuft, ist keiner.
+  //
+  // Drei Wege, alle bestenfalls vorhanden und keiner Voraussetzung:
+  //   * Vibration — geht auf Android, auf iOS nicht.
+  //   * ein kurzer Ton ueber die WebAudio-Schnittstelle. Der Kontext wird
+  //     erst beim Druck auf "Start" gebaut, weil Browser Ton ohne
+  //     Nutzergeste verweigern — der Knopfdruck IST die Geste.
+  //   * die Bildschirmsperre (Wake Lock), damit der Schirm waehrend des
+  //     Kochens anbleibt. Nur ueber https; per file:// gibt es sie nicht.
+  //
+  // Jeder Weg steckt in seinem eigenen try — faellt einer aus, laufen die
+  // anderen weiter, und der Kochmodus laeuft in jedem Fall.
+  function signalgeberBauen() {
+    var klang = null;
+
+    function tonKontext() {
+      if (klang) return klang;
+      var AC = global.AudioContext || global.webkitAudioContext;
+      if (!AC) return null;
+      try { klang = new AC(); } catch (e) { klang = null; }
+      return klang;
+    }
+
+    return {
+      // Beim Start des Timers aufrufen: hier ist die Nutzergeste, mit der
+      // sich der Tonkontext freischalten laesst.
+      vorbereiten: function () {
+        var k = tonKontext();
+        if (k && k.state === "suspended") {
+          try { k.resume(); } catch (e) { /* dann eben ohne Ton */ }
+        }
+      },
+
+      abgelaufen: function () {
+        try {
+          if (global.navigator && global.navigator.vibrate) {
+            global.navigator.vibrate([200, 120, 200, 120, 400]);
+          }
+        } catch (e) { /* Vibration ist Zugabe, kein Zweck */ }
+
+        try {
+          var k = tonKontext();
+          if (!k) return;
+          // Zwei kurze Toene statt eines langen: ein Piepen geht im
+          // Kuechenlaerm unter, ein Muster faellt auf.
+          [0, 0.35].forEach(function (versatz) {
+            var ton = k.createOscillator();
+            var lautstaerke = k.createGain();
+            ton.type = "sine";
+            ton.frequency.value = 880;
+            lautstaerke.gain.value = 0.0001;
+            ton.connect(lautstaerke);
+            lautstaerke.connect(k.destination);
+            var t = k.currentTime + versatz;
+            // Sanft ein- und ausblenden, sonst knackt es.
+            lautstaerke.gain.exponentialRampToValueAtTime(0.25, t + 0.02);
+            lautstaerke.gain.exponentialRampToValueAtTime(0.0001, t + 0.25);
+            ton.start(t);
+            ton.stop(t + 0.3);
+          });
+        } catch (e) { /* kein Ton, kein Beinbruch */ }
+      }
+    };
+  }
+
+  // Bildschirmsperre. Getrennt vom Signalgeber, weil sie am Kochmodus
+  // haengt und nicht am Timer: der Schirm soll bleiben, solange gekocht
+  // wird, nicht nur solange eine Uhr laeuft.
+  function wachhalterBauen() {
+    var sperre = null;
+    return {
+      an: function () {
+        try {
+          var nav = global.navigator;
+          if (!nav || !nav.wakeLock || sperre) return;
+          nav.wakeLock.request("screen").then(function (s) {
+            sperre = s;
+          }, function () { /* abgelehnt, etwa weil kein https */ });
+        } catch (e) { /* dann geht der Schirm eben aus */ }
+      },
+      aus: function () {
+        try {
+          if (sperre) { sperre.release(); sperre = null; }
+        } catch (e) { /* nichts zu tun */ }
+      }
+    };
+  }
+
   // Alles ab hier braucht das DOM. countdownBauen steht bewusst davor:
   // die Rechnung ist DOM-frei und muss auch headless pruefbar sein.
   if (typeof document === "undefined") {
     global.RezeptKochmodus = {
       kochSchritteBauen: kochSchritteBauen,
       zeitFormatieren: zeitFormatieren,
-      countdownBauen: countdownBauen
+      countdownBauen: countdownBauen,
+      signalgeberBauen: signalgeberBauen,
+      wachhalterBauen: wachhalterBauen
     };
     return;
   }
@@ -113,7 +208,9 @@
 
   // Baut den Kochmodus fuer ein gerendertes Rezept. `ziel` ist der
   // Container, in dem das Grid steht.
-  function kochmodusBauen(modell, ziel) {
+  // `geber` und `wachhalter` sind einsetzbar, damit die Pruefung zaehlen
+  // kann, ob der Alarm genau einmal kommt — ohne Ton und ohne Wanduhr.
+  function kochmodusBauen(modell, ziel, geber, wachhalter) {
     var stufen = kochSchritteBauen(modell);
     if (!stufen.length) return null;
 
@@ -122,6 +219,8 @@
     var ticker = null;
     var leiste = null;
     var felder = {};
+    var signal = geber || signalgeberBauen();
+    var wach = wachhalter || wachhalterBauen();
 
     // --- Timer -------------------------------------------------------
     function tickerStoppen() {
@@ -140,6 +239,9 @@
         countdown.pausieren();
         tickerStoppen();
       } else {
+        // Der Knopfdruck ist die Nutzergeste, ohne die kein Browser Ton
+        // erlaubt. Danach darf der Alarm auch im Hintergrund kommen.
+        signal.vorbereiten();
         countdown.starten();
         // Das Interval treibt nur die Anzeige. Faellt es aus oder wird
         // es gedrosselt, rechnet der naechste Tick den Stand wieder aus
@@ -177,7 +279,13 @@
       // Nur bei Wechsel schreiben, sonst wiederholt der Screenreader die
       // Ansage bei jedem Tick.
       var ansage = verbleibend === 0 ? "Zeit abgelaufen" : "";
-      if (felder.alarm.textContent !== ansage) felder.alarm.textContent = ansage;
+      var wechsel = felder.alarm.textContent !== ansage;
+      if (wechsel) felder.alarm.textContent = ansage;
+      // Am selben Wechsel haengt der Alarm (T-0063): genau einmal, wenn
+      // die Zeit ablaeuft. Ein Tick spaeter oder ein verschluckter Tick
+      // aendert daran nichts — die Uhr rechnet aus der Wanduhr, und der
+      // Wechsel passiert beim ersten Blick nach dem Ablauf.
+      if (wechsel && verbleibend === 0) signal.abgelaufen();
       felder.timerKnopf.textContent = laeuft ? "Pause" : (verbleibend === 0 ? "Neu" : "Start");
     }
 
@@ -309,11 +417,13 @@
       document.body.appendChild(leiste);
       document.body.classList.add("kochmodus");
       document.addEventListener("keydown", tastatur);
+      wach.an();
       gehe(0);
     }
 
     function beenden() {
       tickerStoppen();
+      wach.aus();
       document.removeEventListener("keydown", tastatur);
       document.body.classList.remove("kochmodus");
       if (leiste) { leiste.remove(); leiste = null; }
@@ -345,6 +455,8 @@
     kochSchritteBauen: kochSchritteBauen,
     zeitFormatieren: zeitFormatieren,
     countdownBauen: countdownBauen,
+    signalgeberBauen: signalgeberBauen,
+    wachhalterBauen: wachhalterBauen,
     kochmodusBauen: kochmodusBauen
   };
 })(typeof window !== "undefined" ? window : globalThis);

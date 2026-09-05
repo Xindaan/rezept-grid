@@ -10,9 +10,214 @@
 
 ## Backlog
 
-- (leer)
+- **T-0066** Kopplung auf Fingergeraeten — **Entscheidung noetig, nicht
+  begonnen.** `docs/uebergabe-zeitmass.md` Abschnitt 2.4 sieht vor, dass
+  ein Klick die Kopplung von Stufe und Zutaten festhaelt
+  (`gekoppelt-fest`), damit sie auf dem Tablet ueberhaupt benutzbar ist.
+  Gebaut wurde nur die Kopplung per Mauszeiger; `stil.css` schaltet sie
+  unter `@media (hover: none)` sogar ab. Die Uebergabe behauptete bis
+  T-0062, das sei umgesetzt.
+  **Warum das nicht einfach nachgebaut wird:** T-0038 hat den Tipp auf
+  die Stufenzelle inzwischen mit einer anderen Bedeutung belegt (Sprung
+  zum Wortlaut), und der Tipp auf die Zutatenzelle hakt ab. Es ist keine
+  Geste mehr frei. Die Uebergabe ist aelter als beide Entscheidungen.
+  Denkbare Wege: langes Druecken, ein eigener Schalter im Kopf, oder
+  bewusst darauf verzichten (auf 375 px zeigt ohnehin die Stufenliste,
+  die die Zuordnung durch Verschachtelung statt durch Farbe traegt).
+  Mein Vorschlag ist der Verzicht — dann faellt die Zeile aus der
+  Uebergabe und nicht der Code hinterher.
+
+- **T-0068** `zeit_aktiv_s` und `zeit_gesamt_s` ganz aus dem Schema
+  nehmen? — **Entscheidung noetig.** Seit T-0059 zeigt der Kopf die
+  gerechneten Werte; die beiden JSON-Felder sind nur noch die Angabe des
+  Autors, die `pruefe-grid.js` gegen den Plan haelt.
+  Dafuer: eine Zahl weniger zu pflegen, kein Auseinanderlaufen mehr
+  moeglich, Schema-Version 2 waere ohnehin faellig, wenn sonst etwas
+  geht.
+  Dagegen: der Abgleich hat zweimal echte Fehler gefunden (T-0046,
+  T-0053) — wer die Zahl schreibt, denkt ueber den Ablauf nach. Ohne sie
+  faellt eine vergessene `dauer_s` nirgends mehr auf.
+  Mein Vorschlag ist behalten. Kostet nichts und ist ein zweites Netz.
+
+- **T-0069** Fremder Worktree im Repo. Unter
+  `.claude/worktrees/affectionate-shaw-0668cc` liegt eine vollstaendige
+  Arbeitskopie vom 15.08. (detached auf 3718cd8), dazu die lokalen
+  Branches `claude/affectionate-shaw-0668cc` und `design-mobil`. Ueber
+  `.git/info/exclude` unsichtbar, aber jeder rekursive Grep laeuft
+  hinein und findet Dateien doppelt.
+  **Bewusst nicht angefasst:** ein laufender Worktree gehoert der
+  Sitzung, die ihn angelegt hat. Wegzuraeumen ist Deine Entscheidung
+  (`git worktree remove` plus `git branch -d`), nicht meine.
 
 ## Done
+
+- **T-0054 bis T-0067** (2026-09-02) **Zweiten Code-Review aufgearbeitet,
+  alles umgesetzt.** Quelle: eigener Review-Durchgang vom 02.09.2026
+  (Fable 5.1, Vollreview der Codebase). Zehn Befunde plus drei, die erst
+  beim Umsetzen und im Browser dazukamen. Pruefungen **197 -> 283**.
+
+  Zwei Dinge ziehen sich durch: die Befunde A/C/E hatten dieselbe
+  Ursache — **eine Sache, mehrere Quellen** — und die Befunde D/T-0067
+  dieselbe: **eine Pruefung, die schweigt, statt zu widersprechen.**
+
+  - **T-0054** Der Planer liess die Haende leer. `zeitmass.js` waehlte
+    die naechste Stufe allein nach dem laengsten Restpfad, ohne zu
+    fragen, wann sie ueberhaupt anfangen kann. Stand ein unabhaengiger
+    Arbeitsschritt im Array hinter einer Stufe, die auf eine Ruhezeit
+    wartet, gewann die wartende, `handFrei` sprang mit ihr ans Ende der
+    Ruhezeit, und die bereite Stufe kam erst danach.
+    Gemessen an [10 Min Arbeit, 60 Min Ruhe, 10 Min Arbeit, 10 Min freie
+    Arbeit]: **90 statt 80 Minuten**, dazu eine falsche Warnung "zu
+    zweit ginge es schneller" — und `pruefe-grid.js` verlangte danach
+    die falsche groessere Zahl in `zeit_gesamt_s`. Im Bestand nicht
+    sichtbar, weil dort der Restpfad-Sieger zufaellig auch der
+    fruehestmoegliche ist; faellig beim naechsten Rezept mit Seitenstrang.
+    Jetzt zwei Regeln: erst der frueheste Startzeitpunkt, dann der
+    Restpfad. Bekannte Grenze bleibt, dass der Plan nie wartet, solange
+    Arbeit da ist — im Kommentar benannt.
+    **Negativprobe je Regel einzeln.** Beim ersten Anlauf blieb die
+    Probe zu Regel 2 gruen: mein Testfall hatte den Restpfad-Sieger
+    zufaellig an erster Stelle, damit traf ihn auch "nimm den ersten".
+    Ersetzt durch einen Fall, in dem die Feldreihenfolge die falsche
+    Antwort ist.
+
+  - **T-0055** `breitenAnwenden` lief in **keiner** Pruefung. Die
+    Funktion beginnt mit `var rahmen = tabelle.parentElement; if
+    (!rahmen) return;` — und die Attrappe kannte `parentElement` nicht.
+    Gemessen: nach `rezeptRendern` war `style.minWidth` undefined und
+    alle acht col-Breiten ebenfalls. Damit waren Zeitmass, sticky-Versatz
+    und Kuerzungsvermerk ungeprueft, waehrend STATE.md "DOM-Schicht
+    geprueft" meldete.
+    Attrappe nachgeruestet (`parentElement`, `style.setProperty`,
+    `offsetWidth`, `scrollIntoView`, ein Register fuer `id`), sieben
+    Pruefungen auf die Breiten dazu.
+    **Und die Ursache behoben, nicht nur den Fall:** die Attrappe
+    **wirft** jetzt bei jeder unbekannten Eigenschaft, statt still
+    `undefined` zu liefern. `ERLAUBT_UNBEKANNT` ist die Liste der
+    Annahmen, die sie ueber ihre Umgebung macht — jede mit Grund.
+
+  - **T-0056** Der Kuerzungsvermerk gehoerte der Spalte, stand aber an
+    jeder Stufe darin. Bei den Maultaschen trug "Fuellung mischen"
+    (15 von 90 Min) den Satz "Achse gekuerzt, 40 % -> 22 %" — die Zahl
+    der Teigruhe, die dieselbe Spalte aufspannt. Fuer die Fuellung war
+    "gekuerzt" sogar das Gegenteil: sie ist breiter dargestellt, als ihre
+    Dauer hergibt. Gerechnet wird jetzt je Stufe; die Regel selbst steht
+    als `istGekuerzt` an genau einer Stelle.
+
+  - **T-0057** Einkaufsliste, drei Dinge auf einmal.
+    (a) Spannen addierten falsch: eine Zutat ohne Spanne trug zur
+    Obergrenze nichts bei, aus "1 EL" plus "1-2 EL" wurde "2-2 EL" statt
+    "2-3 EL". (b) `?einkauf=spaetzle:-4` ergab "-400 g Mehl", `:0` liess
+    alle Mengen verschwinden — die URL ist teilbar und damit Eingabe von
+    aussen. (c) `replaceState` stand vor dem Fortschreiben der Liste;
+    wirft es (ueber file:// tut es das in manchen Browsern), blieb der
+    Portionswechsel wirkungslos. Reihenfolge getauscht, Pruefung mit
+    absichtlich werfendem `replaceState`.
+
+  - **T-0058** Rundung bei `kg` und `l`. Eine Nachkommastelle ist dort
+    100 g bzw. 100 ml: aus 0,75 l wurde "0,8 l", aus 1,25 kg "1,3 kg".
+    Grosse Einheiten bekommen zwei Stellen — wieder dieselbe Feinheit
+    wie eine Stelle bei g und ml. Im Bestand aendert sich nichts (alle
+    kg/l-Mengen sind glatt), der Fehler war latent.
+
+  - **T-0059** Der Kopf hatte drei Quellen fuer eine Sache: "Arbeit" aus
+    dem JSON-Feld, "ohne Zutun" gerechnet, "gesamt" wieder aus dem JSON.
+    Zwei Wege, auf denen das auseinanderlaeuft: ein Schritt, den das Grid
+    nicht darstellen kann (zutatenlos ohne gueltige Vorstufe, etwa "Ofen
+    vorheizen" als eigener Strang), faellt aus dem Modell, zaehlte aber
+    weiter im Kopf — 25 Minuten oben, Achse endet bei 11. Und sobald ein
+    Rezept den dokumentierten 10-%-Puffer nutzt, widersprachen sich
+    Kachel und Achse, und zwei Pruefungen schlugen an, obwohl die Datei
+    der Regel folgte.
+    Jetzt kommen alle drei Kacheln aus demselben Plan wie die Zeitachse.
+    Die Rechnung im Kopf geht dadurch **zwangslaeufig** auf statt
+    zufaellig. Anzeige aller fuenf Rezepte unveraendert.
+    Die JSON-Felder bleiben als Angabe des Autors — siehe T-0068.
+
+  - **T-0060** Die Stufenzelle war selbst der Knopf. `role="button"` auf
+    einem `<td>` nimmt der Zelle ihre Rolle im Raster, und das
+    `aria-label` **ersetzte** den Namen: Dauer, Temperatur, "laeuft von
+    allein" und "nebenher moeglich" standen sichtbar da, wurden aber
+    nicht mehr vorgelesen — genau die Angaben, fuer die es die Marken
+    gibt. Jetzt sitzt ein echter `<button>` in der Zelle, sein Name wird
+    aus denselben Teilen gebaut, die dastehen. Die Zutatenzelle ist
+    `role="checkbox"` mit `aria-checked` — abgehakt ist ein Zustand,
+    kein Knopfdruck.
+    **Im Browser nachgemessen und dabei einen eigenen Regress gefunden:**
+    das Tippziel war von 180x208 auf 161x43 px geschrumpft. Eine leere
+    `::after`-Flaeche legt es wieder ueber die ganze Zelle; alle vier
+    Ecken treffen (nachgemessen mit `elementFromPoint`).
+    Nebenbefund aus der Negativprobe: `pruefe()` stuerzte ab, wenn ein
+    DOM-Knoten im Vergleich landet (Ringstruktur). Ein Test, der im
+    Fehlerfall abstuerzt statt zu melden, nimmt einem die Meldung —
+    abgefangen.
+
+  - **T-0061** Uebersicht und Einkaufsliste hingen auch ueber http am
+    Manifest. T-0047 hatte nur das Einzelrezept geradegezogen: wer eine
+    JSON aenderte und `build-manifest` vergass, sah das Rezept mit neuen
+    Mengen und die Einkaufsliste mit alten, ohne Hinweis. Ueber http
+    liefert das Manifest jetzt nur noch die Liste der Namen; der Inhalt
+    kommt frisch. Was sich nicht laden laesst, faellt zurueck **und wird
+    gemeldet**.
+
+  - **T-0062** Aufraeumen. `CLAUDE.md` nannte ein `check-rezepte.js`, das
+    es nie gab. Die README-Modulliste fuehrte 5 von 8 Modulen.
+    `docs/schema.md` beschrieb "eine Spalte je Schritt" — seit T-0030
+    ist eine Spalte ein Zeitpunkt. Das Einheiten-Vokabular stand doppelt
+    (portionen.js und pruefe-grid.js) und kommt jetzt aus einer Quelle.
+    Die Schema-Pruefung deckt zusaetzlich `schema`, `titel`, `anweisung`,
+    die id-Form, `quelle` und den Typ von `dauer_s` ab — sechs Waechter,
+    jeder einzeln an einer beschaedigten Datei probiert.
+
+  - **T-0063** Der Timer sagte niemandem Bescheid. Seit T-0045 rechnet er
+    richtig, aber man muss ihn ansehen — und beim Kochen liegt das
+    Telefon mit dem Display nach unten. Jetzt Vibration, zwei kurze Toene
+    ueber WebAudio (Kontext wird beim Druck auf "Start" freigeschaltet,
+    das ist die noetige Nutzergeste) und Wake Lock waehrend des
+    Kochmodus. Jeder Weg einzeln eingepackt: faellt einer aus, laufen die
+    anderen. Geprueft wird das Verhalten — Alarm genau einmal, auch wenn
+    mehrere Ticks nachkommen.
+
+  - **T-0064** Zustand ueberlebt das Neuladen, aber nicht den naechsten
+    Tag. Bisher lebte alles nur als CSS-Klasse; ein Neuladen loeschte
+    Haken, Portionswahl und Auswahl. Die alte Begruendung ("den Haken von
+    gestern will man nicht sehen") stimmt trotzdem — der Unterschied ist
+    die ZEIT. Neues Modul `js/merker.js`: Ablage mit 24-Stunden-Verfall,
+    jeder Zugriff eingepackt (localStorage wirft in privaten Fenstern,
+    bei vollem Speicher und teils per file://), kaputte Eintraege werden
+    weggeworfen. Gemerkt werden Portionszahl und Haken je Rezept, die
+    Haken der Einkaufsliste und die Auswahl der Uebersicht. Eine
+    gespeicherte Portionszahl wird gegen die Auswahl geprueft, bevor sie
+    gilt.
+
+  - **T-0065** Druck-Stylesheet. Bisher druckte die Seite, was der
+    Bildschirm zeigte — Bedienelemente, Schatten, im Dunkelmodus weisse
+    Schrift auf schwarzem Grund. Gedruckt wird die Tabelle (nicht die
+    Stufenliste), Farben werden festgelegt statt geerbt, Zeilen und
+    Stufen brechen nicht ueber den Seitenrand. Die Mindestbreite steht
+    als Inline-Stil an der Tabelle und braucht `!important`, sonst laeuft
+    sie ueber den Rand — im Browser geprueft, dass die 16 Druckregeln
+    wirklich geparst wurden, nicht nur im Quelltext stehen.
+
+  - **T-0067** **`hidden` verbarg nicht.** Im Browser gefunden, nicht im
+    Code: `.einkauf-leiste` hat `display: flex`, der Code setzt
+    `leiste.hidden = true` — und die Regel des Browsers
+    (`[hidden] { display: none }`) verliert gegen jede eigene Regel,
+    unabhaengig von der Spezifitaet. Die Leiste "Einkaufsliste oeffnen"
+    stand seit T-0026 **immer** da, 88,8 px hoch, obwohl der Kommentar
+    daneben sagt "erscheint erst, wenn etwas gewaehlt ist".
+    Die Pruefungen sahen `hidden === true` und waren zufrieden; sie
+    kennen kein CSS. Jetzt einmal global `[hidden] { display: none
+    !important; }`.
+    Dabei aufgefallen: die Uebersicht schrieb bei jedem Aufruf eine leere
+    Auswahl in die Ablage und haette damit ueberschrieben, was sie gerade
+    wiederherstellen wollte.
+
+  **Was NICHT geprueft ist:** Screenreader mit echter Software (die
+  ARIA-Aenderungen sind nach Spezifikation gebaut, nicht vorgelesen
+  getestet), das Druckbild auf Papier (nur die geparsten Regeln),
+  Vibration und Wake Lock auf echter Hardware (headless nicht
+  vorhanden), sowie iOS-Safari insgesamt.
 
 - **T-0009** (2026-08-23) **Verteilung erledigt — beim Commit-Durchgang
   nachgeprueft, der Task stand faelschlich noch offen.** Entschieden am

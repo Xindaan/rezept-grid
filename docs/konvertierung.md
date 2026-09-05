@@ -54,6 +54,10 @@ Fehler — sie hätte sonst keine eindeutige Zeile.
 `Zehen` statt `Zehe` wird still `1,5 Zehen` statt `1½ Zehe`, weil die
 Einheit dann nicht mehr als zählbar erkannt wird.
 
+Die Liste steht seit T-0062 nur noch an einer Stelle, in
+`js/portionen.js` — dort, wo sie auch über die Rundung entscheidet. Wer
+eine Einheit ergänzt, ergänzt sie dort und nirgends sonst.
+
 **3. Gezähltes ohne Einheit.**
 Vier Eier sind `"menge": 4, "einheit": null` — nicht `"Stueck"`, sonst
 steht in der Tabelle „4 Stueck | Eier".
@@ -161,6 +165,13 @@ Kopf standen 45 + 105 gegen 135.
 bekommt er eine Dauer, und `zeit_gesamt_s` wächst mit. `pruefe-grid.js`
 meldet den Widerspruch seit T-0053 — auf den Rohdaten **und** noch einmal
 auf den gerenderten Kacheln.
+
+Seit T-0059 kommen die drei Kacheln im Kopf aus dem gerechneten Plan,
+nicht mehr aus `zeit_aktiv_s` und `zeit_gesamt_s`. Ein fehlendes
+`dauer_s` fällt damit nicht mehr als widersprüchlicher Kopf auf, sondern
+als **zu kurze Gesamtzeit** — und die Prüfung meldet die Abweichung
+zwischen Deiner Angabe und dem Plan. Der Fallstrick bleibt derselbe, nur
+der Ort, an dem er sichtbar wird, ist ehrlicher geworden.
 
 ## Plausibilität prüfen
 

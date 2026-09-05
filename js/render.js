@@ -6,6 +6,14 @@
 
   var G = global.RezeptGrid;
   var P = global.RezeptPortionen;
+  var M = global.RezeptMerker;
+
+  // Was das gerade gezeigte Rezept sichern soll (T-0064). Eine
+  // Modulvariable, weil `abhakenVerdrahten` von zwei Erzeugern benutzt
+  // wird — Tabelle und Stufenliste — und keiner von beiden das Rezept
+  // kennt. Zulaessig ist das, weil pro Seite genau ein Rezept steht;
+  // `rezeptRendern` setzt sie und die Uebersicht loescht sie wieder.
+  var sichernNachHaken = null;
 
   function el(tag, klasse, text) {
     var n = document.createElement(tag);
@@ -262,16 +270,30 @@
 
     // Gedeckelte Stufen sagen, dass ihre Achse gekuerzt wurde — sonst
     // liest man eine Breite ab, die nicht der Dauer entspricht.
+    //
+    // Gerechnet wird je STUFE, nicht je Spalte (T-0056). Teilen sich
+    // zwei Stufen eine Spalte, spannt die laengere sie auf; die kuerzere
+    // bekaeme sonst deren Zahlen angeheftet. Nenner bleibt die Summe der
+    // Spaltenspannen — dieselbe Skala, auf der die Breiten stehen.
+    var spannenSumme = dauern.reduce(function (a, d) { return a + (d || 0); }, 0);
+
     modell.spalten.forEach(function (spalte) {
       var c = spalte.spalte;
       var td = tabelle.querySelector('[data-schritt="' + spalte.schritt.id + '"]');
       if (!td) return;
       var alt = td.querySelector(".kuerzung");
       if (alt) alt.remove();
-      td.classList.toggle("ist-gekuerzt", !!mass.gekuerzt[c]);
-      if (mass.gekuerzt[c]) {
-        var zeit = Math.round(mass.zeitanteil[c] * 100);
-        var breit = Math.round(mass.stufen[c] * 100);
+
+      var eigenAnteil = spannenSumme > 0
+        ? (spalte.schritt.dauer_s || 0) / spannenSumme
+        : 0;
+      var breitenAnteil = mass.stufen[c];
+      var gekuerzt = Z.istGekuerzt(eigenAnteil, breitenAnteil);
+
+      td.classList.toggle("ist-gekuerzt", gekuerzt);
+      if (gekuerzt) {
+        var zeit = Math.round(eigenAnteil * 100);
+        var breit = Math.round(breitenAnteil * 100);
         td.appendChild(el("span", "kuerzung", "∕∕ Achse gekürzt, " + zeit + " % → " + breit + " %"));
       }
     });
@@ -291,12 +313,29 @@
       void ziel.offsetWidth;
       ziel.classList.add("ist-angesprungen");
     }
+    // Ein echter <button> loest bei Enter und Leertaste von selbst aus —
+    // die eigene Tastaturbehandlung von T-0038 entfaellt damit (T-0060).
     td.addEventListener("click", springen);
-    td.addEventListener("keydown", function (e) {
-      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); springen(); }
-    });
   }
 
+  // Die Zelle bleibt eine Zelle (T-0060).
+  //
+  // Bis dahin trug das <td> selbst `role="button"` und ein `aria-label`
+  // aus Titel plus "Anweisung anzeigen". Zwei Verluste auf einmal:
+  //
+  //   * Ein aria-label ERSETZT den Namen des Elements. Dauer, Temperatur,
+  //     "laeuft von allein" und "nebenher moeglich" standen zwar in der
+  //     Zelle, wurden aber nicht mehr vorgelesen — genau die Angaben, um
+  //     derentwillen die Marken ueberhaupt eingefuehrt wurden.
+  //   * `role="button"` auf einem <td> nimmt der Zelle ihre Rolle im
+  //     Tabellenraster. Die Tabelle ist die Kodierung des Rezepts; wer
+  //     sie mit Hilfsmitteln Zelle fuer Zelle liest, verliert sie hier.
+  //
+  // Jetzt sitzt ein echter Knopf IN der Zelle. Er fuellt sie ganz aus
+  // (stil.css), das Tippziel bleibt also gleich gross, und sein Name wird
+  // aus denselben Teilen gebaut, die auch sichtbar dastehen — die
+  // Aufzaehlung unten ist deshalb bewusst dieselbe Reihenfolge wie die
+  // Anhaenge darunter.
   function schrittZelleBauen(spalte, parallel) {
     var schritt = spalte.schritt;
     var klassen = "schritt";
@@ -312,28 +351,39 @@
     // Zelle springt deshalb zum Wortlaut weiter unten (T-0038).
     td.title = schritt.anweisung || "";
     td.dataset.schritt = schritt.id;
-    if (schritt.anweisung) {
-      td.tabIndex = 0;
-      td.setAttribute("role", "button");
-      td.setAttribute("aria-label", schritt.titel + " — Anweisung anzeigen");
-      td.classList.add("schritt-tippbar");
-      anweisungSprungVerdrahten(td, schritt.id);
-    }
-    td.appendChild(el("span", "schritt-titel", schritt.titel));
 
     var dauer = G.dauerFormatieren(schritt.dauer_s);
-    if (dauer) td.appendChild(el("span", "schritt-dauer", dauer));
+    var teile = [schritt.titel];
+    if (dauer) teile.push(dauer);
+    if (schritt.temperatur_c) teile.push(schritt.temperatur_c + " °C");
+    if (schritt.unbeaufsichtigt) teile.push("läuft von allein");
+    if (parallel) teile.push("nebenher möglich");
+
+    // Ohne Anweisung gibt es nichts anzuspringen — dann bleibt die Zelle
+    // eine reine Zelle und bekommt keinen Knopf, den man ins Leere
+    // druecken kann.
+    var inhalt = td;
+    if (schritt.anweisung) {
+      inhalt = el("button", "schritt-knopf schritt-tippbar");
+      inhalt.type = "button";
+      inhalt.setAttribute("aria-label", teile.join(", ") + " — Anweisung anzeigen");
+      anweisungSprungVerdrahten(inhalt, schritt.id);
+      td.appendChild(inhalt);
+    }
+
+    inhalt.appendChild(el("span", "schritt-titel", schritt.titel));
+    if (dauer) inhalt.appendChild(el("span", "schritt-dauer", dauer));
     if (schritt.temperatur_c) {
-      td.appendChild(el("span", "schritt-temperatur", schritt.temperatur_c + " °C"));
+      inhalt.appendChild(el("span", "schritt-temperatur", schritt.temperatur_c + " °C"));
     }
     // Wartezeit wird nicht nur eingefaerbt, sondern benannt.
     if (schritt.unbeaufsichtigt) {
-      td.appendChild(el("span", "stufen-marke", "⧗ läuft von allein"));
+      inhalt.appendChild(el("span", "stufen-marke", "⧗ läuft von allein"));
     }
     // Und eine Stufe, die nebenher laeuft, sagt es auch — sonst liest man
     // die Tabelle als Reihenfolge, obwohl sie hier Gleichzeitigkeit meint.
     if (parallel) {
-      td.appendChild(el("span", "stufen-marke marke-parallel", "∥ nebenher möglich"));
+      inhalt.appendChild(el("span", "stufen-marke marke-parallel", "∥ nebenher möglich"));
     }
     return td;
   }
@@ -368,26 +418,57 @@
   }
 
   // Drei Kennzahlen: was man selbst am Topf steht, was von allein laeuft,
-  // und was das zusammen bedeutet. "ohne Zutun" ist neu und rechnet sich
-  // aus den Stufen mit unbeaufsichtigt: true — die Zahl beantwortet die
-  // Frage "kann ich nebenher etwas anderes machen".
-  function kennzahlenBauen(rezept) {
+  // und was das zusammen bedeutet.
+  //
+  // Alle drei kommen aus DEMSELBEN Plan wie die Zeitachse und das Grid
+  // (T-0059). Vorher hatte der Kopf drei Quellen: "Arbeit" aus dem
+  // JSON-Feld, "ohne Zutun" gerechnet, "gesamt" wieder aus dem JSON. Drei
+  // Quellen fuer eine Sache koennen auseinanderlaufen, und sie taten es
+  // auf zwei Wegen:
+  //
+  //   * Ein Schritt, den das Grid nicht darstellen kann — zutatenlos und
+  //     ohne gueltige Vorstufe, etwa "Ofen vorheizen" als eigener Strang
+  //     — faellt aus dem Modell (grid.js meldet ihn), zaehlte aber weiter
+  //     in den Kennzahlen. Kopf und Achse sagten dann Verschiedenes.
+  //   * Die Doku erlaubt zeit_gesamt_s zehn Prozent Puffer ueber dem
+  //     Plan. Sobald ein Rezept den nutzt, widersprachen sich Kachel und
+  //     Achse — und zwei Pruefungen schlugen an, obwohl die Datei der
+  //     dokumentierten Regel folgte.
+  //
+  // Jetzt gilt: gesamt = Ende des Plans, Arbeit = Summe der
+  // beaufsichtigten Stufen, ohne Zutun = die Differenz. Damit geht die
+  // Rechnung im Kopf nicht mehr zufaellig auf, sondern zwangslaeufig, und
+  // sie deckt sich mit dem Planende auf der Achse.
+  //
+  // Die Felder zeit_aktiv_s und zeit_gesamt_s bleiben im Schema: sie sind
+  // die ANGABE des Autors, und pruefe-grid.js haelt sie gegen den Plan.
+  // Genau so sind T-0046 und T-0053 gefunden worden.
+  function kennzahlenBauen(rezept, modell) {
     var Z = global.RezeptZeitmass;
-    var dauern = rezept.schritte.map(function (s) { return s.dauer_s; });
-    var unbeauf = rezept.schritte.map(function (s) { return !!s.unbeaufsichtigt; });
-    // Default-Regel zentral in zeitmass.js (T-0049).
-    var vorstufen = Z.vorstufenIndizes(rezept.schritte);
+    var dauern = modell.spalten.map(function (s) { return s.schritt.dauer_s; });
+    var unbeauf = modell.spalten.map(function (s) { return !!s.schritt.unbeaufsichtigt; });
+
+    var nachId = {};
+    modell.spalten.forEach(function (s, i) { nachId[s.schritt.id] = i; });
+    var vorstufen = modell.spalten.map(function (s) {
+      return (s.vorstufen || []).map(function (v) { return nachId[v]; })
+                                .filter(function (j) { return j !== undefined; });
+    });
+
+    var planende = 0;
+    modell.spalten.forEach(function (s) { if (s.ende > planende) planende = s.ende; });
 
     // NICHT die Summe der unbeaufsichtigten Stufen: waehrend der Teig
     // ruht, mischt man die Fuellung — diese Zeit ist nicht frei. Frei
     // bleibt die Gesamtdauer minus der eigenen Arbeit.
-    var ohneZutun = Z.freieZeit(dauern, vorstufen, unbeauf);
+    var arbeit = Z.arbeitszeit(dauern, unbeauf);
+    var ohneZutun = Math.max(0, planende - arbeit);
 
     var streifen = el("div", "kennzahlen");
     [
-      ["Arbeit", rezept.zeit_aktiv_s],
+      ["Arbeit", arbeit],
       ["ohne Zutun", ohneZutun],
-      ["gesamt", rezept.zeit_gesamt_s]
+      ["gesamt", planende]
     ].forEach(function (paar) {
       if (!paar[1]) return;
       var kachel = el("div", "kennzahl");
@@ -401,14 +482,14 @@
     if (Z.braucht2Haende(dauern, vorstufen, unbeauf)) {
       streifen.appendChild(el("p", "kennzahl-warnung",
         "Die Zeitachse zeigt den Weg für eine Person: " +
-        G.dauerFormatieren(Z.realeGesamtdauer(dauern, vorstufen, unbeauf)) +
+        G.dauerFormatieren(planende) +
         ". Zu zweit wären es " + G.dauerFormatieren(Z.gesamtdauer(dauern, vorstufen)) +
         " — zwei Schritte fallen zusammen, die allein nacheinander gehen."));
     }
     return streifen;
   }
 
-  function kopfBauen(rezept, portionen, beiWechsel, beiKochstart) {
+  function kopfBauen(rezept, modell, portionen, beiWechsel, beiKochstart) {
     var kopf = el("header", "rezept-kopf");
     kopf.appendChild(el("h1", null, rezept.titel));
     if (rezept.untertitel) kopf.appendChild(el("p", "untertitel", rezept.untertitel));
@@ -417,7 +498,7 @@
     // siehe anhangBauen. Der Kopf traegt nur noch, was man braucht, um
     // das Grid zu lesen: Titel, Einordnung, Zeiten, Portionen, Start.
 
-    kopf.appendChild(kennzahlenBauen(rezept));
+    kopf.appendChild(kennzahlenBauen(rezept, modell));
 
     var ergibt = el("div", "ergibt");
     ergibt.appendChild(el("span", "ergibt-label", "Ergibt"));
@@ -557,10 +638,36 @@
   // Kontrollkaestchen-Spalte: eine dritte Spalte kostet Breite, die im
   // Zeitmass fehlt, und die ganze Zeile ist das groessere Ziel fuer
   // fettige Finger.
+  // Abgehakt oder nicht ist ein ZUSTAND, kein Knopfdruck — deshalb
+  // `checkbox` und `aria-checked` statt `button` und `aria-pressed`
+  // (T-0060). Vorgelesen wird daraus "Kontrollkaestchen, nicht
+  // angekreuzt", und das ist genau, was die Zeile tut.
+  //
+  // Die Rolle sitzt weiter auf der Zutatenzelle und nicht auf einem
+  // eigenen Kaestchen: eine dritte Spalte kostet Breite, die im Zeitmass
+  // fehlt (siehe unten). Dass die Zelle damit ihre Rasterrolle abgibt,
+  // ist der bewusst gezahlte Preis — anders als bei der Stufenzelle gibt
+  // es hier keine Angabe, die dabei verlorenginge.
+  // Setzt den Haken-Zustand auf einer Menge von Zellen. `aria-checked`
+  // geht mit, sonst stimmt die Anzeige fuer Hilfsmittel nicht mehr.
+  function markieren(zellen, an) {
+    Array.prototype.forEach.call(zellen, function (zelle) {
+      zelle.classList.toggle("abgehakt", an);
+      if (zelle.getAttribute("role") === "checkbox") {
+        zelle.setAttribute("aria-checked", String(an));
+      }
+    });
+  }
+
+  // Abgehakt wird die ZEILE — sie steht seit T-0040 in zwei Ansichten.
+  function zeileMarkieren(wurzel, r, an) {
+    markieren(wurzel.querySelectorAll('[data-zeile="' + r + '"]'), an);
+  }
+
   function abhakenVerdrahten(tdMenge, tdZutat) {
-    tdZutat.setAttribute("role", "button");
+    tdZutat.setAttribute("role", "checkbox");
     tdZutat.tabIndex = 0;
-    tdZutat.setAttribute("aria-pressed", "false");
+    tdZutat.setAttribute("aria-checked", "false");
 
     // Abgehakt wird die ZEILE, nicht die Zelle: seit T-0040 zeigt dieselbe
     // Zutat in zwei Ansichten, und ein Haken, der nur in einer sitzt, ist
@@ -570,15 +677,9 @@
       var an = !tdZutat.classList.contains("abgehakt");
       var r = tdZutat.dataset ? tdZutat.dataset.zeile : undefined;
       var wurzel = tdZutat.closest(".rezept") || document;
-      var zellen = (r === undefined)
-        ? [tdMenge, tdZutat]
-        : wurzel.querySelectorAll('[data-zeile="' + r + '"]');
-      Array.prototype.forEach.call(zellen, function (zelle) {
-        zelle.classList.toggle("abgehakt", an);
-        if (zelle.getAttribute("role") === "button") {
-          zelle.setAttribute("aria-pressed", String(an));
-        }
-      });
+      if (r === undefined) markieren([tdMenge, tdZutat], an);
+      else zeileMarkieren(wurzel, r, an);
+      if (sichernNachHaken) sichernNachHaken();
     }
 
     tdZutat.addEventListener("click", umschalten);
@@ -660,6 +761,7 @@
       var an = !eintrag.classList.contains("abgehakt");
       eintrag.classList.toggle("abgehakt", an);
       eintrag.setAttribute("aria-pressed", String(an));
+      if (eintrag.parentElement) einkaufSichern(eintrag.parentElement);
     }
     eintrag.addEventListener("click", umschalten);
     eintrag.addEventListener("keydown", function (e) {
@@ -667,6 +769,19 @@
     });
 
     return eintrag;
+  }
+
+  // Die Einkaufsliste merkt sich ihre Haken (T-0064) — im Laden legt man
+  // das Telefon weg, und die Liste ueberlebt das Sperren des Schirms
+  // nicht von selbst. Der Schluessel des Postens ist dabei dieselbe
+  // Identitaet, die schon der Portionswechsel benutzt (T-0044).
+  function einkaufSichern(liste) {
+    if (!M) return;
+    var haken = [];
+    Array.prototype.forEach.call(liste.children, function (li) {
+      if (li.classList.contains("abgehakt")) haken.push(li.dataset.schluessel);
+    });
+    M.schreiben("einkauf", { abgehakt: haken });
   }
 
   function mengeSchreiben(eintrag, p) {
@@ -698,10 +813,24 @@
       alt[li.dataset.schluessel] = li;
     });
 
+    // Nur fuer NEU gebaute Posten: wer schon dasteht, traegt seinen
+    // Haken bereits, und der gilt vor dem, was gespeichert war.
+    var gemerkt = {};
+    var stand = M ? M.lesen("einkauf") : null;
+    if (stand && stand.abgehakt) {
+      stand.abgehakt.forEach(function (k) { gemerkt[k] = true; });
+    }
+
     posten.forEach(function (p, i) {
       var eintrag = alt[p.schluessel];
       if (eintrag) delete alt[p.schluessel];
-      else eintrag = postenBauen(p);
+      else {
+        eintrag = postenBauen(p);
+        if (gemerkt[p.schluessel]) {
+          eintrag.classList.add("abgehakt");
+          eintrag.setAttribute("aria-pressed", "true");
+        }
+      }
       mengeSchreiben(eintrag, p);
       // Steht er schon an der richtigen Stelle, passiert nichts; sonst
       // wandert er dorthin. Was uebrig bleibt, ist weggefallen.
@@ -713,8 +842,26 @@
     Object.keys(alt).forEach(function (k) { alt[k].remove(); });
   }
 
+  // Hinweis auf Rezepte, die nur noch aus dem Manifest kommen konnten
+  // (T-0061). Ueber http ist das ein Fehler, kein Ladeweg: die Datei
+  // liess sich nicht holen, gezeigt wird die von Hand erzeugte Kopie —
+  // sie kann alte Mengen tragen. Genau diese Sorte Fehler sieht sonst wie
+  // ein Erfolg aus.
+  function veraltetHinweisBauen(ids) {
+    if (!ids || !ids.length) return null;
+    var box = el("section", "probleme");
+    box.appendChild(el("h2", null, ids.length === 1
+      ? "Ein Rezept konnte nicht frisch geladen werden"
+      : ids.length + " Rezepte konnten nicht frisch geladen werden"));
+    box.appendChild(el("p", null,
+      "Gezeigt wird die Fassung aus rezepte/manifest.js — sie kann veraltet " +
+      "sein: " + ids.join(", ") + ". Neu erzeugen mit: node tools/build-manifest.js"));
+    return box;
+  }
+
   // Einkaufsliste (T-0026). `auswahl` ist [{rezept, portionen}].
-  function einkaufRendern(auswahl, ziel) {
+  // `ausManifest` sind die ids, die nur aus dem Manifest kamen (T-0061).
+  function einkaufRendern(auswahl, ziel, ausManifest) {
     var E = global.RezeptEinkauf;
     ziel.textContent = "";
 
@@ -727,6 +874,9 @@
     kopf.appendChild(el("p", "untertitel",
       auswahl.length === 1 ? "Für ein Rezept" : "Für " + auswahl.length + " Rezepte"));
     ziel.appendChild(kopf);
+
+    var veraltet = veraltetHinweisBauen(ausManifest);
+    if (veraltet) ziel.appendChild(veraltet);
 
     if (!auswahl.length) {
       var leer = el("section", "probleme");
@@ -751,15 +901,20 @@
       zeile.appendChild(name);
       zeile.appendChild(portionsWahlBauen(eintrag.rezept, eintrag.portionen, function (neu) {
         eintrag.portionen = neu;
+        // Erst die sichtbare Liste, dann die URL (T-0057). Die Reihenfolge
+        // ist kein Geschmack: `replaceState` ist der Teil, der scheitern
+        // kann — ueber file:// wirft es in manchen Browsern. Stand es
+        // davor, blieb bei einem Wurf die Portionsumschaltung wirkungslos,
+        // und der einzige Hinweis war ein Fehler in der Konsole.
+        // Nur die Mengen fortschreiben — Haken, Scrollposition und Fokus
+        // bleiben, wo sie sind.
+        postenSchreiben(liste, E.listeBauen(auswahl));
         // Die Auswahl steht in der URL, damit die Liste teilbar bleibt
         // und ein Neuladen sie nicht verliert.
         var text = E.auswahlSchreiben(auswahl.map(function (a) {
           return { id: a.rezept.id, portionen: a.portionen };
         }));
         global.history.replaceState(null, "", "index.html?einkauf=" + text);
-        // Nur die Mengen fortschreiben — Haken, Scrollposition und Fokus
-        // bleiben, wo sie sind.
-        postenSchreiben(liste, E.listeBauen(auswahl));
       }));
       quellen.appendChild(zeile);
     });
@@ -775,17 +930,32 @@
     ziel.appendChild(hinweis);
   }
 
-  // Rezept-Uebersicht (T-0006). Quelle ist das Manifest, weil es ohne
-  // Server kein Verzeichnis-Listing gibt — dieselbe Liste, die auch der
-  // file://-Ladeweg benutzt.
-  function uebersichtRendern(rezepte, ziel) {
+  // Rezept-Uebersicht (T-0006). WELCHE Rezepte es gibt, sagt das Manifest
+  // — ohne Server gibt es kein Verzeichnis-Listing. Was in ihnen steht,
+  // holt app.js ueber http frisch aus den JSON-Dateien (T-0061);
+  // `ausManifest` nennt die, bei denen das nicht ging.
+  function uebersichtRendern(rezepte, ziel, ausManifest) {
     ziel.textContent = "";
+    // Die Uebersicht zeigt kein Rezept — was das letzte gesichert hat,
+    // geht sie nichts an.
+    sichernNachHaken = null;
+
+    // Angekreuztes ueberlebt den Weg zur Einkaufsliste und zurueck
+    // (T-0064). Ohne das faengt man nach jedem Zurueck von vorn an.
+    var gemerkteAuswahl = {};
+    var standAuswahl = M ? M.lesen("auswahl") : null;
+    if (standAuswahl && standAuswahl.ids) {
+      standAuswahl.ids.forEach(function (id) { gemerkteAuswahl[id] = true; });
+    }
 
     var kopf = el("header", "rezept-kopf");
     kopf.appendChild(el("h1", null, "Rezepte"));
     kopf.appendChild(el("p", "untertitel",
       rezepte.length === 1 ? "Ein Rezept" : rezepte.length + " Rezepte"));
     ziel.appendChild(kopf);
+
+    var veraltet = veraltetHinweisBauen(ausManifest);
+    if (veraltet) ziel.appendChild(veraltet);
 
     if (!rezepte.length) {
       var leer = el("section", "probleme");
@@ -827,7 +997,8 @@
       var kasten = document.createElement("input");
       kasten.type = "checkbox";
       kasten.value = r.id;
-      kasten.addEventListener("change", auswahlAktualisieren);
+      if (gemerkteAuswahl[r.id]) kasten.checked = true;
+      kasten.addEventListener("change", function () { auswahlAktualisieren(true); });
       wahl.appendChild(kasten);
       wahl.appendChild(el("span", null, "Für die Einkaufsliste"));
       eintrag.appendChild(wahl);
@@ -850,7 +1021,11 @@
     leiste.appendChild(knopf);
     ziel.appendChild(leiste);
 
-    function auswahlAktualisieren() {
+    // `sichern` ist beim ersten Lauf falsch: der stellt nur her, was
+    // ohnehin in der Ablage steht. Ohne die Unterscheidung schriebe jeder
+    // Aufruf der Uebersicht eine leere Auswahl — und ueberschriebe damit
+    // die, die man gerade wiederherstellen wollte.
+    function auswahlAktualisieren(sichern) {
       var gewaehlt = [].slice.call(ziel.querySelectorAll(".karte-wahl input:checked"))
                        .map(function (k) { return k.value; });
       leiste.hidden = gewaehlt.length === 0;
@@ -858,13 +1033,29 @@
         ? "1 Rezept gewählt"
         : gewaehlt.length + " Rezepte gewählt";
       knopf.href = "index.html?einkauf=" + gewaehlt.join(",");
+      if (M && sichern) M.schreiben("auswahl", { ids: gewaehlt });
     }
+
+    // Einmal von Hand, damit eine wiederhergestellte Auswahl auch die
+    // Leiste zeigt — sonst stehen Haken da, aber kein Weg zur Liste.
+    auswahlAktualisieren(false);
   }
 
   // Rendert ein Rezept vollstaendig in `ziel`.
   function rezeptRendern(rezept, ziel) {
     var modell = G.gridModellBauen(rezept);
+
+    // Portionszahl und Haken aus der letzten Sitzung (T-0064). Die
+    // gespeicherte Zahl wird geprueft, bevor sie gilt: sie steht in einer
+    // Ablage, die auch von Hand oder von einer aelteren Fassung des
+    // Rezepts beschrieben sein kann. Was nicht mehr zur Auswahl steht,
+    // wird verworfen — sonst zeigt der Kopf eine Zahl, die kein Knopf
+    // traegt, und keiner ist aktiv.
+    var gemerkt = M ? M.lesen("rezept:" + rezept.id) : null;
     var portionen = rezept.portionen;
+    if (gemerkt && P.portionsOptionen(rezept.portionen).indexOf(gemerkt.portionen) > -1) {
+      portionen = gemerkt.portionen;
+    }
     modell.portionen = function () { return portionen; };
 
     ziel.textContent = "";
@@ -889,9 +1080,25 @@
     } : null;
     modell.kochmodus = function () { return kochmodus; };
 
-    ziel.appendChild(kopfBauen(rezept, portionen, function (neu) {
+    // Sichern, was sich am Rezept aendern kann. Die Funktion liest den
+    // Zustand aus dem DOM statt ihn nebenher mitzufuehren — ein zweites
+    // Modell neben den Klassen waere genau die Doppelquelle, die T-0044
+    // schon einmal Haken gekostet hat.
+    function sichern() {
+      if (!M) return;
+      var haken = [];
+      modell.zeilen.forEach(function (zeile, r) {
+        var zelle = ziel.querySelector('.zutat[data-zeile="' + r + '"]');
+        if (zelle && zelle.classList.contains("abgehakt")) haken.push(zeile.zutat.id);
+      });
+      M.schreiben("rezept:" + rezept.id, { portionen: portionen, abgehakt: haken });
+    }
+    sichernNachHaken = sichern;
+
+    ziel.appendChild(kopfBauen(rezept, modell, portionen, function (neu) {
       portionen = neu;
       mengenAktualisieren(ziel, modell, portionen);
+      sichern();
     }, beiKochstart));
 
     var rahmen = el("div", "grid-rahmen");
@@ -921,6 +1128,17 @@
     if (hinweise) ziel.appendChild(hinweise);
     var quelle = quelleBauen(rezept);
     if (quelle) ziel.appendChild(quelle);
+
+    // Erst jetzt die Haken setzen: beide Ansichten muessen stehen, sonst
+    // bekommt nur eine von beiden sie (T-0040).
+    if (gemerkt && gemerkt.abgehakt && gemerkt.abgehakt.length) {
+      var zeileVonZutat = {};
+      modell.zeilen.forEach(function (zeile, r) { zeileVonZutat[zeile.zutat.id] = r; });
+      gemerkt.abgehakt.forEach(function (zid) {
+        var r = zeileVonZutat[zid];
+        if (r !== undefined) zeileMarkieren(ziel, r, true);
+      });
+    }
 
     return modell;
   }

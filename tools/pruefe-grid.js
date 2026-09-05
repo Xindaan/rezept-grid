@@ -31,6 +31,7 @@ DOM.anmelden();
 //    aus DIESER Datei sichtbar war; im Browser waere es abgestuerzt.
 //    Ein Pruefskript, das dem Produktionscode heimlich eigene Variablen
 //    leiht, prueft nicht das, was ausgeliefert wird.
+require("../js/merker.js");
 require("../js/zeitmass.js");
 require("../js/grid.js");
 require("../js/portionen.js");
@@ -46,11 +47,28 @@ var Z = globalThis.RezeptZeitmass;
 var S = globalThis.RezeptStufenliste;
 var R = globalThis.RezeptRender;
 var A = globalThis.RezeptApp;
+var M = globalThis.RezeptMerker;
 
 var fehler = 0;
+
+// Vergleich ueber JSON. Ein DOM-Knoten darin ist ein Ring (Kind zeigt auf
+// Eltern zeigt auf Kind) — JSON.stringify wirft daran, und zwar erst im
+// FEHLERFALL. Ein Test, der bei Abweichung abstuerzt statt zu melden,
+// nimmt einem genau die Meldung weg, fuer die er da ist; aufgefallen in
+// der Negativprobe zu T-0060. Deshalb hier abgefangen: lieber eine
+// grobe Beschreibung als kein Ergebnis.
+function alsText(wert) {
+  try {
+    return JSON.stringify(wert);
+  } catch (e) {
+    return "<nicht serialisierbar: " + e.message + ">";
+  }
+}
+
 function pruefe(name, ist, soll) {
-  var ok = JSON.stringify(ist) === JSON.stringify(soll);
-  if (!ok) { fehler++; console.log("FAIL  " + name + "\n      ist:  " + JSON.stringify(ist) + "\n      soll: " + JSON.stringify(soll)); }
+  var a = alsText(ist), b = alsText(soll);
+  var ok = a === b && a.indexOf("<nicht serialisierbar") !== 0;
+  if (!ok) { fehler++; console.log("FAIL  " + name + "\n      ist:  " + a + "\n      soll: " + b); }
   else console.log("ok    " + name);
 }
 
@@ -105,6 +123,23 @@ pruefe("g/ml ab 10 ganzzahlig", P.dezimalRunden(133.333), 133);
 pruefe("g/ml unter 10 eine Nachkommastelle", P.dezimalRunden(9.44), 9.4);
 pruefe("g/ml Grenzfall 10", P.dezimalRunden(10), 10);
 pruefe("g/ml rundet ueber die Grenze", P.dezimalRunden(9.96), 10);
+// Grosse Einheiten: eine Nachkommastelle waere hier 100 ml bzw. 100 g
+// (T-0058). Aus 0,75 l wurde "0,8 l" — fuenfzig Milliliter daneben.
+pruefe("kg/l bekommen zwei Nachkommastellen", P.dezimalRunden(0.75, "l"), 0.75);
+pruefe("kg/l: auch beim Gewicht", P.dezimalRunden(1.25, "kg"), 1.25);
+pruefe("kg/l: ab 10 bleibt es ganzzahlig wie ueberall", P.dezimalRunden(12.5, "l"), 13);
+pruefe("g/ml bleiben bei einer Nachkommastelle", P.dezimalRunden(0.75, "g"), 0.8);
+pruefe("ohne Einheit gilt weiter die g/ml-Regel", P.dezimalRunden(0.75), 0.8);
+pruefe("Einheiten-Groessenklasse",
+  [P.istGrosseEinheit("l"), P.istGrosseEinheit("kg"),
+   P.istGrosseEinheit("ml"), P.istGrosseEinheit("g")],
+  [true, true, false, false]);
+// Und am Anzeigetext, nicht nur an der Rechnung — dort sieht es der Leser.
+pruefe("kg/l: der angezeigte Text stimmt",
+  [P.mengeFormatieren({ menge: 1.5, einheit: "l" }, 0.5),
+   P.mengeFormatieren({ menge: 2.5, einheit: "kg" }, 0.5)],
+  ["0,75 l", "1,25 kg"]);
+
 pruefe("Bruch 1,5", P.bruchFormatieren(1.5), "1½");
 pruefe("Bruch 0,75", P.bruchFormatieren(0.75), "¾");
 pruefe("Bruch 2,25", P.bruchFormatieren(2.25), "2¼");
@@ -425,6 +460,47 @@ pruefe("Plan: Gesamtdauer bleibt der kritische Pfad, wenn die Arbeit hineinpasst
 // und wuerde das Ruhen um 45 Minuten verschieben — 7200 statt 5400.
 pruefe("Plan: die Stufe mit dem laengsten Rest kommt zuerst dran",
   Z.plan(langDauern, mtVor, mtUnbeauf).starts, [0, 600, 600, 3300, 4500]);
+
+// --- Der Planer laesst die Haende nicht leer (T-0054) -----------------
+// Zwei Regeln, jede mit eigenem Fall — sonst deckt ein Test beide ab und
+// die Negativprobe bleibt gruen, wenn man eine davon ausbaut.
+//
+// Regel 1 (Zeit): dran ist, was am fruehesten anfangen kann. Bis T-0054
+// entschied der Restpfad allein; die Stufe hinter der Ruhezeit gewann,
+// `handFrei` sprang mit ihr ans Ende der Ruhezeit, und die unabhaengige
+// Arbeit kam erst danach.
+var wartDauern = [600, 3600, 600, 600];        // Arbeit, Ruhe, Arbeit, freie Arbeit
+var wartVor = [[], [0], [1], []];
+var wartUnbeauf = [false, true, false, false];
+pruefe("Plan: die bereite Stufe kommt vor der, die auf eine Ruhezeit wartet",
+  Z.plan(wartDauern, wartVor, wartUnbeauf).starts, [0, 600, 4200, 600]);
+pruefe("Plan: dadurch keine Leerzeit — 80 statt 90 Minuten",
+  Z.realeGesamtdauer(wartDauern, wartVor, wartUnbeauf), 4800);
+// Und die Folge, die der Leser sieht: keine falsche Warnung im Kopf. Der
+// Plan trifft hier den kritischen Pfad, zu zweit ginge es nicht schneller.
+pruefe("Plan: kein falsches 'braucht zwei Haende'",
+  [Z.braucht2Haende(wartDauern, wartVor, wartUnbeauf),
+   Z.gesamtdauer(wartDauern, wartVor)], [false, 4800]);
+
+// Regel 2 (Restpfad): bei GLEICHEM fruehesten Start entscheidet weiter,
+// hinter wem am meisten haengt. Das ist die Maultaschen-Logik in klein —
+// zuerst das, hinter dem eine Ruhezeit haengt, denn die laeuft dann
+// waehrend der uebrigen Arbeit.
+//
+// Der Fall ist bewusst so gebaut, dass die Reihenfolge im Feld NICHT
+// die richtige Antwort ist: Stufe 1 traegt die Kette, Stufe 0 nicht.
+// Ohne die Regel gewinnt der erste Treffer, und die Ruhezeit beginnt
+// erst nach aller Arbeit — 70 statt 60 Minuten. (Ein Rezept mit dieser
+// Reihenfolge wuerde die JSON-Reihenfolgepruefung weiter unten melden;
+// hier steht der Planer allein auf dem Pruefstand.)
+var kettenDauern = [600, 600, 3000];
+var kettenVor = [[], [], [1]];
+var kettenUnbeauf = [false, false, true];
+pruefe("Plan: bei gleichem Start kommt der laengste Restpfad zuerst",
+  Z.plan(kettenDauern, kettenVor, kettenUnbeauf).starts, [600, 0, 600]);
+pruefe("Plan: und die Ruhezeit laeuft dadurch waehrend der uebrigen Arbeit",
+  Z.realeGesamtdauer(kettenDauern, kettenVor, kettenUnbeauf), 3600);
+
 // Lineare Rezepte: der Plan aendert nichts, es gab nie eine Ueberlappung.
 pruefe("Plan: lineare Kette bleibt die alte Kumulation",
   Z.plan([360, 300, 60, 180, 2100, null], null, null).starts,
@@ -546,6 +622,56 @@ pruefe("Einkauf: feste Mengen werden nicht summiert, nur das Maximum zaehlt",
     { rezept: sp, portionen: 4 }, { rezept: sp, portionen: 8 }
   ]), "Wasser", "l")[0].menge, 4);
 
+// --- Spannen addieren sich als Spanne (T-0057) ------------------------
+// "1 EL" plus "1-2 EL" ist "2-3 EL". Vorher trug die Zutat ohne Spanne
+// zur Obergrenze nichts bei, und heraus kam "2-2 EL" — eine Spanne, die
+// keine ist, und eine Obergrenze unter der Wahrheit.
+(function () {
+  function rez(id, zutaten) {
+    return { id: id, titel: id, portionen: 4, zutaten: zutaten };
+  }
+  function spanne(liste) {
+    return liste.map(function (p) { return [p.menge, p.menge_bis]; });
+  }
+  var einzeln = rez("a", [{ id: "z", name: "Essig", menge: 1, einheit: "EL" }]);
+  var mitSpanne = rez("b", [{ id: "z", name: "Essig", menge: 1, menge_bis: 2, einheit: "EL" }]);
+  var festeSpanne = rez("c", [{ id: "z", name: "Essig", menge: 1, menge_bis: 2,
+                               einheit: "EL", skalieren: false }]);
+
+  pruefe("Einkauf: Einzelwert plus Spanne ergibt eine Spanne",
+    spanne(EK.listeBauen([{ rezept: einzeln, portionen: 4 }, { rezept: mitSpanne, portionen: 4 }])),
+    [[2, 3]]);
+  // Und zwar unabhaengig davon, welches Rezept zuerst kommt — genau
+  // daran haengt die Fehlerklasse.
+  pruefe("Einkauf: Spanne plus Einzelwert ergibt dieselbe Spanne",
+    spanne(EK.listeBauen([{ rezept: mitSpanne, portionen: 4 }, { rezept: einzeln, portionen: 4 }])),
+    [[2, 3]]);
+  pruefe("Einkauf: zwei Spannen addieren beide Grenzen",
+    spanne(EK.listeBauen([{ rezept: mitSpanne, portionen: 4 }, { rezept: mitSpanne, portionen: 4 }])),
+    [[2, 4]]);
+  // Ohne Spanne darf keine entstehen, sonst stuende ueberall "2-2 EL".
+  pruefe("Einkauf: ohne Spanne bleibt der Posten ohne Spanne",
+    spanne(EK.listeBauen([{ rezept: einzeln, portionen: 4 }, { rezept: einzeln, portionen: 4 }])),
+    [[2, null]]);
+  // Feste Mengen summieren nicht — auch ihre Obergrenze nicht.
+  pruefe("Einkauf: feste Spanne nimmt das Maximum statt zu summieren",
+    spanne(EK.listeBauen([{ rezept: festeSpanne, portionen: 4 }, { rezept: festeSpanne, portionen: 8 }])),
+    [[1, 2]]);
+  // Skalierung greift auf beiden Grenzen.
+  pruefe("Einkauf: die Portionszahl skaliert beide Grenzen",
+    spanne(EK.listeBauen([{ rezept: mitSpanne, portionen: 8 }])), [[2, 4]]);
+  // Die Hilfsfelder der Rechnung duerfen den Posten nicht verlassen —
+  // sonst wandern sie in die Anzeige und in jeden Vergleich.
+  pruefe("Einkauf: der Posten traegt keine Rechenreste",
+    Object.keys(EK.listeBauen([{ rezept: mitSpanne, portionen: 4 }])[0]).sort(),
+    ["einheit", "fix", "menge", "menge_bis", "mengenlos", "name", "quellen", "schluessel"]);
+})();
+
+// Die Auswahl steht in der URL und ist damit Eingabe von aussen.
+pruefe("Einkauf: unbrauchbare Portionszahlen fallen auf die Basis zurueck",
+  EK.auswahlLesen("a:-4,b:0,c:abc,d:8").map(function (x) { return x.portionen; }),
+  [null, null, null, 8]);
+
 pruefe("Einkauf: Auswahl aus der URL lesen",
   EK.auswahlLesen("spaetzle:8,maultaschen"),
   [{ id: "spaetzle", portionen: 8 }, { id: "maultaschen", portionen: null }]);
@@ -664,16 +790,41 @@ zuPruefen.forEach(function (eintrag) {
   if (r.id !== name) maengel.push('id "' + r.id + '" passt nicht zum Dateinamen');
   if (!r.portionen || r.portionen < 1) maengel.push("portionen fehlt oder ist < 1");
 
+  // Die Pflichtfelder aus docs/schema.md, bisher ungeprueft (T-0062).
+  // Sie fehlen selten — aber wenn, dann faellt es erst im Browser auf,
+  // und dort als leere Ueberschrift statt als Meldung.
+  if (r.schema !== 1) maengel.push("schema fehlt oder ist nicht 1");
+  if (!r.titel) maengel.push("titel fehlt");
+  if (!Number.isInteger(r.portionen)) maengel.push("portionen ist keine ganze Zahl");
+  if (!("quelle" in r)) maengel.push("quelle fehlt (null bei Eigenkreation)");
+  if (r.quelle !== null && typeof r.quelle !== "object") {
+    maengel.push("quelle ist weder null noch ein Objekt");
+  }
+  if (!Array.isArray(r.zutaten) || !r.zutaten.length) maengel.push("zutaten fehlt oder ist leer");
+  if (!Array.isArray(r.schritte) || !r.schritte.length) maengel.push("schritte fehlt oder ist leer");
+  // Die id-Form ist ASCII-kebab-case; sie ist zugleich der Dateiname und
+  // steht in URLs.
+  if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(r.id || "")) {
+    maengel.push('id "' + r.id + '" ist kein ASCII-kebab-case');
+  }
+
   // Einheiten gegen ein festes Vokabular. Ein Tippfehler wie "Zehen"
   // statt "Zehe" faellt sonst nirgends auf: die Einheit ist dann keine
   // Bruch-Einheit mehr und die Menge laeuft still in die Dezimalrundung —
   // aus "1½ Zehe" wird "1,5 Zehen".
-  var ERLAUBTE_EINHEITEN = ["g", "kg", "ml", "l", "EL", "TL", "Msp", "Prise",
-    "Stueck", "Stück", "Zehe", "Blatt", "Stiel", "Zweig", "Bund", "Dose",
-    "Packung", "Scheibe", "Handvoll"];
+  //
+  // Das Vokabular kommt aus js/portionen.js und steht nicht mehr hier
+  // (T-0062). Dort entscheidet es ueber die Rundung; eine zweite Liste
+  // haette bedeutet, dass eine neue Einheit erst richtig gerundet und
+  // dann trotzdem als Fehler gemeldet wird.
+  var ERLAUBTE_EINHEITEN = P.ALLE_EINHEITEN;
 
   var ids = {};
   r.zutaten.forEach(function (z) {
+    if (!z.name) maengel.push('Zutat "' + z.id + '" ohne name');
+    if (!/^z-[a-z0-9]+(-[a-z0-9]+)*$/.test(z.id || "")) {
+      maengel.push('Zutaten-ID "' + z.id + '" folgt nicht dem Muster z-kebab-case');
+    }
     if (z.einheit && ERLAUBTE_EINHEITEN.indexOf(z.einheit) === -1) {
       maengel.push('"' + z.id + '": Einheit "' + z.einheit + '" steht nicht im Vokabular');
     }
@@ -693,7 +844,15 @@ zuPruefen.forEach(function (eintrag) {
     if (schrittIds[s.id]) maengel.push('Schritt-ID "' + s.id + '" doppelt');
     schrittIds[s.id] = true;
     if (!s.titel) maengel.push('Schritt "' + s.id + '" ohne titel');
+    if (typeof s.anweisung !== "string") maengel.push('Schritt "' + s.id + '" ohne anweisung');
+    if (!/^s-[a-z0-9]+(-[a-z0-9]+)*$/.test(s.id || "")) {
+      maengel.push('Schritt-ID "' + s.id + '" folgt nicht dem Muster s-kebab-case');
+    }
+    if (!Array.isArray(s.zutaten)) maengel.push('Schritt "' + s.id + '" ohne zutaten-Feld');
     if (!("dauer_s" in s)) maengel.push('Schritt "' + s.id + '" ohne dauer_s');
+    if (s.dauer_s !== null && !(typeof s.dauer_s === "number" && s.dauer_s >= 0)) {
+      maengel.push('Schritt "' + s.id + '": dauer_s ist weder null noch eine Zahl >= 0');
+    }
     (s.vorstufen || []).forEach(function (v) {
       var davor = r.schritte.slice(0, i).some(function (x) { return x.id === v; });
       if (!davor) maengel.push('Schritt "' + s.id + '": Vorstufe "' + v + '" steht nicht davor');
@@ -886,6 +1045,30 @@ pruefe("Manifest aktuell (sonst: node tools/build-manifest.js)", manifestMaengel
   pruefe("Einkauf/DOM: die Menge wird trotzdem fortgeschrieben",
     menge("Spätzlemehl"), "800 g");
 
+  // Die Liste wird fortgeschrieben, BEVOR die URL angefasst wird
+  // (T-0057). `replaceState` ist der Teil, der scheitern kann — ueber
+  // file:// wirft es in manchen Browsern. Stand es davor, blieb der
+  // Portionswechsel danach wirkungslos.
+  (function () {
+    var echt = globalThis.history.replaceState;
+    globalThis.history.replaceState = function () {
+      throw new Error("SecurityError: replaceState auf file:// nicht erlaubt");
+    };
+    var geworfen = null;
+    try {
+      ziel.querySelectorAll(".portionen-knopf")[1].ausloesen("click");
+    } catch (e) {
+      geworfen = e;
+    }
+    globalThis.history.replaceState = echt;
+    pruefe("Einkauf/DOM: die Mengen stehen auch, wenn replaceState wirft",
+      menge("Spätzlemehl"), "400 g");
+    // Zurueck auf 8 Portionen fuer die folgenden Pruefungen.
+    ziel.querySelectorAll(".portionen-knopf")[3].ausloesen("click");
+    pruefe("Einkauf/DOM: und danach laeuft die Umschaltung normal weiter",
+      menge("Spätzlemehl"), "800 g");
+  })();
+
   // Zweimal Abhaken schaltet wieder aus, und aria-pressed geht mit.
   var einer = posten()[0];
   var warAn = einer.classList.contains("abgehakt");
@@ -940,6 +1123,242 @@ pruefe("Manifest aktuell (sonst: node tools/build-manifest.js)", manifestMaengel
   pruefe("Kennzahlen/DOM: Pfannkuchen",
     kacheln("pfannkuchen"),
     ["Arbeit=45 Min", "ohne Zutun=1 Std 45 Min", "gesamt=2 Std 30 Min"]);
+})();
+
+// --- 5a5b. Die Spaltenbreiten landen wirklich im DOM (T-0055) --------
+// breitenAnwenden ist die Stelle, an der das ganze Zeitmass sichtbar
+// wird — und sie war in JEDER Pruefung stumm: `tabelle.parentElement`
+// kannte die Attrappe nicht, die Funktion stieg an ihrem eigenen
+// Waechter aus, und 197 gruene Pruefungen sagten nichts darueber.
+// Gemessen: nach rezeptRendern war style.minWidth undefined und alle
+// acht col-Breiten ebenfalls.
+//
+// Diese Pruefungen fassen an, was der Nutzer sieht: die Mindestbreite,
+// die Zahl der Spalten, die beiden Zutatenanteile, die Summe der
+// Stufenanteile und den sticky-Versatz.
+(function () {
+  function tabelle(id) {
+    var r = JSON.parse(fs.readFileSync(path.join(rezeptOrdner, id + ".json"), "utf8"));
+    var ziel = DOM.knotenBauen("div");
+    ziel.className = "rezept";
+    var m = R.rezeptRendern(r, ziel);
+    var t = ziel.querySelector("table");
+    return {
+      modell: m,
+      tabelle: t,
+      ziel: ziel,
+      breiten: ziel.querySelectorAll("colgroup col").map(function (c) { return c.style.width; })
+    };
+  }
+
+  var pk = tabelle("pfannkuchen");
+  pruefe("Breiten/DOM: die Mindestbreite steht an der Tabelle",
+    pk.tabelle.style.minWidth, Z.noetigeBreite(pk.modell.spaltenAnzahl) + "px");
+  pruefe("Breiten/DOM: und sie ist die gerechnete, nicht irgendeine",
+    pk.tabelle.style.minWidth, "739px");
+  pruefe("Breiten/DOM: eine col je Spalte plus die beiden Zutatenspalten",
+    pk.breiten.length, pk.modell.spaltenAnzahl + 2);
+  pruefe("Breiten/DOM: keine col bleibt ohne Breite",
+    pk.breiten.filter(function (b) { return !b; }), []);
+  pruefe("Breiten/DOM: die beiden Zutatenspalten tragen ihren Anteil",
+    [pk.breiten[0], pk.breiten[1]],
+    [(Z.ZUTATEN[0] * 100).toFixed(3) + "%", (Z.ZUTATEN[1] * 100).toFixed(3) + "%"]);
+  // Die Stufen teilen sich exakt den Rest — sonst ist die Tabelle
+  // entweder zu schmal oder laeuft ueber.
+  pruefe("Breiten/DOM: die Stufenanteile ergeben zusammen den Rest",
+    Math.round(pk.breiten.slice(2).reduce(function (a, b) {
+      return a + parseFloat(b);
+    }, 0) * 100) / 100,
+    Math.round((1 - Z.ZUTATEN[0] - Z.ZUTATEN[1]) * 10000) / 100);
+  // Der sticky-Versatz muss der TATSAECHLICHEN Breite der Mengenspalte
+  // folgen, nicht ihrem Anteil — sonst schiebt sich die Zutatenspalte
+  // beim Querscrollen darueber (T-0023/T-0039).
+  pruefe("Breiten/DOM: der sticky-Versatz steht als CSS-Variable",
+    pk.tabelle.style["--zutat-links"],
+    Math.round(Z.spaltenbreiten(
+      [0], Z.noetigeBreite(pk.modell.spaltenAnzahl)).zutatenPx[0]) + "px");
+
+  // Und ein zweites Rezept mit anderer Stufenzahl, damit nicht eine
+  // zufaellig passende Konstante durchgeht.
+  var mtT = tabelle("maultaschen");
+  pruefe("Breiten/DOM: andere Stufenzahl, andere Mindestbreite",
+    [mtT.tabelle.style.minWidth, mtT.breiten.length], ["493px", 6]);
+
+  // --- Der Kuerzungsvermerk gehoert der Stufe (T-0056) ---------------
+  // Zwei Stufen koennen sich eine Spalte teilen; aufgespannt wird sie von
+  // der laengeren. Vorher rechnete der Vermerk mit der Spalte und landete
+  // trotzdem an jeder Stufe darin: an "Fuellung mischen" (15 von 90 Min)
+  // stand "40 % -> 22 %" — die Zahl der Teigruhe daneben.
+  function vermerke(t) {
+    var raus = {};
+    t.modell.spalten.forEach(function (sp) {
+      var td = t.tabelle.querySelector('[data-schritt="' + sp.schritt.id + '"]');
+      var k = td && td.querySelector(".kuerzung");
+      if (k) raus[sp.schritt.id] = k.textContent;
+    });
+    return raus;
+  }
+  var mtVermerke = vermerke(mtT);
+  pruefe("Kuerzung: die Stufe in der geteilten Spalte bekommt keinen fremden Vermerk",
+    Object.keys(mtVermerke).sort(), ["s-fuellen", "s-teig-ruhen"]);
+  pruefe("Kuerzung: und die Teigruhe nennt ihren eigenen Anteil",
+    mtVermerke["s-teig-ruhen"], "∕∕ Achse gekürzt, 40 % → 22 %");
+
+  // Ueber alle Rezepte: die genannte Prozentzahl ist immer der Anteil der
+  // STUFE an der Summe der Spaltenspannen — derselben Skala, auf der die
+  // Breiten stehen. Eine Zahl, die zu einer anderen Stufe gehoert, faellt
+  // hier auf, egal in welchem Rezept.
+  var falscheZahlen = [];
+  dateien.map(function (d) { return d.replace(".json", ""); }).forEach(function (id) {
+    var t = tabelle(id);
+    var spannen = [];
+    t.modell.spalten.forEach(function (sp) {
+      var c = sp.spalte;
+      if (!spannen[c]) spannen[c] = { von: Infinity, bis: 0 };
+      spannen[c].von = Math.min(spannen[c].von, sp.start);
+      spannen[c].bis = Math.max(spannen[c].bis, sp.ende);
+    });
+    var summe = spannen.reduce(function (a, x) { return a + (x.bis - x.von); }, 0);
+    var gefunden = vermerke(t);
+    t.modell.spalten.forEach(function (sp) {
+      var text = gefunden[sp.schritt.id];
+      if (!text) return;
+      var soll = Math.round((sp.schritt.dauer_s || 0) / summe * 100);
+      var ist = parseInt(/(\d+)\s*%/.exec(text)[1], 10);
+      if (ist !== soll) {
+        falscheZahlen.push(id + "/" + sp.schritt.id + ": nennt " + ist + " %, eigene Dauer sind " + soll + " %");
+      }
+    });
+  });
+  pruefe("Kuerzung: die genannte Zahl ist in jedem Rezept die der Stufe selbst",
+    falscheZahlen, []);
+})();
+
+// --- 5a5d. Die Stufenzelle bleibt eine Zelle (T-0060) ----------------
+// Vorher trug das <td> selbst role="button" und ein aria-label aus Titel
+// plus Hinweis. Ein aria-label ERSETZT den Namen: Dauer, Temperatur und
+// die Marken standen sichtbar da, wurden aber nicht mehr vorgelesen. Und
+// die Zelle verlor ihre Rolle im Tabellenraster — in einer Tabelle, die
+// die Kodierung des Rezepts IST.
+(function () {
+  function gerendert(id) {
+    var r = JSON.parse(fs.readFileSync(path.join(rezeptOrdner, id + ".json"), "utf8"));
+    var ziel = DOM.knotenBauen("div");
+    ziel.className = "rezept";
+    R.rezeptRendern(r, ziel);
+    return ziel;
+  }
+
+  var mt = gerendert("maultaschen");
+  var zellen = mt.querySelectorAll("td.schritt");
+  // Verglichen werden die WERTE, nicht die Knoten: ein Knoten im Vergleich
+  // laesst den Testlauf im Fehlerfall abstuerzen, statt zu melden.
+  pruefe("Stufenzelle: keine Zelle gibt ihre Rasterrolle auf",
+    zellen.map(function (td) { return td.getAttribute("role"); })
+          .filter(function (rolle) { return rolle !== null; }), []);
+  pruefe("Stufenzelle: und keine ueberschreibt ihren Namen",
+    zellen.map(function (td) { return td.getAttribute("aria-label"); })
+          .filter(function (name) { return name !== null; }), []);
+  pruefe("Stufenzelle: jede tippbare Zelle traegt einen echten Knopf",
+    zellen.map(function (td) {
+      var b = td.querySelector(".schritt-knopf");
+      return b ? b.tagName : null;
+    }),
+    ["BUTTON", "BUTTON", "BUTTON", "BUTTON", "BUTTON"]);
+
+  // Der Name des Knopfes wird aus denselben Teilen gebaut, die sichtbar
+  // dastehen. Genau diese Angaben fielen vorher weg.
+  function labelVon(ziel, schrittId) {
+    return ziel.querySelector('[data-schritt="' + schrittId + '"]')
+               .querySelector(".schritt-knopf").getAttribute("aria-label");
+  }
+  pruefe("Stufenzelle: die Wartezeit wird mit vorgelesen",
+    labelVon(mt, "s-teig-ruhen"),
+    "Teig ruhen lassen, 30 Min, läuft von allein — Anweisung anzeigen");
+  pruefe("Stufenzelle: die Gleichzeitigkeit auch",
+    labelVon(mt, "s-fuellung"),
+    "Füllung mischen, 15 Min, nebenher möglich — Anweisung anzeigen");
+  pruefe("Stufenzelle: und die Temperatur",
+    labelVon(gerendert("pfannkuchen"), "s-backen"),
+    "ausbacken, 20 Min, 170 °C — Anweisung anzeigen");
+
+  // Der Knopf muss auch tun, wozu er da ist (T-0038). Das war bis jetzt
+  // ungeprueft, weil die Attrappe den Sprung nicht nachbilden konnte.
+  var sp = gerendert("spaetzle");
+  sp.querySelector('[data-schritt="s-teig"]').querySelector(".schritt-knopf").ausloesen("click");
+  var sprungziel = document.getElementById("anweisung-s-teig");
+  pruefe("Stufenzelle: der Knopf springt zum Wortlaut und hebt ihn hervor",
+    [sprungziel.wurdeAngesprungen, sprungziel.classList.contains("ist-angesprungen")],
+    [true, true]);
+
+  // Abgehakt ist ein Zustand, kein Knopfdruck.
+  var zutat = sp.querySelectorAll("td.zutat")[0];
+  pruefe("Zutatenzelle: als Kontrollkaestchen ausgezeichnet",
+    [zutat.getAttribute("role"), zutat.getAttribute("aria-checked")], ["checkbox", "false"]);
+  zutat.ausloesen("click");
+  pruefe("Zutatenzelle: und der Zustand geht beim Abhaken mit",
+    [zutat.getAttribute("aria-checked"), zutat.classList.contains("abgehakt")], ["true", true]);
+})();
+
+// --- 5a5c. Kopf und Plan sind dieselbe Rechnung (T-0059) -------------
+// Vorher speiste sich der Kopf aus drei Quellen: "Arbeit" aus dem
+// JSON-Feld, "ohne Zutun" gerechnet, "gesamt" wieder aus dem JSON. Beide
+// Faelle, in denen das auseinanderlaeuft, stehen hier — mit
+// zusammengebauten Rezepten, weil der Bestand sie (noch) nicht hat.
+(function () {
+  function zeige(rezept) {
+    var ziel = DOM.knotenBauen("div");
+    ziel.className = "rezept";
+    R.rezeptRendern(rezept, ziel);
+    var kacheln = {};
+    ziel.querySelectorAll(".kennzahl").forEach(function (k) {
+      kacheln[k.querySelector(".kennzahl-label").textContent] =
+        k.querySelector(".kennzahl-wert").textContent;
+    });
+    var ende = ziel.querySelector(".zeitachse-ende");
+    return { kacheln: kacheln, achse: ende ? ende.textContent : null };
+  }
+
+  // Fall 1: ein Schritt, den das Grid nicht darstellen kann — zutatenlos
+  // und ohne gueltige Vorstufe. grid.js meldet ihn und laesst ihn weg;
+  // vorher zaehlte er trotzdem in den Kennzahlen, und der Kopf behauptete
+  // 25 Minuten, waehrend die Achse bei 11 endete.
+  var mitLoch = {
+    id: "t", titel: "t", portionen: 2, zeit_aktiv_s: 60, zeit_gesamt_s: 1500,
+    zutaten: [{ id: "z-a", name: "A", menge: 1, einheit: "g" }],
+    schritte: [
+      { id: "s-ofen", titel: "Ofen vorheizen", anweisung: "", dauer_s: 900,
+        unbeaufsichtigt: true, zutaten: [], vorstufen: [] },
+      { id: "s-a", titel: "a", anweisung: "", dauer_s: 60, zutaten: ["z-a"], vorstufen: [] },
+      { id: "s-b", titel: "backen", anweisung: "", dauer_s: 600,
+        unbeaufsichtigt: true, zutaten: [], vorstufen: ["s-a"] }
+    ]
+  };
+  var loch = zeige(mitLoch);
+  pruefe("Kennzahlen/DOM: ein nicht darstellbarer Schritt zaehlt auch im Kopf nicht",
+    [loch.kacheln["Arbeit"], loch.kacheln["ohne Zutun"], loch.kacheln["gesamt"]],
+    ["1 Min", "10 Min", "11 Min"]);
+  pruefe("Kennzahlen/DOM: und die Achse sagt dasselbe",
+    loch.achse, "11 Min");
+
+  // Fall 2: ein Rezept nutzt den dokumentierten Puffer von zehn Prozent
+  // ueber dem Plan (docs/schema.md, docs/konvertierung.md). Der Kopf darf
+  // der Achse deswegen nicht widersprechen — beides ist der Plan.
+  var mitPuffer = {
+    id: "t2", titel: "t2", portionen: 2, zeit_aktiv_s: 660, zeit_gesamt_s: 1320,
+    zutaten: [{ id: "z-a", name: "A", menge: 1, einheit: "g" }],
+    schritte: [
+      { id: "s-a", titel: "a", anweisung: "", dauer_s: 600, zutaten: ["z-a"], vorstufen: [] },
+      { id: "s-b", titel: "ruhen", anweisung: "", dauer_s: 600,
+        unbeaufsichtigt: true, zutaten: [], vorstufen: ["s-a"] }
+    ]
+  };
+  var puffer = zeige(mitPuffer);
+  pruefe("Kennzahlen/DOM: der erlaubte Puffer im JSON verbiegt den Kopf nicht",
+    [puffer.kacheln["Arbeit"], puffer.kacheln["ohne Zutun"], puffer.kacheln["gesamt"]],
+    ["10 Min", "10 Min", "20 Min"]);
+  pruefe("Kennzahlen/DOM: Kopf und Achse bleiben auch dann deckungsgleich",
+    puffer.achse, "20 Min");
 })();
 
 // --- 5a6. Zeitachse: Start UND Planende (T-0052) ----------------------
@@ -1094,6 +1513,39 @@ pruefe("Manifest aktuell (sonst: node tools/build-manifest.js)", manifestMaengel
   });
   pruefe("CSS: kein Pseudo-Inhalt ausser den bewusst behaltenen",
     mitInhalt.filter(function (a) { return erlaubt.indexOf(a) === -1; }), []);
+
+  // --- Druck (T-0065) ------------------------------------------------
+  // Das hier ist eine QUELLTEXT-Pruefung, und sie weiss das: ohne
+  // Browser laesst sich kein Druckbild messen. Sie haelt genau die eine
+  // Kopplung fest, die man beim Aendern uebersieht — die Mindestbreite
+  // steht als INLINE-Stil an der Tabelle (render.js, breitenAnwenden),
+  // und nur `!important` kommt dagegen an. Faellt das weg, laeuft die
+  // Tabelle ueber den Seitenrand und wird abgeschnitten; auf dem
+  // Bildschirm sieht man davon nichts. Das Druckbild selbst wurde im
+  // Browser nachgesehen.
+  // --- `hidden` muss verbergen (T-0067) ------------------------------
+  // Auch das ist eine Quelltext-Pruefung, und auch sie weiss das. Der
+  // Befund kam aus dem Browser: `.einkauf-leiste` hatte `display: flex`,
+  // der Code setzte `hidden = true`, und die Leiste stand trotzdem da —
+  // die Regel des Browsers verliert gegen jede eigene. Die Attrappe kennt
+  // kein CSS und sah nur `hidden === true`.
+  //
+  // Statt an jeder Klasse einzeln steht die Gegenregel einmal global.
+  // Diese Pruefung haelt fest, dass sie da ist; wer sie entfernt, macht
+  // jedes `hidden` im Projekt lautlos wirkungslos.
+  pruefe("CSS: hidden verbirgt wirklich",
+    /\[hidden\]\s*\{[^}]*display:\s*none\s*!important/.test(css), true);
+
+  var druck = /@media\s+print\s*\{/.test(css);
+  pruefe("Druck: es gibt ueberhaupt Druckregeln", druck, true);
+  pruefe("Druck: die Mindestbreite der Tabelle wird ueberstimmt",
+    /min-width:\s*0\s*!important/.test(css), true);
+  // Beide Ansichten stehen im DOM. Welche gedruckt wird, darf nicht von
+  // der Seitenbreite abhaengen, die der Drucker gerade meldet.
+  pruefe("Druck: genau eine der beiden Ansichten wird gedruckt",
+    [/\.stufenliste\s*\{\s*display:\s*none\s*!important/.test(css),
+     /\.grid-rahmen\s*\{\s*display:\s*block\s*!important/.test(css)],
+    [true, true]);
 })();
 
 // --- 5a4. Wo .gefaess wirklich steht (T-0048) -------------------------
@@ -1180,6 +1632,75 @@ pruefe("Manifest aktuell (sonst: node tools/build-manifest.js)", manifestMaengel
   km.beenden();
 })();
 
+// --- 5a5e. Der Timer meldet sich (T-0063) ----------------------------
+// Die Uhr rechnete seit T-0045 richtig — sie sagte nur niemandem
+// Bescheid. Beim Kochen liegt das Telefon mit dem Display nach unten
+// neben dem Herd; ein Timer, den man ansehen muss, ist keiner.
+//
+// Geprueft wird nicht der Ton (den gibt es headless nicht), sondern das
+// Verhalten: kommt der Alarm, kommt er GENAU EINMAL, und bleibt der
+// Bildschirm nur waehrend des Kochens wach.
+(function () {
+  var sp = JSON.parse(fs.readFileSync(path.join(rezeptOrdner, "spaetzle.json"), "utf8"));
+  var ziel = DOM.knotenBauen("div");
+  ziel.className = "rezept";
+  R.rezeptRendern(sp, ziel);
+
+  var gezaehlt = { vorbereitet: 0, alarm: 0, wachAn: 0, wachAus: 0 };
+  var geber = {
+    vorbereiten: function () { gezaehlt.vorbereitet++; },
+    abgelaufen: function () { gezaehlt.alarm++; }
+  };
+  var wachhalter = {
+    an: function () { gezaehlt.wachAn++; },
+    aus: function () { gezaehlt.wachAus++; }
+  };
+
+  var km = K.kochmodusBauen(G.gridModellBauen(sp), ziel, geber, wachhalter);
+  km.starten();
+  pruefe("Alarm: der Bildschirm wird beim Start wachgehalten",
+    [gezaehlt.wachAn, gezaehlt.wachAus], [1, 0]);
+  pruefe("Alarm: vor dem Start ist nichts zu melden", gezaehlt.alarm, 0);
+
+  // Timer starten und die Wanduhr ueber das Ende schieben — derselbe
+  // Ablauf wie im gedrosselten Tab.
+  var echtInterval = globalThis.setInterval, echtClear = globalThis.clearInterval;
+  var tick = null;
+  globalThis.setInterval = function (fn) { tick = fn; return 1; };
+  globalThis.clearInterval = function () {};
+  km.timerUmschalten();
+  pruefe("Alarm: der Start bereitet den Ton vor (die Nutzergeste)",
+    gezaehlt.vorbereitet, 1);
+  pruefe("Alarm: solange die Zeit laeuft, schweigt er", gezaehlt.alarm, 0);
+
+  var echteUhr = Date.now;
+  Date.now = function () { return echteUhr() + 999999; };
+  tick();
+  pruefe("Alarm: beim Ablaufen kommt er", gezaehlt.alarm, 1);
+  // Und zwar einmal. Im Hintergrund-Tab holt der naechste Tick die
+  // Wanduhr nach — er darf den Alarm nicht wiederholen.
+  tick();
+  tick();
+  pruefe("Alarm: weitere Ticks wiederholen ihn nicht", gezaehlt.alarm, 1);
+  Date.now = echteUhr;
+  globalThis.setInterval = echtInterval;
+  globalThis.clearInterval = echtClear;
+
+  km.beenden();
+  pruefe("Alarm: nach dem Beenden darf der Bildschirm wieder ausgehen",
+    [gezaehlt.wachAn, gezaehlt.wachAus], [1, 1]);
+
+  // Die eingebauten Geber duerfen in einer Umgebung ohne Vibration, ohne
+  // Ton und ohne Wake Lock nicht werfen — sonst reisst der Kochmodus an
+  // einer Zugabe ab. Genau diese Umgebung ist hier.
+  var echt = K.signalgeberBauen();
+  var geworfen = null;
+  try { echt.vorbereiten(); echt.abgelaufen(); } catch (e) { geworfen = e.message; }
+  var wach = K.wachhalterBauen();
+  try { wach.an(); wach.aus(); } catch (e) { geworfen = e.message; }
+  pruefe("Alarm: ohne Vibration, Ton und Wake Lock wirft nichts", geworfen, null);
+})();
+
 // Isomorphie-Fund zu T-0051: dieselbe Klasse in der Uebersicht. Beim
 // Anhaken eines Rezepts taucht die Leiste "N Rezepte gewaehlt" auf —
 // eine Zustandsaenderung, die vorher nur zu sehen war.
@@ -1191,6 +1712,144 @@ pruefe("Manifest aktuell (sonst: node tools/build-manifest.js)", manifestMaengel
   R.uebersichtRendern(rezepte, ziel);
   pruefe("Uebersicht: der Auswahlzaehler wird angesagt",
     ziel.querySelector(".einkauf-zaehler").getAttribute("aria-live"), "polite");
+})();
+
+// --- 5a5f. Was die Seite sich merkt (T-0064) -------------------------
+// Bis hierher lebte jeder Zustand nur als CSS-Klasse: ein Neuladen
+// loeschte Haken, Portionswahl und Auswahl. Die Gegenrichtung waere
+// genauso falsch — den Haken von gestern will beim Kochen niemand sehen.
+// Der Unterschied ist die Zeit, also haengt alles an einem Verfallsdatum.
+(function () {
+  // Erst die Ablage allein, mit gestellter Uhr.
+  var speicher = DOM.speicherBauen();
+  var jetzt = 1700000000000;
+  var merker = M.bauen(speicher, function () { return jetzt; });
+
+  merker.schreiben("probe", { a: 1 });
+  pruefe("Merker: was hineingeht, kommt heraus", merker.lesen("probe"), { a: 1 });
+
+  jetzt += 23 * 60 * 60 * 1000;
+  pruefe("Merker: nach 23 Stunden steht es noch", merker.lesen("probe"), { a: 1 });
+  jetzt += 2 * 60 * 60 * 1000;
+  pruefe("Merker: nach 25 Stunden ist es weg", merker.lesen("probe"), null);
+  // Und zwar wirklich weg, nicht nur verschwiegen — sonst waechst die
+  // Ablage mit jedem Rezept, das man einmal geoeffnet hat.
+  pruefe("Merker: der abgelaufene Eintrag wird auch geloescht",
+    speicher.getItem(M.PRAEFIX + "probe"), null);
+
+  // Fremder oder kaputter Inhalt darf die Seite nicht aufhalten.
+  speicher.setItem(M.PRAEFIX + "kaputt", "{kein json");
+  pruefe("Merker: kaputter Eintrag liefert nichts", merker.lesen("kaputt"), null);
+  speicher.setItem(M.PRAEFIX + "ohnestand", JSON.stringify({ daten: 1 }));
+  pruefe("Merker: Eintrag ohne Zeitstempel liefert nichts", merker.lesen("ohnestand"), null);
+  // Eine verstellte Uhr macht das Alter unbeurteilbar.
+  merker.schreiben("zukunft", { a: 1 });
+  jetzt -= 60 * 60 * 1000;
+  pruefe("Merker: ein Stand aus der Zukunft gilt nicht", merker.lesen("zukunft"), null);
+
+  // Ohne Ablage (privates Fenster, file://, voller Speicher) laeuft alles
+  // weiter, nur ohne Gedaechtnis.
+  var ohne = M.bauen({
+    getItem: function () { throw new Error("SecurityError"); },
+    setItem: function () { throw new Error("QuotaExceededError"); },
+    removeItem: function () { throw new Error("SecurityError"); }
+  }, function () { return jetzt; });
+  var geworfen = null;
+  try {
+    ohne.schreiben("x", { a: 1 });
+    ohne.lesen("x");
+    ohne.vergessen("x");
+  } catch (e) { geworfen = e.message; }
+  pruefe("Merker: eine Ablage, die wirft, wirft nicht weiter", geworfen, null);
+  pruefe("Merker: und meldet ehrlich, dass nichts gespeichert wurde",
+    ohne.schreiben("x", { a: 1 }), false);
+
+  // --- Jetzt am echten DOM ------------------------------------------
+  globalThis.localStorage = DOM.speicherBauen();
+
+  var sp = JSON.parse(fs.readFileSync(path.join(rezeptOrdner, "spaetzle.json"), "utf8"));
+  function zeigen() {
+    var ziel = DOM.knotenBauen("div");
+    ziel.className = "rezept";
+    R.rezeptRendern(sp, ziel);
+    return ziel;
+  }
+
+  var erst = zeigen();
+  erst.querySelectorAll("td.zutat")[0].ausloesen("click");
+  erst.querySelectorAll("td.zutat")[2].ausloesen("click");
+  erst.querySelectorAll(".portionen-knopf")[3].ausloesen("click");   // 8 Portionen
+  var hakenVorher = erst.querySelectorAll(".abgehakt").length;
+
+  var wieder = zeigen();
+  pruefe("Merker/DOM: die Portionszahl ueberlebt das Neuladen",
+    wieder.querySelectorAll(".portionen-knopf.ist-aktiv").map(function (k) {
+      return k.textContent;
+    }), ["8"]);
+  pruefe("Merker/DOM: und die Mengen stehen passend dazu",
+    wieder.querySelectorAll(".menge")[0].textContent, "800 g");
+  pruefe("Merker/DOM: die Haken ueberleben es auch, in beiden Ansichten",
+    wieder.querySelectorAll(".abgehakt").length, hakenVorher);
+  pruefe("Merker/DOM: und aria-checked geht mit",
+    wieder.querySelectorAll("td.zutat")[0].getAttribute("aria-checked"), "true");
+
+  // Abhaken zuruecknehmen wirkt auch auf die Ablage.
+  wieder.querySelectorAll("td.zutat")[0].ausloesen("click");
+  var drittes = zeigen();
+  pruefe("Merker/DOM: ein zurueckgenommener Haken bleibt zurueckgenommen",
+    drittes.querySelectorAll(".abgehakt").length, hakenVorher - 4);
+
+  // Eine Portionszahl, die es nicht mehr gibt, wird verworfen statt
+  // gezeigt — sonst steht im Kopf eine Zahl, die kein Knopf traegt.
+  globalThis.localStorage.setItem(M.PRAEFIX + "rezept:spaetzle",
+    JSON.stringify({ stand: Date.now(), daten: { portionen: 7, abgehakt: [] } }));
+  pruefe("Merker/DOM: eine unmoegliche Portionszahl faellt auf die Basis zurueck",
+    zeigen().querySelectorAll(".portionen-knopf.ist-aktiv").map(function (k) {
+      return k.textContent;
+    }), ["4"]);
+
+  // Einkaufsliste: dieselbe Frage, andere Liste.
+  globalThis.localStorage = DOM.speicherBauen();
+  var mt = JSON.parse(fs.readFileSync(path.join(rezeptOrdner, "maultaschen.json"), "utf8"));
+  function einkauf() {
+    var ziel = DOM.knotenBauen("div");
+    R.einkaufRendern([{ rezept: sp, portionen: 4 }, { rezept: mt, portionen: 4 }], ziel);
+    return ziel;
+  }
+  var liste1 = einkauf();
+  liste1.querySelectorAll(".einkauf-posten")[1].ausloesen("click");
+  liste1.querySelectorAll(".einkauf-posten")[3].ausloesen("click");
+  var namenVorher = liste1.querySelectorAll(".einkauf-posten.abgehakt").map(function (li) {
+    return li.querySelector(".posten-name").textContent;
+  });
+  pruefe("Merker/DOM: zwei Posten abgehakt", namenVorher.length, 2);
+  pruefe("Merker/DOM: die Haken der Einkaufsliste ueberleben das Neuladen",
+    einkauf().querySelectorAll(".einkauf-posten.abgehakt").map(function (li) {
+      return li.querySelector(".posten-name").textContent;
+    }), namenVorher);
+
+  // Uebersicht: die Auswahl und die Leiste, die daran haengt.
+  globalThis.localStorage = DOM.speicherBauen();
+  var alle = dateien.map(function (d) {
+    return JSON.parse(fs.readFileSync(path.join(rezeptOrdner, d), "utf8"));
+  });
+  var u1 = DOM.knotenBauen("div");
+  R.uebersichtRendern(alle, u1);
+  pruefe("Merker/DOM: ohne Auswahl bleibt die Leiste verborgen",
+    u1.querySelector(".einkauf-leiste").hidden, true);
+  u1.querySelectorAll(".karte-wahl input")[0].checked = true;
+  u1.querySelectorAll(".karte-wahl input")[0].ausloesen("change");
+
+  var u2 = DOM.knotenBauen("div");
+  R.uebersichtRendern(alle, u2);
+  pruefe("Merker/DOM: die Auswahl der Uebersicht ueberlebt",
+    u2.querySelectorAll(".karte-wahl input:checked").length, 1);
+  pruefe("Merker/DOM: und die Leiste kommt gleich mit",
+    [u2.querySelector(".einkauf-leiste").hidden,
+     u2.querySelector(".einkauf-zaehler").textContent],
+    [false, "1 Rezept gewählt"]);
+
+  delete globalThis.localStorage;
 })();
 
 // --- 5b. Das zweite Rezept im Detail ----------------------------------
@@ -1328,7 +1987,85 @@ function ladewegPruefen() {
     .then(function () { globalThis.REZEPTE = manifest; });
 }
 
-ladewegPruefen().then(function () {
+// --- 6b. Uebersicht und Einkaufsliste holen frisch (T-0061) ----------
+// T-0047 hat den Ladeweg des EINZELNEN Rezepts geradegezogen, die Liste
+// blieb am Manifest haengen. Wer eine JSON aenderte und build-manifest
+// vergass, sah das Rezept mit neuen Mengen und die Einkaufsliste mit
+// alten — zwei Zahlen fuer dieselbe Zutat, kein Hinweis.
+function bestandLadewegPruefen() {
+  var manifest = {
+    spaetzle: { id: "spaetzle", titel: "alte Fassung", portionen: 4,
+                zutaten: [{ id: "z-m", name: "Mehl", menge: 100, einheit: "g" }],
+                schritte: [] },
+    maultaschen: { id: "maultaschen", titel: "alte Fassung 2", portionen: 4,
+                   zutaten: [{ id: "z-m", name: "Mehl", menge: 100, einheit: "g" }],
+                   schritte: [] }
+  };
+  globalThis.REZEPTE = manifest;
+
+  function frisch(id) {
+    return { id: id, titel: "frisch vom Server", portionen: 4,
+             zutaten: [{ id: "z-m", name: "Mehl", menge: 400, einheit: "g" }],
+             schritte: [] };
+  }
+
+  // `kaputt` nennt die id, deren Datei sich nicht holen laesst.
+  function fetchStellen(kaputt) {
+    globalThis.fetch = function (pfad) {
+      var id = String(pfad).replace("rezepte/", "").replace(".json", "");
+      if (id === kaputt) return Promise.resolve({ ok: false, status: 404 });
+      return Promise.resolve({ ok: true, json: function () { return Promise.resolve(frisch(id)); } });
+    };
+  }
+
+  fetchStellen(null);
+  return A.alleRezepteLaden("http:").then(function (stand) {
+    pruefe("Bestand: ueber http kommen die Dateien frisch, nicht aus dem Manifest",
+      stand.rezepte.map(function (r) { return r.titel; }).sort(),
+      ["frisch vom Server", "frisch vom Server"]);
+    pruefe("Bestand: dann gibt es auch nichts zu melden", stand.ausManifest, []);
+
+    // Die Namen kommen weiter aus dem Manifest — ohne Server gibt es kein
+    // Verzeichnis-Listing, daran aendert sich nichts.
+    pruefe("Bestand: das Manifest liefert weiter die Liste der Namen",
+      stand.rezepte.map(function (r) { return r.id; }).sort(),
+      ["maultaschen", "spaetzle"]);
+
+    fetchStellen("maultaschen");
+    return A.alleRezepteLaden("http:");
+  }).then(function (stand) {
+    pruefe("Bestand: was sich nicht laden laesst, faellt zurueck — und wird gemeldet",
+      stand.ausManifest, ["maultaschen"]);
+    pruefe("Bestand: die uebrigen bleiben frisch",
+      stand.rezepte.filter(function (r) { return r.id === "spaetzle"; })[0].titel,
+      "frisch vom Server");
+
+    // Und der Hinweis landet sichtbar in der Uebersicht, nicht nur im
+    // Rueckgabewert.
+    var ziel = DOM.knotenBauen("div");
+    R.uebersichtRendern(stand.rezepte, ziel, stand.ausManifest);
+    var box = ziel.querySelector(".probleme");
+    pruefe("Bestand: die Uebersicht sagt es dem Leser",
+      [!!box, box ? box.textContent.indexOf("maultaschen") > -1 : false], [true, true]);
+
+    // Ohne Beanstandung darf keine Box erscheinen — sonst steht sie immer da.
+    var sauber = DOM.knotenBauen("div");
+    R.uebersichtRendern(stand.rezepte, sauber, []);
+    pruefe("Bestand: ohne Beanstandung keine Box",
+      sauber.querySelector(".probleme"), null);
+
+    // Ueber file:// ist das Manifest der regulaere Ladeweg — dort wird
+    // nichts geholt und nichts gemeldet.
+    globalThis.fetch = function () { return Promise.reject(new TypeError("Failed to fetch")); };
+    return A.alleRezepteLaden("file:");
+  }).then(function (stand) {
+    pruefe("Bestand: ueber file:// ist das Manifest der Ladeweg, ohne Meldung",
+      [stand.rezepte.map(function (r) { return r.titel; }).sort(), stand.ausManifest],
+      [["alte Fassung", "alte Fassung 2"], []]);
+  });
+}
+
+ladewegPruefen().then(bestandLadewegPruefen).then(function () {
   console.log(fehler === 0 ? "\nALLE PRUEFUNGEN GRUEN" : "\n" + fehler + " FEHLER");
   process.exit(fehler ? 1 : 0);
 });

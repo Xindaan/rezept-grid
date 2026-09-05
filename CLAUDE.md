@@ -42,7 +42,9 @@ weiterhin Deutsch ASCII (keine Umlaute/ss).
 - Smoke-Test: `index.html` im Browser oeffnen, Beispielrezept rendern,
   Portionen umschalten, Kochmodus starten.
 - Schema-Aenderungen: alle Dateien unter `rezepte/` gegen das Schema
-  pruefen (Checkscript, sobald vorhanden: `node tools/check-rezepte.js`).
+  pruefen mit `node tools/pruefe-grid.js`. Das Skript prueft Schema,
+  Layout, Zeitplan, Manifest und die DOM-Schicht in einem Lauf; ein
+  eigenes `check-rezepte.js` gibt es nicht und ist auch nicht geplant.
 
 ## Steuerdateien
 

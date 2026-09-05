@@ -156,7 +156,7 @@
       return summe > 0 ? (d || 0) / summe : 0;
     });
     var gekuerzt = zeitanteil.map(function (z, i) {
-      return z > DECKEL && z > anteile[i] * 1.2;
+      return istGekuerzt(z, anteile[i]);
     });
 
     return {
@@ -172,6 +172,21 @@
       zeitanteil: zeitanteil,
       roh: roh.map(function (p) { return p / breite; })
     };
+  }
+
+  // Wann traegt eine Breite ihre Dauer nicht mehr? Die Regel steht hier
+  // und nur hier (T-0056). spaltenbreiten wendet sie auf die SPALTE an,
+  // render.js auf die einzelne STUFE — und das ist nicht dasselbe,
+  // sobald sich zwei Stufen eine Spalte teilen.
+  //
+  // Vorher rechnete beides mit der Spalte, und der Vermerk der Spalte
+  // landete auf jeder Stufe darin. Bei den Maultaschen stand an
+  // "Fuellung mischen" (15 von 90 Minuten) der Satz "Achse gekuerzt,
+  // 40 % -> 22 %" — die 40 % gehoeren der Teigruhe, die dieselbe Spalte
+  // aufspannt. Die Fuellung ist mit 20 % sogar knapp breiter dargestellt
+  // als ihre Dauer hergibt; "gekuerzt" war dort schlicht das Gegenteil.
+  function istGekuerzt(zeitanteil, breitenanteil) {
+    return zeitanteil > DECKEL && zeitanteil > breitenanteil * 1.2;
   }
 
   // Startzeitpunkt jeder Stufe in Sekunden. NICHT einfach aufaddiert:
@@ -252,10 +267,33 @@
   //      belegen die Haende nicht und starten immer sofort.
   //
   // Die Reihenfolge unter den beaufsichtigten ist eine Heuristik, keine
-  // Optimierung: es kommt dran, hinter wem noch am meisten haengt
-  // (laengster Restpfad). Bei den Maultaschen waehlt das den Teig vor der
-  // Fuellung — richtig, weil danach 30 Minuten Ruhe von allein laufen.
-  // Ein echtes Optimum waere Scheduling-Theorie fuer fuenf Stufen.
+  // Optimierung, und sie hat zwei Stufen (T-0054):
+  //
+  //   1. ZEIT zuerst: dran ist, was am fruehesten anfangen kann. Man
+  //      stellt sich nicht neben eine Ruhezeit, wenn daneben etwas
+  //      liegt, das sofort ginge.
+  //   2. Unter allem, was zu DIESEM Zeitpunkt anfangen kann, kommt die
+  //      Stufe mit dem laengsten Restpfad zuerst — hinter ihr haengt am
+  //      meisten. Bei gleichem Restpfad die kuerzere.
+  //
+  // Bis T-0054 fehlte Regel 1, und der Restpfad entschied allein. Das
+  // ging so lange gut, wie der Sieger auch der frueheste war — in allen
+  // fuenf Rezepten des Bestands zufaellig der Fall. Sobald ein
+  // unabhaengiger Arbeitsschritt im Array HINTER einer Stufe steht, die
+  // auf eine lange Ruhezeit wartet, waehlte der Planer die wartende:
+  // `handFrei` sprang mit ihr ans Ende der Ruhezeit, und die bereite
+  // Stufe kam erst danach. Gemessen an [10 Min Arbeit, 60 Min Ruhe,
+  // 10 Min Arbeit, 10 Min unabhaengige Arbeit]: 90 statt 80 Minuten,
+  // dazu eine falsche Warnung "zu zweit ginge es schneller" — und
+  // pruefe-grid.js verlangte danach die falsche groessere Zahl in
+  // zeit_gesamt_s.
+  //
+  // Bekannte Grenze: der Plan laesst die Haende nie leer (kein Leerlauf
+  // bei vorhandener Arbeit). Eine Stufe, die zehn Sekunden spaeter
+  // bereit waere, aber eine lange Kette hinter sich hat, verliert
+  // deshalb gegen eine sofort startbare Stunde. Das echte Optimum waere
+  // Scheduling-Theorie; nicht zu warten, solange etwas zu tun ist, ist
+  // in der Kueche die richtige Naeherung.
   function plan(dauern, vorstufen, unbeaufsichtigt) {
     var n = dauern.length;
 
@@ -305,17 +343,24 @@
         }
       }
 
-      var beste = -1;
+      // Erst der frueheste Startzeitpunkt (Regel 1), dann der Restpfad
+      // (Regel 2). `bestesT` beginnt bei Infinity, damit der erste
+      // Kandidat in jedem Fall genommen wird.
+      var beste = -1, bestesT = Infinity;
       for (var k = 0; k < n; k++) {
-        if (geplant[k] || !betreut(k) || bereitAb(k) === null) continue;
-        if (beste < 0 || rest[k] > rest[beste] ||
-            (rest[k] === rest[beste] && (dauern[k] || 0) < (dauern[beste] || 0))) {
-          beste = k;
-        }
+        if (geplant[k] || !betreut(k)) continue;
+        var bereit = bereitAb(k);
+        if (bereit === null) continue;
+        var tk = Math.max(bereit, handFrei);
+        var besser = tk < bestesT || (tk === bestesT && (
+          beste < 0 || rest[k] > rest[beste] ||
+          (rest[k] === rest[beste] && (dauern[k] || 0) < (dauern[beste] || 0))
+        ));
+        if (besser) { beste = k; bestesT = tk; }
       }
       if (beste < 0) break;
 
-      var t = Math.max(bereitAb(beste), handFrei);
+      var t = bestesT;
       start[beste] = t;
       ende[beste] = t + (dauern[beste] || 0);
       handFrei = ende[beste];
@@ -391,6 +436,7 @@
     ZUTATEN: ZUTATEN,
     ZUTATEN_MIN_PX: ZUTATEN_MIN_PX,
     vorstufenIds: vorstufenIds,
-    vorstufenIndizes: vorstufenIndizes
+    vorstufenIndizes: vorstufenIndizes,
+    istGekuerzt: istGekuerzt
   };
 })(typeof window !== "undefined" ? window : globalThis);

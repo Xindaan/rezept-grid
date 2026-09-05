@@ -8,6 +8,14 @@
 // Warum zwei Regeln: 133,333 ml sind eine Scheingenauigkeit, 130 ml sind
 // abmessbar. Umgekehrt ist "1,3 Zehen Knoblauch" keine Anweisung, die
 // jemand ausfuehren kann — "1 1/3" schon.
+//
+// Dazu eine dritte fuer kg und l (T-0058). Die Nachkommastelle ist eine
+// Aussage ueber die FEINHEIT, nicht ueber die Ziffer: bei ml ist ein
+// Zehntel 0,1 ml und damit feiner als jedes Messgeraet, bei l sind es
+// 100 ml. Aus 0,75 l wurde deshalb "0,8 l" — fuenfzig Milliliter daneben,
+// und bei 1,25 kg Mehl entsprechend. Grosse Einheiten bekommen darum zwei
+// Nachkommastellen; das sind wieder 10 ml bzw. 10 g, dieselbe
+// Groessenordnung wie die eine Stelle bei ml und g.
 
 (function (global) {
   "use strict";
@@ -29,6 +37,21 @@
     { wert: 1, zeichen: null } // null = auf die naechste ganze Zahl aufrunden
   ];
 
+  // Einheiten, in denen eine Nachkommastelle grob statt fein ist.
+  var GROSSE_EINHEITEN = ["kg", "l"];
+
+  // Gewogen oder gemessen statt gezaehlt. Zusammen mit BRUCH_EINHEITEN
+  // ist das das vollstaendige Vokabular — und zwar an genau dieser Stelle
+  // (T-0062). Vorher stand die Liste ein zweites Mal in
+  // tools/pruefe-grid.js: wer hier eine Einheit ergaenzt haette, waere
+  // dort auf ein FAIL gelaufen, ohne dass etwas falsch gewesen waere.
+  var MASS_EINHEITEN = ["g", "kg", "ml", "l"];
+  var ALLE_EINHEITEN = MASS_EINHEITEN.concat(BRUCH_EINHEITEN);
+
+  function istGrosseEinheit(einheit) {
+    return GROSSE_EINHEITEN.indexOf(einheit) > -1;
+  }
+
   // Ohne Einheit ist die Menge eine reine Stueckzahl ("4 Eier") — die
   // gehoert zu den gezaehlten, nicht zu den gewogenen Groessen.
   // Sonst kaeme bei 3 Eiern und anderthalbfacher Menge "4,5 Eier" heraus.
@@ -37,9 +60,12 @@
     return BRUCH_EINHEITEN.indexOf(einheit) > -1;
   }
 
-  // Gewicht/Volumen: ab 10 ganzzahlig, darunter eine Nachkommastelle.
-  function dezimalRunden(wert) {
+  // Gewicht/Volumen: ab 10 ganzzahlig, darunter eine Nachkommastelle —
+  // bei kg und l zwei, siehe Kopf der Datei. Ohne Einheit gilt die
+  // g/ml-Regel; so bleibt der alte Einzelaufruf gueltig.
+  function dezimalRunden(wert, einheit) {
     if (wert >= 10) return Math.round(wert);
+    if (istGrosseEinheit(einheit)) return Math.round(wert * 100) / 100;
     return Math.round(wert * 10) / 10;
   }
 
@@ -75,7 +101,7 @@
   // Einzelwert -> Anzeigetext, je nach Einheit.
   function wertFormatieren(wert, einheit) {
     if (istBruchEinheit(einheit)) return bruchFormatieren(wert);
-    return global.RezeptGrid.zahlFormatieren(dezimalRunden(wert));
+    return global.RezeptGrid.zahlFormatieren(dezimalRunden(wert, einheit));
   }
 
   // Menge + Einheit einer Zutat fuer den gewuenschten Faktor.
@@ -109,6 +135,10 @@
     bruchFormatieren: bruchFormatieren,
     dezimalRunden: dezimalRunden,
     istBruchEinheit: istBruchEinheit,
+    istGrosseEinheit: istGrosseEinheit,
+    BRUCH_EINHEITEN: BRUCH_EINHEITEN,
+    MASS_EINHEITEN: MASS_EINHEITEN,
+    ALLE_EINHEITEN: ALLE_EINHEITEN,
     portionsOptionen: portionsOptionen
   };
 })(typeof window !== "undefined" ? window : globalThis);

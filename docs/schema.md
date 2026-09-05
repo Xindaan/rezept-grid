@@ -67,6 +67,10 @@ gerundet:
 - **Gewicht/Volumen** (`g`, `ml`, alles nicht unten Genannte): ab 10
   ganzzahlig, darunter eine Nachkommastelle. `133,33 ml` -> `133 ml`,
   `9,44 g` -> `9,4 g`.
+- **Grosse Einheiten** (`kg`, `l`): unter 10 **zwei** Nachkommastellen,
+  ab 10 wie oben ganzzahlig. Eine Stelle waere hier 100 g bzw. 100 ml —
+  aus `0,75 l` wurde `0,8 l` (T-0058). Zwei Stellen sind wieder dieselbe
+  Feinheit wie eine Stelle bei `g` und `ml`.
 - **Stueck-artige Einheiten** (`EL`, `TL`, `Msp`, `Prise`, `Stueck`,
   `Zehe`, `Blatt`, `Stiel`, `Zweig`, `Bund`, `Dose`, `Packung`,
   `Scheibe`, `Handvoll`): auf gaengige Kuechenbrueche
@@ -118,6 +122,15 @@ Schritten, die von allein laufen (koecheln, backen, ruhen, marinieren),
 Ende des Einpersonen-Plans und diesem Ende plus 10 %. Alle drei Grenzen
 prueft `tools/pruefe-grid.js` seit T-0046.
 
+**Wozu die beiden Zeitfelder dann noch da sind (T-0059):** Sie sind die
+**Angabe des Autors**, nicht die Anzeige. Angezeigt werden im Kopf
+"Arbeit", "ohne Zutun" und "gesamt" aus demselben gerechneten Plan, der
+auch die Zeitachse traegt — die drei Kacheln gehen dadurch zwangslaeufig
+auf, statt zufaellig. Die Felder bleiben, weil der Abgleich zwischen
+Angabe und Plan zweimal echte Fehler gefunden hat (T-0046, T-0053): wer
+sie schreibt, hat ueber den Ablauf nachgedacht, und wo Angabe und
+Rechnung auseinanderfallen, stimmt meistens das Rezept nicht.
+
 Seit T-0032 ist das Feld kein Etikett mehr, sondern **treibt den
 Zeitplan und damit das Grid**: der Renderer plant fuer EINE Person, und
 zwei `false`-Stufen koennen sich deshalb nie ueberlappen. Eine
@@ -134,10 +147,18 @@ nach hinten und das Rezept sieht laenger und stumpf-linear aus.
 2. **Zeilenblock je Schritt:** `block(s)` = Vereinigung der Zeilen seiner
    neuen Zutaten und der Bloecke aller `vorstufen`. Bei linearen Rezepten
    ist das immer ein zusammenhaengender Bereich `[von, bis]`.
-3. **Spalten:** eine Spalte je Schritt, in Array-Reihenfolge. Die Zelle
-   des Schritts sitzt in seiner Spalte, beginnt bei `block.von` und hat
+3. **Zeitplan:** aus `dauer_s`, `vorstufen` und `unbeaufsichtigt` rechnet
+   `js/zeitmass.js` den Ablauf fuer EINE Person — zwei beaufsichtigte
+   Stufen ueberlappen sich nie, und gewartet wird nur, wenn nichts
+   anderes anliegt.
+4. **Spalten:** eine Spalte ist ein **Zeitpunkt**, nicht ein Schritt.
+   Stufen, die zugleich beginnen, teilen sie sich, solange ihre
+   Zeilenbloecke sich nicht ueberschneiden — so stehen parallele Straenge
+   nebeneinander. Bei linearen Rezepten faellt daraus wieder genau eine
+   Spalte je Schritt. Die Zelle des Schritts sitzt in seiner Spalte,
+   beginnt bei `block.von` und hat
    `rowspan = block.bis - block.von + 1`.
-4. **Luecken:** In Spalte *k* bleiben Zeilen ausserhalb von `block(s_k)`
+5. **Luecken:** In Spalte *k* bleiben Zeilen ausserhalb von `block(s_k)`
    leer — das sind die Zutaten, die erst spaeter dazukommen. Sie werden
    als leere Zellen ohne Rahmen gerendert.
 
@@ -154,7 +175,12 @@ nach hinten und das Rezept sieht laenger und stumpf-linear aus.
 
 ## Validierungsregeln (T-0011)
 
-- `id` eindeutig ueber Zutaten bzw. Schritte; Dateiname == `id`.
+- `schema`, `titel`, `portionen`, `quelle`, `zutaten`, `schritte` sind
+  vorhanden; `portionen` ist eine ganze Zahl >= 1.
+- `id` eindeutig ueber Zutaten bzw. Schritte; Dateiname == `id`. Alle ids
+  sind ASCII-kebab-case, Zutaten mit Praefix `z-`, Schritte mit `s-`.
+- Jeder Schritt hat `titel`, `anweisung`, `zutaten` und `dauer_s`;
+  `dauer_s` ist `null` oder eine Zahl >= 0.
 - Jede Zutat wird von genau einem Schritt referenziert — keine
   unbenutzte, keine doppelt referenzierte.
 - Jede `vorstufen`-ID existiert und steht **vor** dem Schritt im Array.

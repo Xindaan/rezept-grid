@@ -92,6 +92,12 @@ im Unterverzeichnis von Pages als auch per Doppelklick auf
 `rezepte/manifest.js` ist nicht aktuell. `node tools/build-manifest.js`
 ausführen. `node tools/pruefe-grid.js` meldet diesen Fall auch.
 
+**Rote Box "N Rezepte konnten nicht frisch geladen werden".**
+Über http holt die Übersicht die JSON-Dateien direkt. Ging das für
+einzelne nicht, zeigt sie deren Fassung aus `rezepte/manifest.js` und
+sagt es — die kann alte Mengen tragen. `node tools/build-manifest.js`
+nachziehen und prüfen, ob die genannte Datei noch existiert.
+
 **Rote Box "Rezept konnte nicht geladen werden" mit einer HTTP- oder
 Syntax-Meldung.**
 Über einen Server (`http://`) holt die App die JSON-Datei direkt. Schlägt
@@ -135,20 +141,36 @@ Steuerdateien: `TASK.md` (Backlog), `STATE.md` (Stand + nächste Schritte).
 
 ## Architektur
 
+- `js/zeitmass.js` — der Ablaufplan für **eine** Person und die
+  Spaltenbreiten daraus. Zwei beaufsichtigte Stufen laufen nie
+  gleichzeitig; dran ist, was am frühesten anfangen kann, und unter
+  gleich frühen die Stufe mit dem längsten Restpfad (T-0054).
 - `js/grid.js` — berechnet das Layout aus dem Rezept-JSON:
   Zeilenreihenfolge nach Erstverwendung, Zeilenblock je Schritt,
   `rowspan`s und Lücken. Kein DOM, dadurch headless prüfbar.
-- `js/portionen.js` — Skalierung und metrische Rundung.
+- `js/portionen.js` — Skalierung und metrische Rundung, dazu das
+  Einheiten-Vokabular für die ganze App.
+- `js/einkauf.js` — Zutaten mehrerer Rezepte zu einer Liste
+  zusammenfassen. Reine Rechnung.
 - `js/kochmodus.js` — Stufen-Navigation und Countdown. Die
   Countdown-Rechnung (`countdownBauen`) hängt an der Wanduhr statt an
   gezählten Ticks und ist DOM-frei, damit sie ohne echte Wartezeit
   prüfbar ist (T-0045).
-- `js/render.js` — Modell in DOM, Übersicht und Einzelrezept.
+- `js/stufenliste.js` — dieselbe Rechnung hochkant für schmale Schirme.
+- `js/render.js` — Modell in DOM, Übersicht und Einzelrezept. Die drei
+  Kennzahlen im Kopf kommen aus demselben Plan wie die Zeitachse
+  (T-0059), nicht aus den JSON-Feldern.
 - `js/app.js` — Laden und Verdrahtung.
 
 **Warum es ein Manifest gibt:** Beim Öffnen per `file://` blockieren alle
 Browser `fetch` auf lokale Dateien. Quelle der Wahrheit bleiben die
 `.json`-Dateien; `rezepte/manifest.js` ist die daraus erzeugte Fassung,
-die ohne Server lesbar ist. Über http wird sie für Einzelrezepte nicht
-benutzt — dort kommen die JSON-Dateien direkt, und wenn das schiefgeht,
-gibt es eine Fehlermeldung statt der stillen Manifest-Kopie (T-0047).
+die ohne Server lesbar ist.
+
+Über http liefert das Manifest nur noch die **Liste der Namen** — ein
+Verzeichnis-Listing gibt es ohne Server nicht. Der Inhalt kommt frisch
+aus den JSON-Dateien, und zwar auch für Übersicht und Einkaufsliste
+(T-0061); vorher galt das nur für das Einzelrezept (T-0047). Schlägt ein
+Laden fehl, springt die Manifest-Fassung ein und wird als solche
+gemeldet — eine alte Menge, die wie eine aktuelle aussieht, ist der
+schlechtere Ausgang.

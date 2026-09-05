@@ -1,6 +1,6 @@
 # STATE.md — rezept-grid
 
-Stand: 2026-08-23
+Stand: 2026-09-02
 
 ## Ziel
 
@@ -24,24 +24,44 @@ konvertiert.
   diesem Plan (T-0030/T-0032) — eine Spalte ist ein Zeitpunkt, und
   parallele Straenge stehen nebeneinander, wenn ihre Zeilen sich nicht
   ueberschneiden.
-- Pruefung: `node tools/pruefe-grid.js` — **197/197 gruen**. Laeuft ueber
+- **Der Kopf rechnet nicht mehr neben dem Grid her** (T-0059): "Arbeit",
+  "ohne Zutun" und "gesamt" kommen aus demselben Einpersonen-Plan wie die
+  Zeitachse. Die drei Kacheln gehen dadurch zwangslaeufig auf statt
+  zufaellig; `zeit_aktiv_s` und `zeit_gesamt_s` sind seither die ANGABE
+  des Autors, die das Pruefskript dagegenhaelt.
+- **Die Seite merkt sich etwas** (T-0064): Portionszahl, Haken und die
+  Auswahl der Uebersicht ueberleben ein Neuladen, aber nur 24 Stunden
+  (`js/merker.js`). Dazu Alarm und Bildschirmsperre im Kochmodus
+  (T-0063) und ein Druck-Stylesheet (T-0065).
+- Pruefung: `node tools/pruefe-grid.js` — **283/283 gruen**. Laeuft ueber
   alle Rezepte (samt der Vorlage in `tools/testdaten/`) und prueft Schema,
   Layout, Zeitplan, Manifest — und seit T-0044 auch die DOM-Schicht:
   Einkaufsliste, Kennzahlenstreifen, Kochleiste und Ladeweg laufen gegen
   `tools/dom-attrappe.js` (kein jsdom, keine Abhaengigkeiten).
+  **Seit T-0055 wirft die Attrappe bei unbekannten Eigenschaften**, statt
+  still `undefined` zu liefern — genau daran war `breitenAnwenden` in
+  jeder Pruefung stumm ausgestiegen.
 - Nach jeder Rezeptaenderung noetig: `node tools/build-manifest.js`.
 - Vorschau: `python3 -m http.server 8412`, Konfiguration in
   `.claude/launch.json`.
 
 ## Next actions
 
-- (nichts offen). Der externe Code-Review ist vollstaendig abgearbeitet,
-  Backlog und Next sind leer. T-0009 war beim Nachpruefen bereits erledigt:
-  Repo ist oeffentlich, Pages laeuft unter
-  https://xindaan.github.io/rezept-grid/ (Quelle `main` / root).
+- **Zwei Entscheidungen liegen bei Andre**, beide im Backlog von TASK.md
+  ausformuliert, beide ohne Zeitdruck:
+  1. **T-0066** Kopplung auf Fingergeraeten — die Design-Uebergabe sieht
+     sie vor, T-0038 hat die noetige Geste inzwischen anders belegt.
+     Mein Vorschlag: bewusst darauf verzichten.
+  2. **T-0068** `zeit_aktiv_s` / `zeit_gesamt_s` ganz aus dem Schema
+     nehmen? Mein Vorschlag: behalten, sie sind das zweite Netz.
+- **T-0069** fremder Worktree unter `.claude/worktrees/` — bewusst nicht
+  angefasst, Aufraeumen ist Andres Entscheidung.
 
 ## Letzte Done
 
+- T-0054 bis T-0067 Zweiter Code-Review vollstaendig umgesetzt: Planer,
+  Kennzahlen, Einkaufsliste, Rundung, Barrierefreiheit, Ladeweg, Alarm,
+  Gedaechtnis, Druck. Pruefungen 197 -> 283 (2026-09-02)
 - T-0009 Verteilung: Repo oeffentlich, Pages laeuft (2026-08-23,
   nachgeprueft — der Task stand faelschlich noch offen)
 - T-0053 Kennzahlen des Pfannkuchens gehen auf; Fuellen dauert 15 Min,

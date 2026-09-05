@@ -1,5 +1,18 @@
 # Uebergabe — Richtung "Zeitmass" (2a) fuer rezept-grid
 
+> **Historisches Dokument.** Es beschreibt den Auftrag vom 02.08.2026, nicht
+> den heutigen Code, und wird nicht nachgefuehrt. Zwei Stellen weichen
+> bewusst ab (geprueft am 02.09.2026):
+>
+> * **`gekoppelt-fest` gibt es nicht.** Abschnitt 2.4 sieht eine per Klick
+>   festgehaltene Kopplung fuers Tablet vor. Gebaut wurde nur die
+>   Kopplung per Mauszeiger; auf Fingergeraeten schaltet `stil.css` sie
+>   unter `@media (hover: none)` sogar ab. Offen als T-0066.
+> * **Die Pruefungszahl "74/74"** in Abschnitt "Nicht anfassen" und in den
+>   Akzeptanzkriterien ist der Stand von damals. Heute sind es 251.
+>
+> Der Rest ist umgesetzt (T-0019 bis T-0023).
+
 Stand: 2026-08-02. Grundlage: Entwurf `Rezept-Grid Richtungen.dc.html`, Option
 2a (Grid) und 2b (Belastungsprobe). Visuelle Tokens aus
 dem Kicktipp-Projekt (oeffentlich als `Xindaan/poisson-dor`),

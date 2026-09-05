@@ -13,12 +13,50 @@
     return params.get("rezept");
   }
 
-  // Liste fuer die Uebersicht (T-0006). Ohne Server gibt es kein
-  // Verzeichnis-Listing, also ist das Manifest die einzige Quelle —
-  // auch ueber http, wo das einzelne Rezept sonst per fetch kommt.
-  function rezepteAuflisten() {
-    var alle = global.REZEPTE || {};
-    return Object.keys(alle).map(function (id) { return alle[id]; });
+  // Welche Rezepte es gibt, weiss nur das Manifest: ohne Server gibt es
+  // kein Verzeichnis-Listing. WAS in ihnen steht, ist ueber http dagegen
+  // eine andere Frage (T-0061).
+  //
+  // Bis dahin nahm die Uebersicht — und mit ihr die Einkaufsliste — den
+  // Inhalt ebenfalls aus dem Manifest. Das ist derselbe Fehler, den
+  // T-0047 fuer das Einzelrezept behoben hat, nur eine Seite weiter: das
+  // Manifest wird von Hand erzeugt, und wer eine JSON aendert und
+  // `build-manifest` vergisst, sah das Rezept mit neuen Mengen, die
+  // Einkaufsliste dazu aber mit alten. Zwei Zahlen fuer dieselbe Zutat,
+  // kein Hinweis.
+  //
+  // Jetzt gilt auch hier: ueber http kommen die Dateien frisch, das
+  // Manifest liefert nur noch die Liste der Namen. Was sich nicht laden
+  // laesst, faellt auf die Manifest-Fassung zurueck — und wird gemeldet,
+  // statt still einzuspringen.
+  function rezeptNamen() {
+    return Object.keys(global.REZEPTE || {});
+  }
+
+  function alleRezepteLaden(protokoll) {
+    var prot = protokoll || global.location.protocol;
+    var ausManifest = global.REZEPTE || {};
+    var namen = rezeptNamen();
+
+    if (fallbackErlaubt(prot)) {
+      return Promise.resolve({
+        rezepte: namen.map(function (id) { return ausManifest[id]; }),
+        ausManifest: []
+      });
+    }
+
+    return Promise.all(namen.map(function (id) {
+      return rezeptLaden(id, prot).then(
+        function (r) { return { id: id, rezept: r, alt: false }; },
+        function () { return { id: id, rezept: ausManifest[id], alt: true }; }
+      );
+    })).then(function (teile) {
+      return {
+        rezepte: teile.map(function (t) { return t.rezept; }).filter(Boolean),
+        ausManifest: teile.filter(function (t) { return t.alt; })
+                          .map(function (t) { return t.id; })
+      };
+    });
   }
 
   // Der Fallback aufs Manifest ist der file://-Weg, kein Allzweck-Netz
@@ -82,22 +120,32 @@
     // ?einkauf=<id>[:portionen],... zeigt die Einkaufsliste (T-0026).
     var einkauf = new URLSearchParams(global.location.search).get("einkauf");
     if (einkauf) {
-      var alle = global.REZEPTE || {};
-      var auswahl = global.RezeptEinkauf.auswahlLesen(einkauf)
-        .map(function (a) {
-          var r = alle[a.id];
-          return r ? { rezept: r, portionen: a.portionen || r.portionen } : null;
-        })
-        .filter(Boolean);
-      global.RezeptRender.einkaufRendern(auswahl, ziel);
-      document.title = "Einkaufsliste — rezept-grid";
+      alleRezepteLaden().then(function (stand) {
+        var nachId = {};
+        stand.rezepte.forEach(function (r) { nachId[r.id] = r; });
+        var auswahl = global.RezeptEinkauf.auswahlLesen(einkauf)
+          .map(function (a) {
+            var r = nachId[a.id];
+            return r ? { rezept: r, portionen: a.portionen || r.portionen } : null;
+          })
+          .filter(Boolean);
+        // Gemeldet wird nur, was auch auf der Liste steht — ein veraltetes
+        // Rezept, das gar nicht gewaehlt wurde, geht niemanden an.
+        var gewaehlt = {};
+        auswahl.forEach(function (a) { gewaehlt[a.rezept.id] = true; });
+        global.RezeptRender.einkaufRendern(auswahl, ziel,
+          stand.ausManifest.filter(function (rid) { return gewaehlt[rid]; }));
+        document.title = "Einkaufsliste — rezept-grid";
+      }).catch(function (fehler) { fehlerZeigen(ziel, fehler); });
       return;
     }
 
     // Ohne ?rezept= zeigt die App die Uebersicht.
     if (!id) {
-      global.RezeptRender.uebersichtRendern(rezepteAuflisten(), ziel);
-      document.title = "Rezepte — rezept-grid";
+      alleRezepteLaden().then(function (stand) {
+        global.RezeptRender.uebersichtRendern(stand.rezepte, ziel, stand.ausManifest);
+        document.title = "Rezepte — rezept-grid";
+      }).catch(function (fehler) { fehlerZeigen(ziel, fehler); });
       return;
     }
 
@@ -117,6 +165,7 @@
   // gehoert geprueft, nicht nur im Browser durchgeklickt (T-0047).
   global.RezeptApp = {
     rezeptLaden: rezeptLaden,
+    alleRezepteLaden: alleRezepteLaden,
     fallbackErlaubt: fallbackErlaubt
   };
 
