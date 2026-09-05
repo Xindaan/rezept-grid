@@ -182,8 +182,13 @@
     // letzte Zelle beides: links weiter ihren Start, rechts an der
     // Spaltenkante das Ende des Plans — dort, wo die Zeit wirklich
     // ausgeht, und passend zur Kennzahl "gesamt".
-    var planende = 0;
-    modell.spalten.forEach(function (sp) { if (sp.ende > planende) planende = sp.ende; });
+    // Dieselbe Rechnung wie im Kopf und in der Uebersicht — der dritte
+    // und letzte Ort, an dem die Gesamtzeit vorkommt (T-0070). Die lokale
+    // Kopie, die hier stand, hatte die gemeinsame Funktion sogar
+    // ueberdeckt: `var planende` im Funktionsrumpf schattiert den Namen,
+    // und wer den Helfer spaeter hier benutzen wollte, haette eine Zahl
+    // statt einer Funktion vorgefunden.
+    var planEndeS = planende(modell);
 
     var zeiten = spaltenZeiten(modell);
     zeiten.starts.forEach(function (sekunden, c) {
@@ -198,7 +203,7 @@
 
       if (c === zeiten.starts.length - 1) {
         th.classList.add("zeitachse-marke-letzte");
-        var ende = Math.round(planende / 60);
+        var ende = Math.round(planEndeS / 60);
         th.appendChild(el("span", "zeitachse-ende", ende + " Min"));
         vorgelesen += ", Planende " + minuten(ende);
       }
@@ -443,6 +448,25 @@
   // Die Felder zeit_aktiv_s und zeit_gesamt_s bleiben im Schema: sie sind
   // die ANGABE des Autors, und pruefe-grid.js haelt sie gegen den Plan.
   // Genau so sind T-0046 und T-0053 gefunden worden.
+  // Ende des Einpersonen-Plans aus einem gerechneten Modell (T-0070).
+  //
+  // Steht als eigene Funktion da, weil ZWEI Stellen die Gesamtzeit
+  // zeigen: der Kennzahlenstreifen im Rezeptkopf und die Karte in der
+  // Uebersicht. Die Karte las bis T-0070 stattdessen `zeit_gesamt_s`
+  // aus der Datei — dieselbe Zahl, solange sie sich decken, und ein
+  // Widerspruch, sobald ein Rezept den erlaubten 10-%-Puffer nutzt
+  // (Karte "1 Std", Kopf "55 Min"). Genau die Fehlerklasse aus T-0053,
+  // eine Ebene hoeher: zwei Quellen fuer eine Aussage.
+  //
+  // Jetzt ist es eine Rechnung an einer Stelle. Dass beide dasselbe
+  // zeigen, ist damit keine Zusage mehr, die jemand einhalten muss,
+  // sondern eine Eigenschaft des Codes.
+  function planende(modell) {
+    var ende = 0;
+    modell.spalten.forEach(function (s) { if (s.ende > ende) ende = s.ende; });
+    return ende;
+  }
+
   function kennzahlenBauen(rezept, modell) {
     var Z = global.RezeptZeitmass;
     var dauern = modell.spalten.map(function (s) { return s.schritt.dauer_s; });
@@ -455,20 +479,19 @@
                                 .filter(function (j) { return j !== undefined; });
     });
 
-    var planende = 0;
-    modell.spalten.forEach(function (s) { if (s.ende > planende) planende = s.ende; });
+    var gesamt = planende(modell);
 
     // NICHT die Summe der unbeaufsichtigten Stufen: waehrend der Teig
     // ruht, mischt man die Fuellung — diese Zeit ist nicht frei. Frei
     // bleibt die Gesamtdauer minus der eigenen Arbeit.
     var arbeit = Z.arbeitszeit(dauern, unbeauf);
-    var ohneZutun = Math.max(0, planende - arbeit);
+    var ohneZutun = Math.max(0, gesamt - arbeit);
 
     var streifen = el("div", "kennzahlen");
     [
       ["Arbeit", arbeit],
       ["ohne Zutun", ohneZutun],
-      ["gesamt", planende]
+      ["gesamt", gesamt]
     ].forEach(function (paar) {
       if (!paar[1]) return;
       var kachel = el("div", "kennzahl");
@@ -482,7 +505,7 @@
     if (Z.braucht2Haende(dauern, vorstufen, unbeauf)) {
       streifen.appendChild(el("p", "kennzahl-warnung",
         "Die Zeitachse zeigt den Weg für eine Person: " +
-        G.dauerFormatieren(planende) +
+        G.dauerFormatieren(gesamt) +
         ". Zu zweit wären es " + G.dauerFormatieren(Z.gesamtdauer(dauern, vorstufen)) +
         " — zwei Schritte fallen zusammen, die allein nacheinander gehen."));
     }
@@ -1024,7 +1047,11 @@
       if (r.untertitel) link.appendChild(el("span", "karte-untertitel", r.untertitel));
 
       var fakten = [];
-      if (r.zeit_gesamt_s) fakten.push(G.dauerFormatieren(r.zeit_gesamt_s));
+      // Dieselbe Rechnung wie im Rezeptkopf, nicht das JSON-Feld daneben
+      // (T-0070). Fuenf Modelle je Uebersicht sind reine Rechnung ohne
+      // DOM — bei den Groessenordnungen hier nicht messbar.
+      var ende = planende(G.gridModellBauen(r));
+      if (ende) fakten.push(G.dauerFormatieren(ende));
       fakten.push(r.portionen + " " + (r.portionen_einheit || "Portionen"));
       fakten.push(r.schritte.length + " Schritte");
       link.appendChild(el("span", "karte-fakten", fakten.join(" · ")));

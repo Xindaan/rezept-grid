@@ -38,7 +38,11 @@ konvertiert.
   ihren Zutaten fest — dieselbe Geste, die zum Wortlaut springt, ohne
   eine zweite zu erfinden. Auf dem Telefon hat jede Zutatenzeile ihre
   vollen 44 pt. Silbentrennung `hyphens: auto` fuer beide.
-- Pruefung: `node tools/pruefe-grid.js` — **291/291 gruen**. Laeuft ueber
+- **Jede Gesamtzeit auf dem Bildschirm kommt aus einer Rechnung**
+  (T-0070): Kennzahlen im Kopf, Ende der Zeitachse und Zeitangabe auf der
+  Uebersichtskarte lesen alle `planende(modell)`. Vorher waren es drei
+  Kopien, zwei davon mit einer anderen Quelle.
+- Pruefung: `node tools/pruefe-grid.js` — **294/294 gruen**. Laeuft ueber
   alle Rezepte (samt der Vorlage in `tools/testdaten/`) und prueft Schema,
   Layout, Zeitplan, Manifest — und seit T-0044 auch die DOM-Schicht:
   Einkaufsliste, Kennzahlenstreifen, Kochleiste und Ladeweg laufen gegen
@@ -52,16 +56,16 @@ konvertiert.
 
 ## Next actions
 
-- **T-0070** ist der einzige offene Punkt und braucht keine Entscheidung
-  mehr: die Uebersichtskarte zeigt `zeit_gesamt_s` aus dem JSON, der Kopf
-  den gerechneten Plan. Heute deckt sich beides; nutzt ein Rezept den
-  erlaubten 10-%-Puffer, widersprechen sich Karte und Kopf. Die
-  Uebersicht muss denselben Plan rechnen.
-- Alle drei Entscheidungen vom 02.09. sind getroffen und umgesetzt
-  (T-0066 gebaut, T-0068 behalten, T-0069 entfernt).
+- (nichts offen). Backlog und Next sind leer: der zweite Code-Review ist
+  vollstaendig abgearbeitet, alle drei Entscheidungen vom 02.09. sind
+  getroffen und umgesetzt (T-0066 gebaut, T-0068 behalten, T-0069
+  entfernt), T-0070 nachgezogen.
 
 ## Letzte Done
 
+- T-0070 Eine Rechnung fuer jede Gesamtzeit — Karte, Kopf und Achse
+  lesen dieselbe Funktion; dabei einen dritten Rechenort gefunden
+  (2026-09-02)
 - T-0066/T-0068/T-0069 Entscheidungen umgesetzt: Kopplung auf
   Fingergeraeten gebaut, Zeitfelder bleiben, fremder Worktree entfernt.
   Dabei drei weitere Messbefunde behoben (Markenueberlauf, Silbentrennung,

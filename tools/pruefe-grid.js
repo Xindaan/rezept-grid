@@ -1361,6 +1361,62 @@ pruefe("Manifest aktuell (sonst: node tools/build-manifest.js)", manifestMaengel
     puffer.achse, "20 Min");
 })();
 
+// --- 5a5h. Karte und Kopf sagen dasselbe (T-0070) --------------------
+// Die Uebersichtskarte zeigte `zeit_gesamt_s` aus der Datei, der Kopf
+// seit T-0059 den gerechneten Plan. Solange sich beide decken, faellt
+// das nicht auf — bei allen fuenf Rezepten des Bestands tun sie das.
+// Genau deshalb steht hier ein Rezept, das den erlaubten 10-%-Puffer
+// AUSNUTZT: nur daran laesst sich sehen, welche Quelle die Karte liest.
+(function () {
+  // Plan: 600 + 1800 = 2400 s. Das Feld nennt 2640 (+10 %, erlaubt).
+  var gedehnt = {
+    schema: 1, id: "puffer-probe", titel: "Pufferprobe", portionen: 2,
+    portionen_einheit: "Portionen", zeit_aktiv_s: 600, zeit_gesamt_s: 2640,
+    quelle: null,
+    zutaten: [{ id: "z-a", name: "A", menge: 1, einheit: "g", notiz: null }],
+    schritte: [
+      { id: "s-eins", titel: "eins", anweisung: "x", dauer_s: 600, zutaten: ["z-a"], vorstufen: [] },
+      { id: "s-zwei", titel: "zwei", anweisung: "y", dauer_s: 1800,
+        unbeaufsichtigt: true, zutaten: [], vorstufen: ["s-eins"] }
+    ]
+  };
+
+  function karteVon(rezepte, titel) {
+    var ziel = DOM.knotenBauen("div");
+    R.uebersichtRendern(rezepte, ziel);
+    var treffer = ziel.querySelectorAll(".rezept-karte").filter(function (k) {
+      return k.querySelector(".karte-titel").textContent === titel;
+    })[0];
+    return treffer ? treffer.querySelector(".karte-fakten").textContent.split(" · ")[0] : null;
+  }
+  function kopfVon(rezept) {
+    var ziel = DOM.knotenBauen("div");
+    ziel.className = "rezept";
+    R.rezeptRendern(rezept, ziel);
+    return ziel.querySelectorAll(".kennzahl").map(function (k) {
+      return k.querySelector(".kennzahl-label").textContent === "gesamt"
+        ? k.querySelector(".kennzahl-wert").textContent : null;
+    }).filter(Boolean)[0];
+  }
+
+  // 2400 s Plan = "40 Min"; 2640 s Feld waeren "44 Min".
+  pruefe("Karte/Kopf: die Karte zeigt den Plan, nicht das JSON-Feld",
+    karteVon([gedehnt], "Pufferprobe"), "40 Min");
+  pruefe("Karte/Kopf: und der Kopf sagt dasselbe", kopfVon(gedehnt), "40 Min");
+
+  // Und die Invariante ueber den echten Bestand: was auf der Karte steht,
+  // steht auch im Kopf. Die kann kein Rezept zufaellig erfuellen, weil
+  // sie beide Wege vergleicht statt einen davon nachzurechnen.
+  var alle = dateien.map(function (d) {
+    return JSON.parse(fs.readFileSync(path.join(rezeptOrdner, d), "utf8"));
+  });
+  var abweichungen = alle.map(function (r) {
+    var k = karteVon(alle, r.titel), kopf = kopfVon(r);
+    return k === kopf ? null : r.id + ": Karte " + k + " gegen Kopf " + kopf;
+  }).filter(Boolean);
+  pruefe("Karte/Kopf: in jedem Rezept dieselbe Gesamtzeit", abweichungen, []);
+})();
+
 // --- 5a6. Zeitachse: Start UND Planende (T-0052) ----------------------
 // Alle Marken sind Startzeiten, aber nur die letzte trug eine Einheit —
 // und las sich damit als Gesamtdauer. Gemessen war die Luecke beim

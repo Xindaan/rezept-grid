@@ -10,16 +10,30 @@
 
 ## Backlog
 
-- **T-0070** Uebersichtskarte und Rezeptkopf koennen auseinanderfallen.
-  Die Karte zeigt `zeit_gesamt_s` aus dem JSON (`render.js:981`), der
-  Kopf seit T-0059 den gerechneten Plan. Heute decken sich beide bei
-  allen fuenf Rezepten; nutzt ein Rezept den erlaubten 10-%-Puffer,
-  stuende auf der Karte "1 Std" und im Kopf "55 Min". Dieselbe
-  Fehlerklasse wie T-0053, eine Ebene hoeher. Behoben wird es, indem die
-  Uebersicht denselben Plan rechnet — braucht keine Entscheidung mehr,
-  nachdem T-0068 auf "behalten" entschieden ist.
+- (leer)
 
 ## Done
+
+- **T-0070** (2026-09-02) **Eine Rechnung fuer jede Gesamtzeit.** Die
+  Uebersichtskarte zeigte `zeit_gesamt_s` aus der Datei, der Rezeptkopf
+  seit T-0059 den gerechneten Plan. Solange sich beide decken — bei allen
+  fuenf Rezepten des Bestands der Fall — faellt nichts auf; nutzt ein
+  Rezept den erlaubten 10-%-Puffer, stuende auf der Karte "44 Min" und im
+  Kopf "40 Min". Dieselbe Fehlerklasse wie T-0053, eine Ebene hoeher.
+
+  Beim Aufraeumen kam ein **dritter** Ort dazu, an dem dieselbe Zahl
+  gerechnet wurde: `zeitachseBauen` hatte eine eigene Kopie — und ihre
+  lokale Variable `planende` haette den neuen gemeinsamen Helfer sogar
+  ueberdeckt. Jetzt rechnet `planende(modell)` an einer Stelle, und Kopf,
+  Achse und Karte lesen sie. Dass die drei dasselbe zeigen, ist damit
+  keine Zusage mehr, die jemand einhalten muss, sondern eine Eigenschaft
+  des Codes.
+
+  **Der Test erzwingt den Fall, statt auf ihn zu warten:** ein Rezept, das
+  den Puffer ausnutzt (Plan 2400 s, Feld 2640 s). Nur daran laesst sich
+  ueberhaupt sehen, welche Quelle die Karte liest — mit dem echten
+  Bestand waere jede Fassung gruen. Dazu die Invariante ueber alle
+  Rezepte: was auf der Karte steht, steht auch im Kopf. 291 -> 294.
 
 - **T-0066** (2026-09-02) **Kopplung auf Fingergeraeten — Andres Vorgabe
   statt einer meiner Varianten.** Vorgelegt hatte ich A (verzichten), B

@@ -157,9 +157,12 @@ Steuerdateien: `TASK.md` (Backlog), `STATE.md` (Stand + nächste Schritte).
   gezählten Ticks und ist DOM-frei, damit sie ohne echte Wartezeit
   prüfbar ist (T-0045).
 - `js/stufenliste.js` — dieselbe Rechnung hochkant für schmale Schirme.
-- `js/render.js` — Modell in DOM, Übersicht und Einzelrezept. Die drei
-  Kennzahlen im Kopf kommen aus demselben Plan wie die Zeitachse
-  (T-0059), nicht aus den JSON-Feldern.
+- `js/render.js` — Modell in DOM, Übersicht und Einzelrezept. Jede
+  Gesamtzeit auf dem Bildschirm kommt aus **einer** Rechnung
+  (`planende`): die drei Kennzahlen im Kopf, das Ende der Zeitachse und
+  die Zeitangabe auf der Übersichtskarte (T-0059, T-0070). Die JSON-Felder
+  `zeit_aktiv_s` und `zeit_gesamt_s` werden dafür nicht gelesen — sie sind
+  die Angabe des Autors, die `pruefe-grid.js` dagegenhält.
 - `js/app.js` — Laden und Verdrahtung.
 
 **Warum es ein Manifest gibt:** Beim Öffnen per `file://` blockieren alle
