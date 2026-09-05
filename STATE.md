@@ -33,7 +33,12 @@ konvertiert.
   Auswahl der Uebersicht ueberleben ein Neuladen, aber nur 24 Stunden
   (`js/merker.js`). Dazu Alarm und Bildschirmsperre im Kochmodus
   (T-0063) und ein Druck-Stylesheet (T-0065).
-- Pruefung: `node tools/pruefe-grid.js` — **283/283 gruen**. Laeuft ueber
+- **Tabelle und Liste sind zwei gleichwertige Wege, nicht ein Notbehelf**
+  (T-0066): auf dem Tablet setzt der Tipp auf eine Stufe die Kopplung zu
+  ihren Zutaten fest — dieselbe Geste, die zum Wortlaut springt, ohne
+  eine zweite zu erfinden. Auf dem Telefon hat jede Zutatenzeile ihre
+  vollen 44 pt. Silbentrennung `hyphens: auto` fuer beide.
+- Pruefung: `node tools/pruefe-grid.js` — **291/291 gruen**. Laeuft ueber
   alle Rezepte (samt der Vorlage in `tools/testdaten/`) und prueft Schema,
   Layout, Zeitplan, Manifest — und seit T-0044 auch die DOM-Schicht:
   Einkaufsliste, Kennzahlenstreifen, Kochleiste und Ladeweg laufen gegen
@@ -47,18 +52,20 @@ konvertiert.
 
 ## Next actions
 
-- **Zwei Entscheidungen liegen bei Andre**, beide im Backlog von TASK.md
-  ausformuliert, beide ohne Zeitdruck:
-  1. **T-0066** Kopplung auf Fingergeraeten — die Design-Uebergabe sieht
-     sie vor, T-0038 hat die noetige Geste inzwischen anders belegt.
-     Mein Vorschlag: bewusst darauf verzichten.
-  2. **T-0068** `zeit_aktiv_s` / `zeit_gesamt_s` ganz aus dem Schema
-     nehmen? Mein Vorschlag: behalten, sie sind das zweite Netz.
-- **T-0069** fremder Worktree unter `.claude/worktrees/` — bewusst nicht
-  angefasst, Aufraeumen ist Andres Entscheidung.
+- **T-0070** ist der einzige offene Punkt und braucht keine Entscheidung
+  mehr: die Uebersichtskarte zeigt `zeit_gesamt_s` aus dem JSON, der Kopf
+  den gerechneten Plan. Heute deckt sich beides; nutzt ein Rezept den
+  erlaubten 10-%-Puffer, widersprechen sich Karte und Kopf. Die
+  Uebersicht muss denselben Plan rechnen.
+- Alle drei Entscheidungen vom 02.09. sind getroffen und umgesetzt
+  (T-0066 gebaut, T-0068 behalten, T-0069 entfernt).
 
 ## Letzte Done
 
+- T-0066/T-0068/T-0069 Entscheidungen umgesetzt: Kopplung auf
+  Fingergeraeten gebaut, Zeitfelder bleiben, fremder Worktree entfernt.
+  Dabei drei weitere Messbefunde behoben (Markenueberlauf, Silbentrennung,
+  Tippziel 23 -> 44 px). 283 -> 291 (2026-09-02)
 - T-0054 bis T-0067 Zweiter Code-Review vollstaendig umgesetzt: Planer,
   Kennzahlen, Einkaufsliste, Rundung, Barrierefreiheit, Ladeweg, Alarm,
   Gedaechtnis, Druck. Pruefungen 197 -> 283 (2026-09-02)

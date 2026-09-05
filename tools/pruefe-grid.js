@@ -1714,6 +1714,69 @@ pruefe("Manifest aktuell (sonst: node tools/build-manifest.js)", manifestMaengel
     ziel.querySelector(".einkauf-zaehler").getAttribute("aria-live"), "polite");
 })();
 
+// --- 5a5g. Kopplung, die stehen bleibt (T-0066) ----------------------
+// Auf einem Tablet steht die Tabelle (ab 600 px), aber es gibt kein
+// Ueberfahren — die Kopplung Stufe/Zutaten war dort nicht erreichbar und
+// wurde von `@media (hover: none)` sogar sichtbar abgeschaltet. Der Tipp
+// auf die Stufenzelle setzt sie jetzt fest. Keine neue Geste: derselbe
+// Tipp springt seit T-0038 zum Wortlaut.
+(function () {
+  var mt = JSON.parse(fs.readFileSync(path.join(rezeptOrdner, "maultaschen.json"), "utf8"));
+  var ziel = DOM.knotenBauen("div");
+  ziel.className = "rezept";
+  var modell = R.rezeptRendern(mt, ziel);
+
+  function fest() {
+    return ziel.querySelectorAll(".gekoppelt-fest").map(function (n) {
+      return n.dataset.schritt || ("zeile" + n.dataset.zeile);
+    });
+  }
+  function tippen(id) {
+    var td = ziel.querySelector('[data-schritt="' + id + '"]');
+    (td.querySelector(".schritt-knopf") || td).ausloesen("click");
+  }
+
+  pruefe("Kopplung: vor dem Tippen ist nichts festgesetzt", fest(), []);
+
+  // "Nudelteig kneten" bringt vier Zutaten mit — Zelle plus je Zeile die
+  // Mengen- und die Zutatenzelle in beiden Ansichten.
+  tippen("s-teig");
+  var nachTipp = fest();
+  // Die Zutatenzellen stehen im DOM VOR der Stufenzelle (die Zeile
+  // beginnt links), deshalb wird gefiltert statt indiziert.
+  pruefe("Kopplung: der Tipp setzt die Stufe fest",
+    nachTipp.filter(function (x) { return x.indexOf("zeile") !== 0; }), ["s-teig"]);
+  // Vier Zutaten, je Zeile vier Zellen: Menge und Zutat in der Tabelle
+  // UND in der Stufenliste. Beide Ansichten stehen seit T-0040
+  // gleichzeitig im DOM und tragen dieselben `data-zeile`-Marker; die
+  // Marke wandert deshalb ueber beide, sichtbar ist sie (per CSS) nur in
+  // der Tabelle. Dieselbe Mechanik wie beim Kochmodus.
+  pruefe("Kopplung: und ihre Zutatenzeilen gleich mit, in beiden Ansichten",
+    nachTipp.filter(function (x) { return x.indexOf("zeile") === 0; }).length, 16);
+
+  // Eine andere Stufe uebernimmt die Marke, statt sie zu verdoppeln.
+  tippen("s-fuellung");
+  pruefe("Kopplung: eine andere Stufe uebernimmt, es bleibt bei einer",
+    fest().filter(function (x) { return x.indexOf("zeile") !== 0; }), ["s-fuellung"]);
+
+  // Zweiter Tipp auf dieselbe loest.
+  tippen("s-fuellung");
+  pruefe("Kopplung: der zweite Tipp auf dieselbe Stufe loest sie", fest(), []);
+
+  // Im Kochmodus fuehrt die Stufennavigation. Eine stehengebliebene
+  // Marke waere dort eine zweite, konkurrierende Hervorhebung.
+  tippen("s-teig");
+  pruefe("Kopplung: vor dem Kochmodus steht sie", fest().length > 0, true);
+  var km = K.kochmodusBauen(modell, ziel);
+  modell.kopplung().loesen();
+  km.starten();
+  pruefe("Kopplung: der Kochmodus raeumt sie weg", fest(), []);
+  // Und waehrend er laeuft, faengt kein Tipp eine neue an.
+  tippen("s-teig");
+  pruefe("Kopplung: im Kochmodus setzt ein Tipp nichts fest", fest(), []);
+  km.beenden();
+})();
+
 // --- 5a5f. Was die Seite sich merkt (T-0064) -------------------------
 // Bis hierher lebte jeder Zustand nur als CSS-Klasse: ein Neuladen
 // loeschte Haken, Portionswahl und Auswahl. Die Gegenrichtung waere

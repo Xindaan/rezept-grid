@@ -703,20 +703,58 @@
       });
     });
 
-    function umschalten(spalte, an) {
+    // `klasse` unterscheidet die beiden Kopplungen: `gekoppelt` haengt am
+    // Mauszeiger und verschwindet mit ihm, `gekoppelt-fest` bleibt stehen,
+    // bis man sie wieder loest (T-0066).
+    function umschalten(spalte, an, klasse) {
       if (!spalte) return;
+      var k = klasse || "gekoppelt";
       var td = ziel.querySelector('[data-schritt="' + spalte.schritt.id + '"]');
-      if (td) td.classList.toggle("gekoppelt", an);
+      if (td) td.classList.toggle(k, an);
       (spalte.eigeneZeilen || []).forEach(function (r) {
         Array.prototype.forEach.call(
           ziel.querySelectorAll('[data-zeile="' + r + '"]'),
-          function (zelle) { zelle.classList.toggle("gekoppelt", an); }
+          function (zelle) { zelle.classList.toggle(k, an); }
         );
       });
     }
 
     // Im Kochmodus fuehrt die Stufennavigation, nicht der Mauszeiger.
     function erlaubt() { return !document.body.classList.contains("kochmodus"); }
+
+    // --- Festgesetzte Kopplung (T-0066) -------------------------------
+    //
+    // Auf einem Tablet gibt es kein Ueberfahren: die Tabelle steht dort
+    // (ab 600 px zeigt stil.css sie statt der Stufenliste), aber die
+    // Kopplung war nicht erreichbar — `@media (hover: none)` schaltete
+    // sie sogar sichtbar ab. Damit fehlte auf genau dem Geraet, auf dem
+    // man ein Rezept aufschlaegt und liest, die Antwort auf "welche
+    // Zutaten gehoeren zu dieser Stufe".
+    //
+    // Die Design-Uebergabe sah dafuer einen Klick vor. Gebaut ist er
+    // jetzt — aber OHNE eine neue Geste zu erfinden: der Tipp auf die
+    // Stufenzelle springt seit T-0038 zum Wortlaut, und dieselbe
+    // Bewegung heisst jetzt zusaetzlich "das ist die Stufe, die mich
+    // interessiert". Eine Geste, zwei Wirkungen, beide sagen dasselbe.
+    //
+    // Abweichung von der Uebergabe: dort loeste "Tippen daneben". Das
+    // hiesse ein Zuhoerer auf dem ganzen Dokument, der bei jedem Abhaken
+    // mitfeuert. Stattdessen loest der zweite Tipp auf dieselbe Stufe,
+    // und eine andere Stufe uebernimmt die Marke.
+    var fest = null;
+
+    function loesen() {
+      if (fest) { umschalten(fest, false, "gekoppelt-fest"); fest = null; }
+    }
+
+    function festsetzen(spalte) {
+      if (!erlaubt()) return;
+      var war = fest;
+      loesen();
+      if (war === spalte) return;   // zweiter Tipp auf dieselbe Stufe
+      fest = spalte;
+      umschalten(fest, true, "gekoppelt-fest");
+    }
 
     function koppeln(element, spalte) {
       if (!element || !spalte) return;
@@ -727,7 +765,13 @@
     }
 
     modell.spalten.forEach(function (spalte) {
-      koppeln(ziel.querySelector('[data-schritt="' + spalte.schritt.id + '"]'), spalte);
+      var td = ziel.querySelector('[data-schritt="' + spalte.schritt.id + '"]');
+      koppeln(td, spalte);
+      // Der Knopf traegt den Tipp, wenn es einen gibt; sonst die Zelle.
+      var ziehl = td && (td.querySelector(".schritt-knopf") || td);
+      if (ziehl) {
+        ziehl.addEventListener("click", function () { festsetzen(spalte); });
+      }
     });
 
     modell.zeilen.forEach(function (_, r) {
@@ -737,6 +781,8 @@
         function (zelle) { koppeln(zelle, spalte); }
       );
     });
+
+    return { loesen: loesen, festgesetzt: function () { return fest; } };
   }
 
   // Baut einen Posten-Eintrag. Alles, was der Schluessel festlegt (Name,
@@ -1074,7 +1120,11 @@
     // Der Kochmodus wird erst beim ersten Start gebaut — vorher steht das
     // Grid, auf das er sich bezieht, noch gar nicht im DOM.
     var kochmodus = null;
+    var kopplung = null;
     var beiKochstart = global.RezeptKochmodus ? function () {
+      // Im Kochmodus fuehrt die Stufennavigation. Eine festgesetzte
+      // Kopplung von vorher wuerde daneben eine zweite Stufe markieren.
+      if (kopplung) kopplung.loesen();
       if (!kochmodus) kochmodus = global.RezeptKochmodus.kochmodusBauen(modell, ziel);
       if (kochmodus) kochmodus.starten();
     } : null;
@@ -1105,7 +1155,8 @@
     var tabelle = tabelleBauen(modell, portionen);
     rahmen.appendChild(tabelle);
     ziel.appendChild(rahmen);
-    kopplungVerdrahten(modell, ziel);
+    kopplung = kopplungVerdrahten(modell, ziel);
+    modell.kopplung = function () { return kopplung; };
 
     // Einmal genuegt: die Breiten sind Prozentwerte an einer festen
     // Mindestbreite, der Browser rechnet den Rest bei jeder Fenstergroesse

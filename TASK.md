@@ -10,46 +10,97 @@
 
 ## Backlog
 
-- **T-0066** Kopplung auf Fingergeraeten — **Entscheidung noetig, nicht
-  begonnen.** `docs/uebergabe-zeitmass.md` Abschnitt 2.4 sieht vor, dass
-  ein Klick die Kopplung von Stufe und Zutaten festhaelt
-  (`gekoppelt-fest`), damit sie auf dem Tablet ueberhaupt benutzbar ist.
-  Gebaut wurde nur die Kopplung per Mauszeiger; `stil.css` schaltet sie
-  unter `@media (hover: none)` sogar ab. Die Uebergabe behauptete bis
-  T-0062, das sei umgesetzt.
-  **Warum das nicht einfach nachgebaut wird:** T-0038 hat den Tipp auf
-  die Stufenzelle inzwischen mit einer anderen Bedeutung belegt (Sprung
-  zum Wortlaut), und der Tipp auf die Zutatenzelle hakt ab. Es ist keine
-  Geste mehr frei. Die Uebergabe ist aelter als beide Entscheidungen.
-  Denkbare Wege: langes Druecken, ein eigener Schalter im Kopf, oder
-  bewusst darauf verzichten (auf 375 px zeigt ohnehin die Stufenliste,
-  die die Zuordnung durch Verschachtelung statt durch Farbe traegt).
-  Mein Vorschlag ist der Verzicht — dann faellt die Zeile aus der
-  Uebergabe und nicht der Code hinterher.
-
-- **T-0068** `zeit_aktiv_s` und `zeit_gesamt_s` ganz aus dem Schema
-  nehmen? — **Entscheidung noetig.** Seit T-0059 zeigt der Kopf die
-  gerechneten Werte; die beiden JSON-Felder sind nur noch die Angabe des
-  Autors, die `pruefe-grid.js` gegen den Plan haelt.
-  Dafuer: eine Zahl weniger zu pflegen, kein Auseinanderlaufen mehr
-  moeglich, Schema-Version 2 waere ohnehin faellig, wenn sonst etwas
-  geht.
-  Dagegen: der Abgleich hat zweimal echte Fehler gefunden (T-0046,
-  T-0053) — wer die Zahl schreibt, denkt ueber den Ablauf nach. Ohne sie
-  faellt eine vergessene `dauer_s` nirgends mehr auf.
-  Mein Vorschlag ist behalten. Kostet nichts und ist ein zweites Netz.
-
-- **T-0069** Fremder Worktree im Repo. Unter
-  `.claude/worktrees/affectionate-shaw-0668cc` liegt eine vollstaendige
-  Arbeitskopie vom 15.08. (detached auf 3718cd8), dazu die lokalen
-  Branches `claude/affectionate-shaw-0668cc` und `design-mobil`. Ueber
-  `.git/info/exclude` unsichtbar, aber jeder rekursive Grep laeuft
-  hinein und findet Dateien doppelt.
-  **Bewusst nicht angefasst:** ein laufender Worktree gehoert der
-  Sitzung, die ihn angelegt hat. Wegzuraeumen ist Deine Entscheidung
-  (`git worktree remove` plus `git branch -d`), nicht meine.
+- **T-0070** Uebersichtskarte und Rezeptkopf koennen auseinanderfallen.
+  Die Karte zeigt `zeit_gesamt_s` aus dem JSON (`render.js:981`), der
+  Kopf seit T-0059 den gerechneten Plan. Heute decken sich beide bei
+  allen fuenf Rezepten; nutzt ein Rezept den erlaubten 10-%-Puffer,
+  stuende auf der Karte "1 Std" und im Kopf "55 Min". Dieselbe
+  Fehlerklasse wie T-0053, eine Ebene hoeher. Behoben wird es, indem die
+  Uebersicht denselben Plan rechnet — braucht keine Entscheidung mehr,
+  nachdem T-0068 auf "behalten" entschieden ist.
 
 ## Done
+
+- **T-0066** (2026-09-02) **Kopplung auf Fingergeraeten — Andres Vorgabe
+  statt einer meiner Varianten.** Vorgelegt hatte ich A (verzichten), B
+  (langes Druecken) und C (Schalter im Kopf) mit Empfehlung A. Andres
+  Antwort war keine der drei, sondern das Ziel: *"iPad und iOS muss
+  beides unabhaengig voneinander optimal gehen."* Damit fiel A weg, und
+  die Frage war nicht mehr ob, sondern wie.
+
+  Gebaut ist die Kopplung **ohne neue Geste**: der Tipp auf die
+  Stufenzelle springt seit T-0038 zum Wortlaut und heisst jetzt
+  zusaetzlich "das ist die Stufe, die mich interessiert". Eine Bewegung,
+  zwei Wirkungen, beide sagen dasselbe. Damit entfaellt Bs Kollision mit
+  Textauswahl und Kontextmenue auf iOS und Cs zusaetzliches Bedienelement.
+  Abweichung von der Design-Uebergabe: dort loeste "Tippen daneben" — das
+  waere ein Zuhoerer auf dem ganzen Dokument, der bei jedem Abhaken
+  mitfeuert. Stattdessen loest der zweite Tipp auf dieselbe Stufe.
+  Am Laptop bleibt das Ueberfahren wie es war, der Klick setzt zusaetzlich
+  fest; genau so stand es in der Uebergabe.
+
+  **Erst messen, dann bauen.** Beide Geraeteklassen wurden im Browser
+  vermessen, und beide hatten einen eigenen Mangel:
+
+  - **iPad (Tabelle, ab 600 px):** Kopplung beim Tippen wirkungslos —
+    0 hervorgehobene Zellen, und `@media (hover: none)` schaltete die
+    Hervorhebung sogar sichtbar ab. Das war der eigentliche Befund.
+  - **iPad, zweiter Fund:** die Marke "läuft von allein" ist 105 px
+    breit, zwei der drei Stufenspalten sind auf 767 px nur 83 und 97 px.
+    Bei `table-layout: fixed` wird nichts abgeschnitten, es ueberlappt —
+    die Marke sah aus, als gehoere sie zur Nachbarstufe. Unter 900 px
+    duerfen die Marken jetzt umbrechen.
+  - **iPad, dritter Fund:** "ausbacken" braucht 74 px in einer 70-px-Zelle
+    und stand ueber der Spaltenkante. Die Seite ist `lang="de"`, der
+    Browser kann trennen — er tat es nur nicht. `hyphens: auto` (mit
+    `-webkit-`-Praefix, iOS ist ausdruecklich im Ziel) fuer Schritt-Titel
+    und Zutatennamen. Danach: kein einziges ueberlaufendes Element mehr.
+  - **iPhone (Stufenliste, unter 600 px):** Zutaten **ohne Notiz** hatten
+    nur ein 23 px hohes Tippziel. Die Zeile hielt ihre 44 pt, aber
+    abgehakt wird die Zutatenspanne darin, und die ist nur so hoch wie
+    ihr Text. Elf von dreizehn Zeilen im Pfannkuchen waren betroffen.
+    Jetzt fuellt das Ziel die Zeile: **44 px, gemessen, in allen 13.**
+
+  **Eine Annahme von mir hat die Messung widerlegt:** ich hatte 21 px
+  Polster fuer den Grund gehalten, dass ein Rezept mit sechs Spalten auf
+  768 px nicht scrollfrei passt, und wollte sie wegkuerzen. Nachgemessen
+  bleiben auch mit fast keinem Polster 14 px Ueberstand. Der Grund steckt
+  in `zeitmass.js`: `RESERVE` haelt 25 % des Stufenbereichs frei, damit
+  sich die Dauern in den Breiten abbilden koennen — sechs Spalten
+  brauchen dadurch 739 px. **Auf einem Tablet ist entweder das Zeitmass
+  da oder die Tabelle passt; beides geht nicht.** Diese Entscheidung ist
+  alt und richtig (T-0020), und die stehenden Zutatenspalten aus T-0023
+  sind die Antwort darauf. Das Polster ist trotzdem gekuerzt (32 px mehr
+  Tabelle je Bildschirm), aber der Kommentar sagt jetzt, was es leistet
+  und was nicht.
+
+  Vier Pruefungen, vier getrennte Negativproben. 283 -> 291.
+
+  **Nicht geprueft:** echte iPad- und iPhone-Hardware. Gemessen wurde mit
+  Chrome-Geraeteemulation (`hover: none`, `pointer: coarse`), die die
+  Medienabfragen richtig setzt, aber kein Safari ist.
+
+- **T-0068** (2026-09-02) **`zeit_aktiv_s` und `zeit_gesamt_s` bleiben im
+  Schema.** Entschieden von Andre nach Entscheidungsvorlage, Option A.
+  Faktenlage, die dahinter steht: beide Felder decken sich bei 4 von 5
+  Rezepten exakt mit dem gerechneten Wert — sie tragen also fast keine
+  eigene Information. Ihr Wert liegt im Widerspruch, wenn einer auftritt,
+  und der hat zweimal echte Fehler gefunden (T-0046, T-0053), beide Male
+  war die Angabe des Menschen richtig und der Plan falsch.
+  Bekanntes Gegenargument, ausdruecklich in Kauf genommen: Redundanz, die
+  nur eine Pruefung zusammenhaelt, ist dasselbe Muster, das in diesem
+  Projekt schon dreimal auseinandergelaufen ist (T-0049, T-0056, T-0062).
+  Hier ist sie Absicht — steht so in `docs/schema.md`, damit es niemand
+  in einem Jahr "aufraeumt".
+
+- **T-0069** (2026-09-02) **Fremder Worktree entfernt.** Vor dem Loeschen
+  gemessen statt angenommen: beide Branches 0 Commits vor `main`, der
+  Worktree-HEAD (3718cd8) Vorfahre von `main`, Arbeitsbaum sauber, letzte
+  Aktivitaet 15.08. Es ging nichts verloren. `git worktree remove` plus
+  `git branch -d` (nicht `-D`, damit es verweigert haette, falls doch
+  etwas Unverschmolzenes drinsteckt), dazu das leere Huellenverzeichnis.
+  Gegenprobe: ein rekursives `find` nach `render.js` liefert wieder genau
+  einen Treffer.
 
 - **T-0054 bis T-0067** (2026-09-02) **Zweiten Code-Review aufgearbeitet,
   alles umgesetzt.** Quelle: eigener Review-Durchgang vom 02.09.2026

@@ -381,6 +381,23 @@ td.schritt.ist-gekuerzt { border-right-style: dashed; }
   .grid .zutat.gekoppelt .zutat-name { color: inherit; }
 }
 
+/* Festgesetzte Kopplung (T-0066). Steht bewusst NACH dem Block darueber:
+   sie ist genau die Kopplung, die es auf dem Tablet geben muss, und darf
+   deshalb nicht mit dem Ueberfahren zusammen abgeschaltet werden.
+
+   Sichtbar kraeftiger als die fluechtige Variante — sie bleibt stehen,
+   also muss man sie auch als gewaehlt erkennen und nicht als
+   Mauszeiger-Spur. Farbe traegt wie ueberall nicht allein: die Stufe
+   bekommt zusaetzlich eine deutliche Kontur. */
+.grid .gekoppelt-fest { background: var(--akzent-flaeche); }
+.grid .menge.gekoppelt-fest,
+.grid .zutat.gekoppelt-fest { background: var(--akzent-flaeche); }
+.grid .zutat.gekoppelt-fest .zutat-name { color: var(--akzent); font-weight: 600; }
+.grid .schritt.gekoppelt-fest {
+  border-color: var(--akzent);
+  box-shadow: inset 0 0 0 1px var(--akzent);
+}
+
 /* Zutatenblock: durchgehende Haarlinien ueber beide Spalten.
    Gezeichnet als inset box-shadow statt als border — Chrome laesst die
    Rahmen sticky-positionierter Zellen bei border-collapse: collapse
@@ -514,6 +531,25 @@ td.schritt {
   display: block;
   font-weight: 600;
   letter-spacing: .005em;
+  /* Deutsche Woerter sind lang, Stufenspalten sind schmal: "ausbacken"
+     braucht 74 px in einer 70-px-Zelle und stand ueber der Spaltenkante
+     (auf 767 px nachgemessen). Die Seite ist `lang="de"`, der Browser
+     kann also trennen — er tut es nur nicht von selbst. `break-word` ist
+     das Netz darunter, fuer Woerter ohne gueltige Trennstelle.
+     Auf breiten Schirmen aendert sich dadurch nichts: dort ist Platz,
+     und die Trennung greift gar nicht erst. */
+  -webkit-hyphens: auto;
+  hyphens: auto;
+  overflow-wrap: break-word;
+}
+
+/* Dieselbe Ueberlegung fuer die Zutatenspalte — sie steht auf schmalen
+   Geraeten auf ihrer Pixeluntergrenze (T-0039), und "Knollensellerie"
+   ist laenger als die. */
+.zutat-name {
+  -webkit-hyphens: auto;
+  hyphens: auto;
+  overflow-wrap: break-word;
 }
 
 .schritt-dauer,
@@ -1057,6 +1093,42 @@ body.kochmodus .zutat.koch-neu { border-bottom-color: var(--akzent); }
   .grid td.zutat { padding-right: .6rem; }
 }
 
+/* Tablet: mehr Grid je Bildschirm (T-0066).
+
+   Auf 768 px standen 24 px Seitenrand am body und 20 px im Rahmen — vier
+   Polster, die zusammen 88 px kosten. Auf 16 und 12 px gekuerzt sind
+   32 px mehr Tabelle sichtbar.
+
+   Was das NICHT tut, obwohl ich es zuerst angenommen hatte: das
+   Querscrollen beseitigen. Nachgemessen auf 767 px bleiben bei einem
+   Rezept mit sechs Spalten 30 px Ueberstand, und auch mit fast keinem
+   Polster mehr blieben es 14. Der Grund steckt in zeitmass.js: die
+   Mindestbreite haelt 25 % des Stufenbereichs frei (RESERVE), damit sich
+   die Dauern in den Breiten ueberhaupt abbilden koennen — sechs Spalten
+   brauchen dadurch 739 px. Auf einem Tablet ist also entweder das
+   Zeitmass da oder die Tabelle passt; beides geht nicht. Die Entscheidung
+   dafuer ist alt und richtig (T-0020), und die stehenden Zutatenspalten
+   aus T-0023 sind genau die Antwort darauf. Es scrollt hier also mit
+   Absicht, nur kuerzer als vorher.
+
+   Die Grenze liegt bei 900 px und nicht bei 768: ein Tablet im Querformat
+   ist breit genug, dass das Polster nicht stoert, ein geteilter
+   Bildschirm darunter nicht. Unter 600 px greift ohnehin die Stufenliste,
+   die von dem Gewinn genauso profitiert. */
+@media (max-width: 900px) {
+  body { padding-left: 1rem; padding-right: 1rem; }
+  .grid-rahmen { padding: 14px 12px 14px; }
+
+  /* Die Marken duerfen umbrechen, sobald die Spalten schmal werden.
+     `nowrap` haelt "läuft von allein" auf 105 px zusammen — auf 767 px
+     sind zwei der drei Stufenspalten aber nur 83 und 97 px breit, und
+     die Marke lief sichtbar in die Nachbarspalte hinein (nachgemessen).
+     Bei `table-layout: fixed` wird nichts abgeschnitten, es ueberlappt
+     einfach: der Leser sieht eine Marke, die zur falschen Stufe zu
+     gehoeren scheint. Zwei Zeilen sind das kleinere Uebel. */
+  .grid .stufen-marke { white-space: normal; }
+}
+
 /* --- Kopf auf schmalen Schirmen (T-0039.2 und .3) -------------------- */
 
 /* Ausstattung und Merkmale unter dem Grid, siehe anhangBauen in
@@ -1213,16 +1285,38 @@ body.kochmodus .zutat.koch-neu { border-bottom-color: var(--akzent); }
 .stufe-zutat {
   display: grid;
   grid-template-columns: 4rem 1fr;
-  align-items: center;
+  /* `stretch` statt `center` (T-0066): die Zeile hielt ihre 44 pt, das
+     TIPPZIEL darin aber nicht. Abgehakt wird die Zutatenspanne, und die
+     ist nur so hoch wie ihr Text — bei einer Zutat ohne Notiz 23 px
+     statt 44 (auf 375 px nachgemessen). Zwei von acht Zeilen im
+     Pfannkuchen waren betroffen: genau die kurzen, die nebeneinander
+     stehen und die man am ehesten verfehlt. */
+  align-items: stretch;
   gap: .6rem;
   min-height: 44px;
-  padding: .2rem .7rem;
+  /* Senkrecht kein Polster: es gehoert INS Tippziel, nicht darum herum.
+     Mit .2rem oben und unten blieben von 47 px Zeilenhoehe nur 40 px
+     Trefferflaeche uebrig — nachgemessen, und damit immer noch unter den
+     44 pt, die diese Zeile zusagt. Der Abstand zum Text entsteht jetzt
+     aus der Mindesthoehe, nicht aus einem Rand, den man nicht treffen
+     kann. */
+  padding: 0 .7rem;
   border-bottom: 1px solid var(--linie);
+}
+
+/* Der Inhalt bleibt mittig, die Trefferflaeche fuellt die Zeile. */
+.stufe-zutat .menge,
+.stufe-zutat .zutat {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  min-height: 44px;
 }
 
 .stufe-zutat:last-child { border-bottom: none; }
 
 .stufe-zutat .menge {
+  justify-content: flex-end;
   text-align: right;
   white-space: nowrap;
   font-size: .82rem;
