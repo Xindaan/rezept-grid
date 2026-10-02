@@ -6,13 +6,244 @@
 
 ## Next
 
-- (leer)
+Quelle von T-0071 bis T-0087: Review Oktober 2026, Bericht in
+`docs/review-2026-10.md` (je Befund-ID: Stelle, Repro, Gate-Urteil).
+"bestaetigt" heisst: ein Pruefagent auf Opus hat den Befund selbst
+nachgestellt. "ohne Gate" heisst Einzelstimme — vor dem Umsetzen selbst
+nachstellen.
+
+- **T-0071** **Kochmodus folgt der aktiven Stufe.** `gehe()` setzt nur
+  Klassen und scrollt nie; am Telefon blendet `stil.css:985` die Anweisung
+  in der Leiste aus. Ab Stufe 2-3 liegt die aktive Stufe unter der Leiste
+  oder ausserhalb des Bildes — gemessen bei 375x812, 1024x768 (Tablet quer)
+  und 812x375 (Telefon quer, Leiste dort 46 % der Hoehe). Drei Dimensionen
+  haben das unabhaengig gefunden. Befunde ui-mobil-1, ui-gross-4,
+  zustand-7, ui-mobil-15 (bestaetigt, hoch).
+  Akzeptanz: nach jedem Stufenwechsel stehen aktive Stufe und ihre neuen
+  Zutaten sichtbar oberhalb der Leiste, gemessen in allen fuenf Rezepten
+  in den drei Groessen; Anweisung am Telefon lesbar; reduced-motion
+  beachtet; Test mit Negativprobe.
+
+- **T-0072** **Laufende Uhr ueberlebt den Stufenwechsel, Alarm bis zur
+  Quittung, Kochstand uebersteht ein Neuladen.** `gehe()` ->
+  `timerSetzen()` -> `countdown.setzen()` verwirft die laufende Uhr
+  (kochmodus.js:333/230) — genau bei "Teig ruhen", wo man weiterblaettert.
+  T-0004 hat das Zuruecksetzen festgelegt, aber vor den parallelen
+  Straengen (T-0030) und vor dem Alarm (T-0063). Der Alarm klingt einmal
+  2x0,25 s, danach bleibt nur eine rote 0:00. Stufe und Uhr gehen beim
+  Neuladen verloren, obwohl der Merker genau fuer "Telefon sperrt und
+  laedt neu" gebaut ist. Dazu: "Beenden" ohne Rueckfrage 6 px neben
+  "Weiter"; ein verspaeteter Tick startet die Uhr von vorn. Befunde
+  ui-mobil-2, zustand-1 (bestaetigt, hoch), ui-mobil-7, zustand-8,
+  ui-mobil-3 (bestaetigt, mittel), zustand-11, zustand-14.
+  **Entschieden (2026-10-02):** eine Uhr je unbeaufsichtigter Stufe, die
+  weiterlaeuft und in der Leiste mit ihrem Stufennamen steht (verworfen:
+  eine einzige Uhr mit Rueckfrage beim Wechsel).
+  Akzeptanz: Weiter/Zurueck waehrend einer laufenden Ruhe-Uhr laesst sie
+  laufen und den Alarm kommen; der Alarm wiederholt sich sichtbar, bis er
+  quittiert ist; Neuladen stellt Stufe und Restzeit aus dem
+  Wanduhr-Anker wieder her.
+
+- **T-0073** **Pruefsuite laesst gueltige Rezepte durch.** Zwei Pruefungen
+  schreiben den Bestand als Regel fest. "Arbeit + ohne Zutun ergibt
+  gesamt" liest blind drei Kacheln, die Kachel "ohne Zutun" fehlt aber bei
+  0 (render.js:496): jedes Rezept ohne Wartezeit (Salat, Ruehrei) wird rot
+  mit "... statt undefined" (pruefe-grid.js:1113). "Ausstattung: jedes
+  Rezept hat genau eine" verlangt das optionale `gefaess`
+  (pruefe-grid.js:1631 gegen schema.md:32). Befunde daten-2, daten-4
+  (bestaetigt, mittel), architektur-7 (Endwerte einzelner Produktivrezepte
+  fest verdrahtet).
+  Akzeptanz: ein Testrezept ohne Wartezeit und ohne `gefaess` unter
+  `tools/testdaten/` ist gruen; Negativprobe je Pruefung.
+
+- **T-0074** **Zeitmass-Aussagen stimmen.** (a) "Achse gekuerzt"
+  vergleicht den Zeitanteil (Bezug: Stufen = 100 %) mit dem Breitenanteil
+  (Bezug: ganze Tabelle, davon 22 % Zutatenspalten). Damit gilt jede Stufe
+  ueber 24 % als gekuerzt, auch wenn sie massstabsgetreu steht; im Bestand
+  Maultaschen "Fuellen 27 % -> 20 %". Steht zweimal: zeitmass.js:154 und
+  render.js:291; T-0056 hat das nicht erfasst. (b) "Zu zweit waeren es X"
+  nennt den kritischen Pfad bei unbegrenzt vielen Haenden, ab drei
+  parallelen Straengen falsch (render.js:509). (c) Das Planende haengt an
+  der letzten Spalte statt an der spaetest endenden Stufe (render.js:204).
+  (d) `spaltenbreiten([])` liefert ein anderes Format, Absturz statt
+  Problembox. Befunde planer-7, planer-1 (bestaetigt, mittel), planer-13,
+  planer-12, planer-14, ui-gross-9.
+  Akzeptanz: Vermerk und Breite auf derselben Skala; "zu zweit" aus einem
+  echten Zweipersonen-Plan; je Teil ein Test mit Negativprobe.
+
+- **T-0075** **Einkaufsliste: gemerkte Portionen, Haken je Liste, URL
+  streng.** (a) Die Liste startet immer bei der Basisportion, der Merker
+  der Rezeptseite wird nicht gelesen (app.js:129, render.js:1108). (b) Die
+  Haken liegen unter einem einzigen Schluessel und gelten 24 h fuer jede
+  andere Liste (render.js:853/888): "Eier" steht abgehakt, obwohl fuer
+  diese Liste nichts gekauft wurde. (c) `?einkauf=constructor` erzeugt eine
+  Phantomzeile (`nachId = {}`); `parseInt` nimmt "4.5" als 4 und "1e3" als
+  1, ohne Obergrenze; unbekannte IDs fallen still weg. (d) Bei 360 px
+  laeuft die Portionszeile 8 px ueber. (e) Feste Mengen desselben Postens
+  im SELBEN Rezept werden per Maximum statt Summe zusammengefasst
+  (einkauf.js:76). Befunde ui-mobil-10/-11 (bestaetigt, mittel),
+  ui-mobil-12, mengen-1/-2/-3/-4/-8/-11, zustand-10/-12/-13/-15.
+  Akzeptanz: je Teil ein Verhaltenstest mit Negativprobe; bei 360 px kein
+  waagerechter Ueberlauf (gemessen).
+
+- **T-0076** **Kochmodus: Fokus, Tastatur, Wachhalter, Ton.** Beim Start
+  bleibt der Fokus auf dem unsichtbaren Startknopf, beim Beenden faellt er
+  auf `body`; die Leiste liegt 23 Tab-Stopps entfernt. Pfeiltasten ohne
+  Modifier-Pruefung (Alt+Links wird gekapert). Der Wake Lock wird nach
+  `visibilitychange` nicht neu angefordert und leckt, wenn Beenden vor dem
+  Promise kommt; der Alarm ruft kein `resume()` am AudioContext. Befunde
+  ui-gross-1, zustand-5, a11y-css-7 (bestaetigt, mittel), zustand-2
+  (bestaetigt, mittel — nur per Attrappe belegt), zustand-3, zustand-4,
+  zustand-6, mutation-26.
+  Akzeptanz: Fokus geht beim Start in die Leiste und beim Beenden zurueck
+  auf den Startknopf (echter Tastendruck, gemessen); Wake Lock nach
+  Sichtbarkeitswechsel wieder angefordert (Attrappe; endgueltig nur auf
+  Hardware pruefbar).
+
+- **T-0077** **Kaputte Daten legen keine Seite lahm.** Der Schema-Waechter
+  prueft weder Typen noch unbekannte Felder noch alle Pflichtfelder:
+  `tags` als String, `vorstufen` als String, der Tippfehler `skaliern` und
+  `quelle.url` mit `javascript:` laufen gruen durch. Ein einziges kaputtes
+  Rezept legt dann die ganze Uebersicht lahm (render.js:1053). Doppelte
+  Schritt-IDs werden nicht gemeldet. Ein Merker-Eintrag mit falschem Typ
+  legt die Rezeptseite fuer bis zu 24 h lahm (render.js:1215). "Stueck"
+  und "Stück" sind beide erlaubt; gleiche Namen ueber Rezepte prueft
+  niemand. Befunde architektur-2 (bestaetigt, mittel), architektur-3,
+  planer-4, planer-15, zustand-9, architektur-4, mengen-6/-7, daten-5.
+  Akzeptanz: je Fehlerart eine beschaedigte Testdatei, die mit
+  verstaendlicher Meldung rot wird; die Uebersicht zeigt die heilen Karten
+  und meldet die kaputte.
+
+- **T-0078** **Autorenweg: Seitenstrang, Vorheizen, Temperatur.**
+  Probe-Konvertierung "Kaesespaetzle mit Roestzwiebeln": nach der
+  Anleitung nicht darstellbar, weil der Planer den kurzen Strang in die
+  Ruhezeit legt und Fallstrick 10 dann mit der Zeilenblock-Regel
+  kollidiert; gruen nur mit einem undokumentierten Vorab-Schritt fuer Kaese
+  und Butter. "Ofen vorheizen" als eigener Strang faellt aus Plan, Achse
+  und Kochmodus (grid.js:96); die Meldung nennt keinen Ausweg, die
+  Anleitung schweigt. `temperatur_c` fehlt in der Anleitung. schema.md:87
+  nennt die Array-Reihenfolge "bedeutungslos", sie entscheidet aber ueber
+  die Darstellbarkeit. Die Meldung "kann der Renderer noch nicht (T-0008)"
+  widerspricht T-0008. Befunde daten-1, daten-3, planer-8 (bestaetigt,
+  mittel), planer-5, daten-13, daten-8.
+  Haengt an T-0079: faellt die Entscheidung dort fuer "berechnen",
+  entfaellt der groesste Teil.
+
+- **T-0079** **Zeilenreihenfolge aus der Stufenstruktur berechnen
+  (T-0008 am 2026-10-02 neu entschieden).** T-0008 hat "bleibt Konvention" entschieden
+  und angekuendigt, mit einem echten Anwendungsfall neu zu entscheiden;
+  daten-1 (Kaesespaetzle) ist dieser Fall. Gemessen: 25-30 % der
+  Zufallsrezepte ohne Verschraenkung werden heute allein wegen der
+  Array-Reihenfolge als "nicht zusammenhaengend" gemeldet; ordnet man die
+  Zeilen in Nachordnung des Stufenbaums, sind alle darstellbar (planer-6,
+  bestaetigt, mittel). Eckpfeiler 3 ("Layout wird berechnet, nie von Hand
+  kodiert") spricht dafuer. **Entschieden: berechnen** (verworfen: Konvention
+  behalten und nur die Anleitung ergaenzen).
+  Akzeptanz: alle verschraenkungsfreien Zufallsrezepte ohne
+  Zeilenblock-Meldung; die fuenf Rezepte des Bestands unveraendert
+  dargestellt; danach T-0078 neu zuschneiden.
+
+- **T-0080** **Pruefsuite deckt die Oberflaeche ab.** Mutationstest: 279
+  Mutanten, 115 gefangen (bereinigt um aequivalente 47 %). Die
+  Rechenkerne sind scharf; duenn sind Kochleiste (34 von 43 ueberleben),
+  Stufenliste (18 von 22), `app.start`/URL-Weiche (laeuft nie),
+  Tabellenzellen und der Einkaufs-Schluessel (Einheit und Art je einzeln
+  ungeprueft). Die DOM-Attrappe weicht in sieben gemessenen Punkten vom
+  Browser ab (`getElementById` erfindet Knoten statt `null`, ein
+  disabled-Knopf feuert `click`, kein Bubbling und kein keydown-Versand,
+  `tabIndex` immer 0). Befunde mutation-1 bis -24, planer-9, planer-11.
+  Vorgehen: kein Testbau auf Vorrat. Jeder Fix aus T-0071 bis T-0078
+  bringt seinen Regressionstest an der zustaendigen Grenze mit; hier
+  bleibt, was danach noch offen ist (Attrappe treuer, `app.start`
+  pruefbar). Wert-Huerde je Test.
 
 ## Backlog
 
-- (leer)
+- **T-0081** **Barrierefreiheit.** Vorziehbar, weil klein: der Quelllink
+  steht im Dunkelmodus in Browser-Blau auf Schwarz, 2,2:1 — das
+  Stylesheet hat keine Linkfarbe (a11y-css-3, bestaetigt, mittel). Dazu
+  Stufenliste ohne Ueberschriften, Portionsknoepfe ohne Gruppennamen,
+  Sprung zum Wortlaut ohne Fokus, Kontrast von Tags und abgehakten Mengen,
+  smooth-Scroll ohne reduced-motion, Schrift fest 15 px (folgt der
+  Browser-Schriftgroesse nicht), Tabelle ohne Spaltenkoepfe,
+  Einkaufsposten `role=button` statt checkbox, kein forced-colors-Zweig.
+  Befunde a11y-css-1 bis -21, ui-mobil-14/-19, mengen-16, ui-gross-6/-7.
+
+- **T-0082** **Lesbarkeit und Verstaendnis.** Keine Lesehilfe fuer die
+  Notation; Jargon "Strang" und "Zusammenlauf (10 Zutaten)";
+  Anweisungstext 14 px, Zeitangaben 11,8 px; Abhaken nicht erkennbar;
+  Zeitachsen-Hinweis am Telefon, wo es keine Zeitachse gibt; Fehlermeldung
+  in Entwicklersprache. Tablet: Zeitachse beim Querscrollen nicht sticky,
+  ein Tipp auf eine Stufe scrollt die gerade gekoppelten Zutaten aus dem
+  Bild; Spaltenmass in px bricht bei Textvergroesserung. Befunde
+  ui-mobil-4/-5/-6/-8/-9/-13/-16/-17/-18, ui-gross-2/-3/-5/-8.
+
+- **T-0083** **Mengenanzeige und Einkaufsliste im Detail.** Spannen
+  kollabieren ("11–11 g"), Kleinstmengen runden auf "0 g", kg/l ab 10 auf
+  ganze Einheiten, Einheiten ohne Plural ("8 Stiel"), Stueckware als Bruch
+  auf der Einkaufsliste ("7½ Eier"), g/kg und ml/l nicht zusammengefasst,
+  mengenlose Zeile neben dem Mengenposten, Wasser/Salz/Zucker als Rauschen
+  (kein Merkmal "Vorrat"). Befunde mengen-5/-9/-10/-12/-13/-14/-15,
+  daten-10/-11, architektur-5. Alles niedrig oder ohne Gate.
+
+- **T-0084** **Rezeptinhalte pruefen (Kuechenurteile, nicht gerechnet).**
+  Maultaschen: "bis sie oben schwimmen" als Garzeichen bei roher
+  Fleischfuellung (daten-7, plausibel). "unbeaufsichtigt" uneinheitlich:
+  Spaetzle-Wasser zaehlt als Arbeit, Omelett-Stocken als Pause (daten-9).
+  Spaetzle-Teig mit 100 ml Wasser auf 400 g Mehl eher fest (daten-12, aus
+  dem Gedaechtnis, gegenpruefen). Pfannkuchen: Selbstverweis auf die
+  Sammlung und Plauderton (daten-14). Entscheidung beim Maintainer.
+
+- **T-0085** **Wartbarkeit und Doku-Stand.** `el()` dreimal byte-gleich;
+  Zutatenzeile und Stufenmarken in Tabelle und Stufenliste getrennt
+  gebaut; render.js mit fuenf Zustaendigkeiten; sechs von sechzehn
+  geprueften Kommentaren veraltet (render.js:657 "Zustand lebt nur in der
+  Sitzung" ist seit T-0064 falsch); README kennt Merker, Alarm und Druck
+  nicht; uebergabe-zeitmass.md behauptet einen Stand vor T-0066;
+  Pixelgrenzen der Zutatenspalten in JS und CSS doppelt; toter Code
+  (`zutatenPx[1]`, `gedeckelt`, Vorstufen-Waechter grid.js:166).
+  Skalierung auf 50-100 Rezepte: Manifest auf jeder Seite, keine Suche.
+  Befunde architektur-1/-6/-8 bis -14, mutation-25, planer-10,
+  a11y-css-22.
+
+- **T-0086** **Auslieferung, Offline, Eingabewege (nur gelesen, nicht per
+  Agent geprueft).** (a) Skripte und CSS ohne Versionskennung: nach einem
+  Deploy auf Pages kann ein Browser neue und alte Dateien mischen. (b)
+  Netz weg beim Neuladen in der Kueche: ueber http fuehrt ein reiner
+  Netzwerkfehler zur Fehlerseite, obwohl die Manifest-Fassung vorliegt
+  (app.js:84-94; der Fallback ist seit T-0047 bewusst auf `file:`
+  beschraenkt — die Abwaegung neu stellen fuer den Fall "Netzwerkfehler"
+  statt "HTTP-Fehler"). **Entschieden (2026-10-02):** bei einem reinen
+  Netzwerkfehler die Manifest-Fassung zeigen, mit sichtbarem Hinweis
+  "offline, Stand vom ..."; HTTP-Fehler und kaputte JSON bleiben rote Box.
+  (c) `quelle.url` geht ungeprueft in ein `href`
+  (render.js:608). `innerHTML` kommt im Code nicht vor. Pruefauftraege im
+  Bericht, Anhang.
+
+- **T-0087** **Planer: qualitaetskritische Stufen spaet legen (Idee).**
+  Der Planer legt jede Stufe so frueh wie moeglich: Roestzwiebeln 25 Min
+  vor dem Anrichten, Spaetzle-Wasser 20 Min vor dem Schaben (daten-6,
+  Folge der bekannten Heuristik). Gegen das Optimum fuer eine Person liegt
+  er in 0,4-1 % der Faelle daneben; zwei Muster sind benannt (planer-2,
+  planer-3). Idee: Feld "so spaet wie moeglich" je Stufe.
 
 ## Done
+
+- **T-0088** (2026-10-02) **Review Oktober 2026 abgeschlossen, Vorname
+  wieder aus TASK.md entfernt.** Neun Pruefdimensionen (Planer, Mengen,
+  Laufzeitzustand, Architektur, Mutationstest, UX Telefon, UX Tablet und
+  Desktop, Barrierefreiheit, Rezeptdaten mit Probe-Konvertierung), Finder
+  auf Sonnet, Gate auf Opus. 150 Befunde: 62 bestaetigt, 2 plausibel,
+  1 bereits bekannt, 85 ohne Gate, keiner widerlegt. Bericht
+  `docs/review-2026-10.md`, Aufgaben T-0071 bis T-0087.
+  Nebenbefund beim Erzeugen des Berichts: T-0035 hatte den Vornamen vor
+  der Veroeffentlichung aus allen versionierten Dateien entfernt; seit
+  dem 05.09. stand er in fuenf Saetzen von TASK.md wieder drin (Eintraege
+  T-0009, T-0053, T-0066, T-0068), gepusht. Umformuliert wie in T-0035,
+  ohne Traeger. Gegenprobe: `git grep -i -w` nach dem Vornamen samt
+  Genitiv-Form ueber alle versionierten Dateien ist leer, der Bericht
+  ebenfalls. Die Historie
+  bleibt unangetastet (siehe T-0036).
 
 - **T-0070** (2026-09-02) **Eine Rechnung fuer jede Gesamtzeit.** Die
   Uebersichtskarte zeigte `zeit_gesamt_s` aus der Datei, der Rezeptkopf
@@ -35,9 +266,9 @@
   Bestand waere jede Fassung gruen. Dazu die Invariante ueber alle
   Rezepte: was auf der Karte steht, steht auch im Kopf. 291 -> 294.
 
-- **T-0066** (2026-09-02) **Kopplung auf Fingergeraeten — Andres Vorgabe
+- **T-0066** (2026-09-02) **Kopplung auf Fingergeraeten — Vorgabe des Maintainers
   statt einer meiner Varianten.** Vorgelegt hatte ich A (verzichten), B
-  (langes Druecken) und C (Schalter im Kopf) mit Empfehlung A. Andres
+  (langes Druecken) und C (Schalter im Kopf) mit Empfehlung A. Die
   Antwort war keine der drei, sondern das Ziel: *"iPad und iOS muss
   beides unabhaengig voneinander optimal gehen."* Damit fiel A weg, und
   die Frage war nicht mehr ob, sondern wie.
@@ -95,7 +326,7 @@
   Medienabfragen richtig setzt, aber kein Safari ist.
 
 - **T-0068** (2026-09-02) **`zeit_aktiv_s` und `zeit_gesamt_s` bleiben im
-  Schema.** Entschieden von Andre nach Entscheidungsvorlage, Option A.
+  Schema.** Entschieden nach Entscheidungsvorlage, Option A.
   Faktenlage, die dahinter steht: beide Felder decken sich bei 4 von 5
   Rezepten exakt mit dem gerechneten Wert — sie tragen also fast keine
   eigene Information. Ihr Wert liegt im Widerspruch, wenn einer auftritt,
@@ -302,7 +533,7 @@
   erreichbar unter https://xindaan.github.io/rezept-grid/.
   Damit sind beide offenen Punkte des Tasks erledigt; sie standen nur
   noch da, weil sie niemand nachgezogen hat. Auch der Vermerk „nicht von
-  mir, ich pushe nichts" ist ueberholt: Andre hat den Push am 23.08.
+  mir, ich pushe nichts" ist ueberholt: der Push wurde am 23.08.
   ausdruecklich beauftragt.
   Commit-Mails sind GitHub-Noreply (`112499291+Xindaan@...`), da laeuft
   keine Adresse mit.
@@ -313,7 +544,7 @@
   kommt und „ohne Zutun" aus dem gerechneten Plan — und `s-fuellen`
   („fuellen und zuckern") mit `dauer_s: null` dazwischen stand.
   **Entschieden (Entscheidungsvorlage, Option B): Fuellen und Zuckern
-  dauert 15 Minuten** — Andres Angabe fuer 12 Stueck mit dem
+  dauert 15 Minuten** — Angabe aus der Kuechenpraxis fuer 12 Stueck mit dem
   Spritzbeutel. Damit `dauer_s: 900` und `zeit_gesamt_s` auf 9000;
   `zeit_aktiv_s` bleibt bei 2700 und ist jetzt genau die Summe der
   beaufsichtigten Stufen. Kopf zeigt 45 Min / 1 Std 45 Min / 2 Std 30 Min.

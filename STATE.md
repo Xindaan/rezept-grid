@@ -1,6 +1,6 @@
 # STATE.md — rezept-grid
 
-Stand: 2026-09-02
+Stand: 2026-10-02
 
 ## Ziel
 
@@ -54,14 +54,27 @@ konvertiert.
 - Vorschau: `python3 -m http.server 8412`, Konfiguration in
   `.claude/launch.json`.
 
+- **Review Oktober 2026** (T-0088): 150 Befunde, Bericht in
+  `docs/review-2026-10.md`, Aufgaben T-0071 bis T-0087. Rechenkerne
+  tragen; die Schwaechen liegen an der Oberflaeche, die die Pruefsuite
+  kaum sieht (Mutationstest: 47 % gefangen, Kochleiste und Stufenliste
+  fast ungeprueft).
+
 ## Next actions
 
-- (nichts offen). Backlog und Next sind leer: der zweite Code-Review ist
-  vollstaendig abgearbeitet, alle drei Entscheidungen vom 02.09. sind
-  getroffen und umgesetzt (T-0066 gebaut, T-0068 behalten, T-0069
-  entfernt), T-0070 nachgezogen.
+- T-0071 + T-0072: Kochmodus folgt der Stufe, laufende Uhr ueberlebt den
+  Stufenwechsel (beide hoch). Fuer T-0072 entschieden: eine Uhr je
+  Ruhestufe.
+- T-0073: Pruefsuite laesst gueltige Rezepte durch — klein, blockiert
+  sonst das naechste Rezept ohne Wartezeit oder ohne `gefaess`.
+- T-0079 (entschieden: Zeilenreihenfolge berechnen) vor T-0078 umsetzen,
+  dann T-0078 neu zuschneiden.
 
 ## Letzte Done
+
+- T-0088 Review Oktober 2026: 150 Befunde, T-0071 bis T-0087 angelegt;
+  Vorname wieder aus TASK.md entfernt (Rueckfall hinter T-0035)
+  (2026-10-02)
 
 - T-0070 Eine Rechnung fuer jede Gesamtzeit — Karte, Kopf und Achse
   lesen dieselbe Funktion; dabei einen dritten Rechenort gefunden
