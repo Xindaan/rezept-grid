@@ -1,0 +1,35 @@
+{
+  "schema": 1,
+  "id": "gurkensalat",
+  "titel": "Gurkensalat",
+  "untertitel": "Zwei Handgriffe, keine Wartezeit",
+  "portionen": 2,
+  "zeit_aktiv_s": 600,
+  "zeit_gesamt_s": 600,
+  "quelle": null,
+  "zutaten": [
+    { "id": "z-gurke", "name": "Salatgurke", "menge": 1, "einheit": null, "notiz": null },
+    { "id": "z-salz", "name": "Salz", "menge": 1, "einheit": "Prise", "notiz": null, "skalieren": false },
+    { "id": "z-joghurt", "name": "Joghurt", "menge": 150, "einheit": "g", "notiz": null },
+    { "id": "z-dill", "name": "Dill", "menge": 1, "einheit": "EL", "notiz": "gehackt" },
+    { "id": "z-zitrone", "name": "Zitronensaft", "menge": 1, "einheit": "EL", "notiz": null }
+  ],
+  "schritte": [
+    {
+      "id": "s-hobeln",
+      "titel": "hobeln",
+      "anweisung": "Gurke in dünne Scheiben hobeln und leicht salzen.",
+      "dauer_s": 300,
+      "zutaten": ["z-gurke", "z-salz"],
+      "vorstufen": []
+    },
+    {
+      "id": "s-anmachen",
+      "titel": "anmachen",
+      "anweisung": "Joghurt mit Dill und Zitronensaft verrühren und unter die Gurken heben.",
+      "dauer_s": 300,
+      "zutaten": ["z-joghurt", "z-dill", "z-zitrone"],
+      "vorstufen": ["s-hobeln"]
+    }
+  ]
+}

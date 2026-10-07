@@ -1,6 +1,6 @@
 # STATE.md — rezept-grid
 
-Stand: 2026-10-02
+Stand: 2026-10-07
 
 ## Ziel
 
@@ -42,8 +42,8 @@ konvertiert.
   (T-0070): Kennzahlen im Kopf, Ende der Zeitachse und Zeitangabe auf der
   Uebersichtskarte lesen alle `planende(modell)`. Vorher waren es drei
   Kopien, zwei davon mit einer anderen Quelle.
-- Pruefung: `node tools/pruefe-grid.js` — **294/294 gruen**. Laeuft ueber
-  alle Rezepte (samt der Vorlage in `tools/testdaten/`) und prueft Schema,
+- Pruefung: `node tools/pruefe-grid.js` — **295/295 gruen**. Laeuft ueber
+  alle Rezepte (samt der Testdaten in `tools/testdaten/`) und prueft Schema,
   Layout, Zeitplan, Manifest — und seit T-0044 auch die DOM-Schicht:
   Einkaufsliste, Kennzahlenstreifen, Kochleiste und Ladeweg laufen gegen
   `tools/dom-attrappe.js` (kein jsdom, keine Abhaengigkeiten).
@@ -65,13 +65,14 @@ konvertiert.
 - T-0071 + T-0072: Kochmodus folgt der Stufe, laufende Uhr ueberlebt den
   Stufenwechsel (beide hoch). Fuer T-0072 entschieden: eine Uhr je
   Ruhestufe.
-- T-0073: Pruefsuite laesst gueltige Rezepte durch — klein, blockiert
-  sonst das naechste Rezept ohne Wartezeit oder ohne `gefaess`.
 - T-0079 (entschieden: Zeilenreihenfolge berechnen) vor T-0078 umsetzen,
   dann T-0078 neu zuschneiden.
 
 ## Letzte Done
 
+- T-0073 Pruefsuite laesst gueltige Rezepte durch: Kacheln nach
+  Beschriftung, Ausstattung nur mit `gefaess`, Testrezept Gurkensalat
+  (2026-10-07)
 - T-0088 Review Oktober 2026: 150 Befunde, T-0071 bis T-0087 angelegt;
   Vorname wieder aus TASK.md entfernt (Rueckfall hinter T-0035)
   (2026-10-02)

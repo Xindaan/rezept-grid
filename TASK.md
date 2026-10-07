@@ -44,18 +44,6 @@ nachstellen.
   quittiert ist; Neuladen stellt Stufe und Restzeit aus dem
   Wanduhr-Anker wieder her.
 
-- **T-0073** **Pruefsuite laesst gueltige Rezepte durch.** Zwei Pruefungen
-  schreiben den Bestand als Regel fest. "Arbeit + ohne Zutun ergibt
-  gesamt" liest blind drei Kacheln, die Kachel "ohne Zutun" fehlt aber bei
-  0 (render.js:496): jedes Rezept ohne Wartezeit (Salat, Ruehrei) wird rot
-  mit "... statt undefined" (pruefe-grid.js:1113). "Ausstattung: jedes
-  Rezept hat genau eine" verlangt das optionale `gefaess`
-  (pruefe-grid.js:1631 gegen schema.md:32). Befunde daten-2, daten-4
-  (bestaetigt, mittel), architektur-7 (Endwerte einzelner Produktivrezepte
-  fest verdrahtet).
-  Akzeptanz: ein Testrezept ohne Wartezeit und ohne `gefaess` unter
-  `tools/testdaten/` ist gruen; Negativprobe je Pruefung.
-
 - **T-0074** **Zeitmass-Aussagen stimmen.** (a) "Achse gekuerzt"
   vergleicht den Zeitanteil (Bezug: Stufen = 100 %) mit dem Breitenanteil
   (Bezug: ganze Tabelle, davon 22 % Zutatenspalten). Damit gilt jede Stufe
@@ -228,6 +216,30 @@ nachstellen.
   planer-3). Idee: Feld "so spaet wie moeglich" je Stufe.
 
 ## Done
+
+- **T-0073** (2026-10-07) **Pruefsuite laesst gueltige Rezepte durch.**
+  Zwei Pruefungen hatten Eigenschaften des Bestands als Regel
+  festgeschrieben (Review daten-2, daten-4). Die Kachel-Summe liest jetzt
+  nach Beschriftung: fehlt "ohne Zutun" (render.js laesst sie bei 0 weg),
+  zaehlt sie als 0; fehlen "Arbeit" oder "gesamt", meldet sie das
+  ausdruecklich. Die Ausstattung wird nur noch bei Rezepten mit
+  `gefaess` verlangt (optional laut schema.md:32), eines ohne darf keine
+  zeigen. Neues Testrezept `tools/testdaten/gurkensalat.json`: keine
+  Wartezeit, kein `gefaess`, keine `tags`/`hinweise`; beide
+  Pruefungen und die Schema-Pruefung laufen jetzt auch ueber die
+  Testdaten. 294 -> 295.
+  **Negativproben einzeln, je in einer Kopie:** alte Positions-Lesart ->
+  rot mit genau der Meldung aus dem Review ("gurkensalat: 10 + 10 = 20
+  statt undefined"); falsche Summe in render.js -> rot ("... statt 61");
+  Kachel "Arbeit" entfernt -> rot ("Kachel fehlt"); alte
+  Ausstattungsregel -> rot; Ausstattung nicht mehr gerendert -> rot (0
+  statt 6).
+  **Isomorphie-Check:** der Gurkensalat als echtes Rezept unter
+  `rezepte/` (Kopie, Manifest neu gebaut) -> ganze Suite gruen. Keine
+  weitere Pruefung haengt an einer Eigenschaft des Bestands.
+  **Bewusst nicht umgesetzt:** architektur-7 (feste Endwerte einzelner
+  Bestandsrezepte in der Suite). Das sind gemessene Sollwerte aus echten
+  Rezepten; dass eine Rezeptaenderung sie rot macht, ist gewollt.
 
 - **T-0088** (2026-10-02) **Review Oktober 2026 abgeschlossen, Vorname
   wieder aus TASK.md entfernt.** Neun Pruefdimensionen (Planer, Mengen,

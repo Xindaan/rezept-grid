@@ -775,11 +775,19 @@ pruefe("mindestens zwei Rezepte vorhanden", dateien.length >= 2, true);
 // sagt. Eine Vorlage, die sich selbst widerspricht, ist ein schlechter
 // Anker. `dateien` bleibt unveraendert, die Manifest-Pruefung weiter
 // unten darf die Testdatei nicht sehen.
+//
+// Der Gurkensalat steht dort fuer die Faelle, die der Bestand nicht hat:
+// keine Wartezeit (Kachel "ohne Zutun" faellt weg) und kein `gefaess`
+// (optional laut Schema). Zwei Pruefungen hatten genau diese Eigenschaften
+// des Bestands als Regel festgeschrieben und haetten das naechste
+// Rezept dieser Art rot gemacht (T-0073).
+var testdatenOrdner = path.join(wurzel, "tools/testdaten");
+var testdaten = ["gurkensalat.json", "linsen-eintopf.json"];
 var zuPruefen = dateien.map(function (d) {
   return { ordner: rezeptOrdner, datei: d };
-}).concat([
-  { ordner: path.join(wurzel, "tools/testdaten"), datei: "linsen-eintopf.json" }
-]);
+}).concat(testdaten.map(function (d) {
+  return { ordner: testdatenOrdner, datei: d };
+}));
 
 zuPruefen.forEach(function (eintrag) {
   var datei = eintrag.datei;
@@ -1084,8 +1092,8 @@ pruefe("Manifest aktuell (sonst: node tools/build-manifest.js)", manifestMaengel
 // umwarf. Genau die Luecke, in der eine korrigierte Formel und ein
 // stehengebliebenes Bild nebeneinander leben koennen.
 (function () {
-  function kacheln(id) {
-    var r = JSON.parse(fs.readFileSync(path.join(rezeptOrdner, id + ".json"), "utf8"));
+  function kacheln(id, ordner) {
+    var r = JSON.parse(fs.readFileSync(path.join(ordner || rezeptOrdner, id + ".json"), "utf8"));
     var ziel = DOM.knotenBauen("div");
     ziel.className = "rezept";
     R.rezeptRendern(r, ziel);
@@ -1108,13 +1116,28 @@ pruefe("Manifest aktuell (sonst: node tools/build-manifest.js)", manifestMaengel
     var std = /(\d+)\s*Std/.exec(text), min = /(\d+)\s*Min/.exec(text);
     return (std ? parseInt(std[1], 10) * 60 : 0) + (min ? parseInt(min[1], 10) : 0);
   }
-  var widersprueche = dateien.map(function (d) { return d.replace(".json", ""); })
-    .map(function (id) {
-      var w = kacheln(id).map(function (k) { return alsMinuten(k.split("=")[1]); });
-      return w[0] + w[1] === w[2]
-        ? null
-        : id + ": " + w[0] + " + " + w[1] + " = " + (w[0] + w[1]) + " statt " + w[2];
-    }).filter(Boolean);
+  // Gelesen wird nach Beschriftung, nicht nach Position: bei 0 Minuten
+  // laesst render.js die Kachel "ohne Zutun" weg (T-0073). Fehlen darf
+  // nur sie — ohne "Arbeit" oder "gesamt" ist die Rechnung kaputt.
+  function summenFehler(id, ordner) {
+    var w = {};
+    kacheln(id, ordner).forEach(function (k) {
+      var teil = k.split("=");
+      w[teil[0]] = alsMinuten(teil[1]);
+    });
+    if (w.Arbeit === undefined || w.gesamt === undefined) {
+      return id + ": Kachel fehlt (" + Object.keys(w).join(", ") + ")";
+    }
+    var ohne = w["ohne Zutun"] || 0;
+    return w.Arbeit + ohne === w.gesamt
+      ? null
+      : id + ": " + w.Arbeit + " + " + ohne + " = " + (w.Arbeit + ohne) + " statt " + w.gesamt;
+  }
+  var widersprueche = dateien.map(function (d) {
+    return summenFehler(d.replace(".json", ""), rezeptOrdner);
+  }).concat(testdaten.map(function (d) {
+    return summenFehler(d.replace(".json", ""), testdatenOrdner);
+  })).filter(Boolean);
   pruefe("Kennzahlen/DOM: Arbeit + ohne Zutun ergibt gesamt, in jedem Rezept",
     widersprueche, []);
   // Pfannkuchen zweimal korrigiert: T-0046 nahm die falschen 3 Std auf das
@@ -1613,9 +1636,12 @@ pruefe("Manifest aktuell (sonst: node tools/build-manifest.js)", manifestMaengel
 // Diese Pruefung haelt den Zustand fest — zieht jemand die Ausstattung
 // zurueck nach oben, faellt es hier auf und nicht erst am Abstand.
 (function () {
-  var stellen = [];
-  dateien.forEach(function (datei) {
-    var r = JSON.parse(fs.readFileSync(path.join(rezeptOrdner, datei), "utf8"));
+  // `gefaess` ist laut Schema optional (T-0073): gezaehlt wird gegen die
+  // Rezepte, die eines angeben — und eines ohne darf keines zeigen.
+  var stellen = [], mitGefaess = 0;
+  zuPruefen.forEach(function (eintrag) {
+    var r = JSON.parse(fs.readFileSync(path.join(eintrag.ordner, eintrag.datei), "utf8"));
+    if (r.gefaess) mitGefaess++;
     var ziel = DOM.knotenBauen("div");
     ziel.className = "rezept";
     R.rezeptRendern(r, ziel);
@@ -1628,7 +1654,8 @@ pruefe("Manifest aktuell (sonst: node tools/build-manifest.js)", manifestMaengel
       });
     });
   });
-  pruefe("Ausstattung: jedes Rezept hat genau eine", stellen.length, dateien.length);
+  pruefe("Ausstattung: genau eine je Rezept mit gefaess, keine ohne",
+    stellen.length, mitGefaess);
   pruefe("Ausstattung: steht in .rezept-anhang, nie hinter dem Untertitel",
     stellen.filter(function (o) {
       return o.eltern !== "rezept-anhang" || o.davorUntertitel;
