@@ -189,6 +189,17 @@
     // und wer den Helfer spaeter hier benutzen wollte, haette eine Zahl
     // statt einer Funktion vorgefunden.
     var planEndeS = planende(modell);
+    // Das Ende steht an der Spalte, deren Stufe zuletzt ENDET — nicht an
+    // der letzten Spalte, die nur zuletzt BEGINNT (T-0074). Bei einem
+    // Schmorgericht mit Salat daneben endet das Schmoren in Spalte 2,
+    // waehrend der Salat in Spalte 3 laengst fertig ist.
+    var endeSpalte = 0, spaetestes = -1;
+    modell.spalten.forEach(function (s) {
+      if (s.ende > spaetestes || (s.ende === spaetestes && s.spalte > endeSpalte)) {
+        spaetestes = s.ende;
+        endeSpalte = s.spalte;
+      }
+    });
 
     var zeiten = spaltenZeiten(modell);
     zeiten.starts.forEach(function (sekunden, c) {
@@ -201,7 +212,7 @@
       function minuten(n) { return n + (n === 1 ? " Minute" : " Minuten"); }
       var vorgelesen = "ab " + minuten(start);
 
-      if (c === zeiten.starts.length - 1) {
+      if (c === endeSpalte) {
         th.classList.add("zeitachse-marke-letzte");
         var ende = Math.round(planEndeS / 60);
         th.appendChild(el("span", "zeitachse-ende", ende + " Min"));
@@ -292,7 +303,8 @@
       var eigenAnteil = spannenSumme > 0
         ? (spalte.schritt.dauer_s || 0) / spannenSumme
         : 0;
-      var breitenAnteil = mass.stufen[c];
+      // Auf der Stufenflaeche, wie die Zeit (T-0074).
+      var breitenAnteil = mass.achsenanteil[c];
       var gekuerzt = Z.istGekuerzt(eigenAnteil, breitenAnteil);
 
       td.classList.toggle("ist-gekuerzt", gekuerzt);
@@ -506,7 +518,7 @@
       streifen.appendChild(el("p", "kennzahl-warnung",
         "Die Zeitachse zeigt den Weg für eine Person: " +
         G.dauerFormatieren(gesamt) +
-        ". Zu zweit wären es " + G.dauerFormatieren(Z.gesamtdauer(dauern, vorstufen)) +
+        ". Zu zweit wären es " + G.dauerFormatieren(Z.zuZweit(dauern, vorstufen, unbeauf)) +
         " — zwei Schritte fallen zusammen, die allein nacheinander gehen."));
     }
     return streifen;

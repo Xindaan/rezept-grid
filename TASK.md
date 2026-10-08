@@ -12,21 +12,6 @@ Quelle von T-0071 bis T-0087: Review Oktober 2026, Bericht in
 nachgestellt. "ohne Gate" heisst Einzelstimme — vor dem Umsetzen selbst
 nachstellen.
 
-- **T-0074** **Zeitmass-Aussagen stimmen.** (a) "Achse gekuerzt"
-  vergleicht den Zeitanteil (Bezug: Stufen = 100 %) mit dem Breitenanteil
-  (Bezug: ganze Tabelle, davon 22 % Zutatenspalten). Damit gilt jede Stufe
-  ueber 24 % als gekuerzt, auch wenn sie massstabsgetreu steht; im Bestand
-  Maultaschen "Fuellen 27 % -> 20 %". Steht zweimal: zeitmass.js:154 und
-  render.js:291; T-0056 hat das nicht erfasst. (b) "Zu zweit waeren es X"
-  nennt den kritischen Pfad bei unbegrenzt vielen Haenden, ab drei
-  parallelen Straengen falsch (render.js:509). (c) Das Planende haengt an
-  der letzten Spalte statt an der spaetest endenden Stufe (render.js:204).
-  (d) `spaltenbreiten([])` liefert ein anderes Format, Absturz statt
-  Problembox. Befunde planer-7, planer-1 (bestaetigt, mittel), planer-13,
-  planer-12, planer-14, ui-gross-9.
-  Akzeptanz: Vermerk und Breite auf derselben Skala; "zu zweit" aus einem
-  echten Zweipersonen-Plan; je Teil ein Test mit Negativprobe.
-
 - **T-0075** **Einkaufsliste: gemerkte Portionen, Haken je Liste, URL
   streng.** (a) Die Liste startet immer bei der Basisportion, der Merker
   der Rezeptseite wird nicht gelesen (app.js:129, render.js:1108). (b) Die
@@ -184,6 +169,22 @@ nachstellen.
   planer-3). Idee: Feld "so spaet wie moeglich" je Stufe.
 
 ## Done
+
+- **T-0074** (2026-10-08) **Zeitmass-Aussagen stimmen.** (a) "Achse
+  gekuerzt" vergleicht Zeit und Breite jetzt beide als Anteil an der
+  Stufenflaeche (`achsenanteil` in spaltenbreiten, render.js liest ihn);
+  vorher stand die Breite auf der ganzen Tabelle (22 % Zutatenspalten).
+  Maultaschen: nur noch die Teigruhe, "40 % -> 29 %"; "Fuellen" (27 % Zeit,
+  25 % Breite) ist nicht mehr gekuerzt. Zwei alte Sollwerte hatten den
+  Fehler festgeschrieben und sind ersetzt. (b) plan() kennt `personen`
+  (Default 1, Verhalten unveraendert); "zu zweit" und braucht2Haende
+  rechnen mit dem Zweipersonen-Plan statt dem kritischen Pfad — drei
+  parallele 10-Min-Straenge: 21 statt 11 Min. (c) Das Planende steht an der
+  Spalte, die zuletzt ENDET. (d) spaltenbreiten([]) liefert dasselbe
+  Format, ein Rezept ohne darstellbare Stufe zeigt seine Problembox.
+  300... -> 321. Sechs Negativproben einzeln, je an eigener Pruefung.
+  Offen: ui-gross-9 (gedehnte kurze Stufen ohne Vermerk) ist Gestaltung,
+  nicht umgesetzt; Browser-Sichtpruefung der Zeitachse nicht gemacht.
 
 - **T-0072** (2026-10-08) **Laufende Uhr ueberlebt den Stufenwechsel,
   Alarm bis zur Quittung, Kochstand uebersteht ein Neuladen.** (Review

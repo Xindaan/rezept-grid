@@ -42,7 +42,7 @@ konvertiert.
   (T-0070): Kennzahlen im Kopf, Ende der Zeitachse und Zeitangabe auf der
   Uebersichtskarte lesen alle `planende(modell)`. Vorher waren es drei
   Kopien, zwei davon mit einer anderen Quelle.
-- Pruefung: `node tools/pruefe-grid.js` — **315/315 gruen**. Laeuft ueber
+- Pruefung: `node tools/pruefe-grid.js` — **321/321 gruen**. Laeuft ueber
   alle Rezepte (samt der Testdaten in `tools/testdaten/`) und prueft Schema,
   Layout, Zeitplan, Manifest — und seit T-0044 auch die DOM-Schicht:
   Einkaufsliste, Kennzahlenstreifen, Kochleiste und Ladeweg laufen gegen
@@ -62,13 +62,14 @@ konvertiert.
 
 ## Next actions
 
-- T-0074: Zeitmass-Aussagen ("Achse gekuerzt" auf falscher Skala, "zu
-  zweit"), dann T-0075 Einkaufsliste.
+- T-0075 Einkaufsliste (gemerkte Portionen, Haken je Liste, URL streng).
 - T-0079 (entschieden: Zeilenreihenfolge berechnen) vor T-0078 umsetzen,
   dann T-0078 neu zuschneiden.
 
 ## Letzte Done
 
+- T-0074 Zeitmass-Aussagen: Kuerzung auf einer Skala, zu zweit aus
+  Zweipersonen-Plan, Planende an der richtigen Spalte (2026-10-08)
 - T-0072 Eine Uhr je Stufe, Alarm bis zur Quittung, Kochstand uebersteht
   ein Neuladen (2026-10-08)
 - T-0071 Kochmodus folgt der aktiven Stufe, im Browser in drei Groessen

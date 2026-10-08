@@ -82,7 +82,17 @@
   // Alle Werte als Anteil der Tabellenbreite (0..1).
   function spaltenbreiten(dauern, tabelleBreitePx) {
     var n = dauern.length;
-    if (!n) return { zutaten: ZUTATEN.slice(), stufen: [], gedeckelt: [], roh: [] };
+    // Dasselbe Format wie unten, auch ohne Stufen (T-0074): render.js liest
+    // zutatenPx, und ein Rezept ohne darstellbare Stufe stuerzte sonst in
+    // breitenAnwenden ab, statt seine Problembox zu zeigen.
+    if (!n) {
+      return {
+        zutaten: ZUTATEN.slice(),
+        zutatenPx: [Math.max(ZUTATEN[0] * MIN_PX, ZUTATEN_MIN_PX[0]),
+                    Math.max(ZUTATEN[1] * MIN_PX, ZUTATEN_MIN_PX[1])],
+        stufen: [], achsenanteil: [], gedeckelt: [], gekuerzt: [], zeitanteil: [], roh: []
+      };
+    }
 
     // Nie schmaler rechnen als noetig — der Aufrufer setzt die Tabelle
     // entsprechend breit und laesst sie scrollen.
@@ -151,12 +161,22 @@
     // die den Leser angeht: diese Stufe ist X Prozent der Gesamtzeit,
     // bekommt aber nur Y Prozent der Breite. Ohne den Hinweis liest man
     // eine Breite als Dauer, die es nicht ist.
+    //
+    // Beide Anteile auf DERSELBEN Skala, der Stufenflaeche (T-0074). Bis
+    // dahin stand die Zeit auf "alle Stufen = 100 %", die Breite aber auf
+    // "ganze Tabelle = 100 %" — davon belegen die Zutatenspalten fest 22 %.
+    // Eine exakt massstabsgetreue Stufe bekam so nur 78 % ihres
+    // Zeitanteils als Breite, und jede ueber 24 % galt als gekuerzt
+    // (Maultaschen "Fuellen 27 % -> 20 %", zwei gleich lange Stufen
+    // "50 % -> 39 %").
     var anteile = px.map(function (p) { return p / breite; });
+    var stufenSumme = px.reduce(function (a, p) { return a + p; }, 0);
+    var achsenanteil = px.map(function (p) { return stufenSumme > 0 ? p / stufenSumme : 0; });
     var zeitanteil = dauern.map(function (d) {
       return summe > 0 ? (d || 0) / summe : 0;
     });
     var gekuerzt = zeitanteil.map(function (z, i) {
-      return istGekuerzt(z, anteile[i]);
+      return istGekuerzt(z, achsenanteil[i]);
     });
 
     return {
@@ -167,6 +187,7 @@
       // sticky-Versatz der Zutatenspalte.
       zutatenPx: zutatenPx,
       stufen: anteile,
+      achsenanteil: achsenanteil, // Anteil an der Stufenflaeche, fuer den Vermerk
       gedeckelt: gedeckelt,     // interne Deckelung, fuer Pruefungen
       gekuerzt: gekuerzt,       // sichtbarer Vermerk
       zeitanteil: zeitanteil,
@@ -185,6 +206,7 @@
   // 40 % -> 22 %" — die 40 % gehoeren der Teigruhe, die dieselbe Spalte
   // aufspannt. Die Fuellung ist mit 20 % sogar knapp breiter dargestellt
   // als ihre Dauer hergibt; "gekuerzt" war dort schlicht das Gegenteil.
+  // Beide Werte als Anteil an der Stufenflaeche (T-0074).
   function istGekuerzt(zeitanteil, breitenanteil) {
     return zeitanteil > DECKEL && zeitanteil > breitenanteil * 1.2;
   }
@@ -294,8 +316,13 @@
   // deshalb gegen eine sofort startbare Stunde. Das echte Optimum waere
   // Scheduling-Theorie; nicht zu warten, solange etwas zu tun ist, ist
   // in der Kueche die richtige Naeherung.
-  function plan(dauern, vorstufen, unbeaufsichtigt) {
+  // `personen` (T-0074, Default 1): wie viele beaufsichtigte Stufen
+  // zugleich laufen duerfen. Mit 2 rechnet die Warnung "zu zweit waeren
+  // es ..." — vorher nahm sie den kritischen Pfad, also unbegrenzt viele
+  // Haende, und lag ab drei parallelen Straengen falsch.
+  function plan(dauern, vorstufen, unbeaufsichtigt, personen) {
     var n = dauern.length;
+    var anzahl = Math.max(1, Math.floor(personen || 1));
 
     function vor(i) { return vorOder(vorstufen, i); }
     function betreut(i) { return !(unbeaufsichtigt && unbeaufsichtigt[i]); }
@@ -312,7 +339,15 @@
     }
 
     var start = [], ende = [], geplant = new Array(n).fill(false);
-    var handFrei = 0;
+    // Wann jede Hand wieder frei ist. Eine Person = eine Liste mit einem
+    // Eintrag, also dasselbe Verhalten wie vor T-0074.
+    var haende = [];
+    for (var p = 0; p < anzahl; p++) haende.push(0);
+    function ersteFreie() {
+      var h = 0;
+      for (var q = 1; q < haende.length; q++) if (haende[q] < haende[h]) h = q;
+      return h;
+    }
 
     // Frueheste Zeit aus den Abhaengigkeiten, oder null solange eine
     // Vorstufe noch ungeplant ist.
@@ -351,7 +386,7 @@
         if (geplant[k] || !betreut(k)) continue;
         var bereit = bereitAb(k);
         if (bereit === null) continue;
-        var tk = Math.max(bereit, handFrei);
+        var tk = Math.max(bereit, haende[ersteFreie()]);
         var besser = tk < bestesT || (tk === bestesT && (
           beste < 0 || rest[k] > rest[beste] ||
           (rest[k] === rest[beste] && (dauern[k] || 0) < (dauern[beste] || 0))
@@ -363,7 +398,7 @@
       var t = bestesT;
       start[beste] = t;
       ende[beste] = t + (dauern[beste] || 0);
-      handFrei = ende[beste];
+      haende[ersteFreie()] = ende[beste];
       geplant[beste] = true;
     }
 
@@ -418,7 +453,12 @@
   // koennten — zu zweit ginge es schneller.
   function braucht2Haende(dauern, vorstufen, unbeaufsichtigt) {
     return realeGesamtdauer(dauern, vorstufen, unbeaufsichtigt)
-         > gesamtdauer(dauern, vorstufen) + 0.5;
+         > zuZweit(dauern, vorstufen, unbeaufsichtigt) + 0.5;
+  }
+
+  // Gesamtdauer, wenn zwei Personen kochen (T-0074).
+  function zuZweit(dauern, vorstufen, unbeaufsichtigt) {
+    return plan(dauern, vorstufen, unbeaufsichtigt, 2).gesamt;
   }
 
   global.RezeptZeitmass = {
@@ -431,6 +471,7 @@
     realeGesamtdauer: realeGesamtdauer,
     freieZeit: freieZeit,
     braucht2Haende: braucht2Haende,
+    zuZweit: zuZweit,
     MIN_PX: MIN_PX,
     DECKEL: DECKEL,
     ZUTATEN: ZUTATEN,

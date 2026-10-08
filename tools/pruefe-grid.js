@@ -1222,10 +1222,22 @@ pruefe("Manifest aktuell (sonst: node tools/build-manifest.js)", manifestMaengel
     return raus;
   }
   var mtVermerke = vermerke(mtT);
+  // Seit T-0074 auf einer Skala: Zeit UND Breite als Anteil an der
+  // Stufenflaeche. Vorher stand hier die Sollliste ["s-fuellen",
+  // "s-teig-ruhen"] und "40 % -> 22 %" — beides war der Skalenfehler
+  // selbst: die Fuellung steht mit 27 % Zeit auf 25 % Breite, also
+  // massstabsgetreu; die 22 % waren Anteil an der GANZEN Tabelle.
   pruefe("Kuerzung: die Stufe in der geteilten Spalte bekommt keinen fremden Vermerk",
-    Object.keys(mtVermerke).sort(), ["s-fuellen", "s-teig-ruhen"]);
+    Object.keys(mtVermerke).sort(), ["s-teig-ruhen"]);
   pruefe("Kuerzung: und die Teigruhe nennt ihren eigenen Anteil",
-    mtVermerke["s-teig-ruhen"], "∕∕ Achse gekürzt, 40 % → 22 %");
+    mtVermerke["s-teig-ruhen"], "∕∕ Achse gekürzt, 40 % → 29 %");
+  // Der kleinste Fall des Skalenfehlers: zwei gleich lange Stufen stehen
+  // exakt im Verhaeltnis und sind nicht gekuerzt. Die Gegenprobe, eine
+  // wirklich gestauchte lange Stufe, behaelt den Vermerk.
+  pruefe("Kuerzung: zwei gleich lange Stufen sind nicht gekuerzt, eine gestauchte lange schon",
+    [Z.spaltenbreiten([600, 600], Z.noetigeBreite(2)).gekuerzt,
+     Z.spaltenbreiten([3600, 60, 60, 60, 60, 60], Z.noetigeBreite(6)).gekuerzt[0]],
+    [[false, false], true]);
 
   // Ueber alle Rezepte: die genannte Prozentzahl ist immer der Anteil der
   // STUFE an der Summe der Spaltenspannen — derselben Skala, auf der die
@@ -2065,6 +2077,81 @@ pruefe("Manifest aktuell (sonst: node tools/build-manifest.js)", manifestMaengel
   Date.now = echteUhr;
   globalThis.setInterval = echtInterval;
   globalThis.clearInterval = echtClear;
+})();
+
+// --- 5a5k. Zeitmass-Aussagen (T-0074) --------------------------------
+(function () {
+  function rezeptAus(schritte) {
+    var zutaten = [];
+    schritte.forEach(function (st) {
+      st.zutaten.forEach(function (id) {
+        zutaten.push({ id: id, name: id, menge: 100, einheit: "g", notiz: null });
+      });
+    });
+    return { schema: 1, id: "probe", titel: "Probe", portionen: 2,
+             zeit_aktiv_s: null, zeit_gesamt_s: null, quelle: null,
+             zutaten: zutaten, schritte: schritte };
+  }
+  function stufe(id, dauer, zutaten, vorstufen, ruhe) {
+    var st = { id: id, titel: id, anweisung: id, dauer_s: dauer, zutaten: zutaten, vorstufen: vorstufen };
+    if (ruhe) st.unbeaufsichtigt = true;
+    return st;
+  }
+  function rendern(r) {
+    var ziel = DOM.knotenBauen("div");
+    ziel.className = "rezept";
+    var ablage = globalThis.localStorage;
+    delete globalThis.localStorage;
+    try { R.rezeptRendern(r, ziel); } finally { if (ablage) globalThis.localStorage = ablage; }
+    return ziel;
+  }
+
+  // (b) Drei parallele Haende-Straenge zu je 10 Min, dann 1 Min
+  // Zusammenfuehrung. Allein 31 Min, unbegrenzt viele Haende 11 Min —
+  // ZU ZWEIT aber 21: zwei Straenge gleichzeitig, der dritte danach.
+  var drei = [600, 600, 600, 60], dreiVor = [[], [], [], [0, 1, 2]];
+  pruefe("Zu zweit: drei parallele Straenge brauchen zu zweit 21 Min, nicht den kritischen Pfad",
+    [Z.realeGesamtdauer(drei, dreiVor), Z.zuZweit(drei, dreiVor), Z.gesamtdauer(drei, dreiVor)],
+    [1860, 1260, 660]);
+  pruefe("Zu zweit: mit einer Person ist der Plan unveraendert",
+    Z.plan(drei, dreiVor, null, 1).gesamt, Z.plan(drei, dreiVor).gesamt);
+  var warnung = rendern(rezeptAus([
+    stufe("s-a", 600, ["z-a"], []), stufe("s-b", 600, ["z-b"], []),
+    stufe("s-c", 600, ["z-c"], []), stufe("s-d", 60, ["z-d"], ["s-a", "s-b", "s-c"])
+  ])).querySelector(".kennzahl-warnung");
+  pruefe("Zu zweit: die Warnung im Kopf nennt den Zweipersonen-Plan",
+    warnung ? /Zu zweit wären es 21 Min/.test(warnung.textContent) : "keine Warnung", true);
+
+  // (c) Schmoren endet in Spalte 2, der Salat in Spalte 3 viel frueher:
+  // das Planende gehoert an das Schmoren.
+  var zwei = rendern(rezeptAus([
+    stufe("s-braten", 600, ["z-fleisch"], []),
+    stufe("s-schmoren", 3600, ["z-wein"], ["s-braten"], true),
+    stufe("s-salat", 300, ["z-salat"], []),
+    stufe("s-dressing", 300, ["z-essig"], ["s-salat"])
+  ]));
+  var marken = zwei.querySelectorAll(".zeitachse-marke");
+  var mitEnde = marken.map(function (m, i) { return m.querySelector(".zeitachse-ende") ? i : -1; })
+    .filter(function (i) { return i > -1; });
+  var schmorSpalte = G.gridModellBauen(rezeptAus([
+    stufe("s-braten", 600, ["z-fleisch"], []),
+    stufe("s-schmoren", 3600, ["z-wein"], ["s-braten"], true),
+    stufe("s-salat", 300, ["z-salat"], []),
+    stufe("s-dressing", 300, ["z-essig"], ["s-salat"])
+  ])).spalten.filter(function (sp) { return sp.schritt.id === "s-schmoren"; })[0].spalte;
+  pruefe("Zeitachse: das Planende steht an der Spalte, die zuletzt endet",
+    [mitEnde, marken.length - 1 !== schmorSpalte], [[schmorSpalte], true]);
+
+  // (d) Kein darstellbarer Schritt: dasselbe Format wie sonst, und die
+  // Seite zeigt ihre Problembox, statt in breitenAnwenden abzustuerzen.
+  var leer = Z.spaltenbreiten([]);
+  var geworfen = null, box = null;
+  try {
+    box = rendern(rezeptAus([stufe("s-ofen", 900, [], [])])).querySelector(".probleme");
+  } catch (e) { geworfen = e.message; }
+  pruefe("Breiten: ohne Stufen dasselbe Format, die Seite zeigt ihre Probleme",
+    [Array.isArray(leer.zutatenPx) && leer.zutatenPx.length, Array.isArray(leer.achsenanteil), geworfen, !!box],
+    [2, true, null, true]);
 })();
 
 // --- 5a5g. Kopplung, die stehen bleibt (T-0066) ----------------------
