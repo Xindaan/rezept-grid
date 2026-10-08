@@ -1,6 +1,6 @@
 # STATE.md — rezept-grid
 
-Stand: 2026-10-07
+Stand: 2026-10-08
 
 ## Ziel
 
@@ -42,7 +42,7 @@ konvertiert.
   (T-0070): Kennzahlen im Kopf, Ende der Zeitachse und Zeitangabe auf der
   Uebersichtskarte lesen alle `planende(modell)`. Vorher waren es drei
   Kopien, zwei davon mit einer anderen Quelle.
-- Pruefung: `node tools/pruefe-grid.js` — **295/295 gruen**. Laeuft ueber
+- Pruefung: `node tools/pruefe-grid.js` — **300/300 gruen**. Laeuft ueber
   alle Rezepte (samt der Testdaten in `tools/testdaten/`) und prueft Schema,
   Layout, Zeitplan, Manifest — und seit T-0044 auch die DOM-Schicht:
   Einkaufsliste, Kennzahlenstreifen, Kochleiste und Ladeweg laufen gegen
@@ -62,14 +62,15 @@ konvertiert.
 
 ## Next actions
 
-- T-0071 + T-0072: Kochmodus folgt der Stufe, laufende Uhr ueberlebt den
-  Stufenwechsel (beide hoch). Fuer T-0072 entschieden: eine Uhr je
-  Ruhestufe.
+- T-0072: laufende Uhr ueberlebt den Stufenwechsel (hoch). Entschieden:
+  eine Uhr je Ruhestufe.
 - T-0079 (entschieden: Zeilenreihenfolge berechnen) vor T-0078 umsetzen,
   dann T-0078 neu zuschneiden.
 
 ## Letzte Done
 
+- T-0071 Kochmodus folgt der aktiven Stufe, im Browser in drei Groessen
+  gemessen (2026-10-08)
 - T-0073 Pruefsuite laesst gueltige Rezepte durch: Kacheln nach
   Beschriftung, Ausstattung nur mit `gefaess`, Testrezept Gurkensalat
   (2026-10-07)

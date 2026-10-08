@@ -330,11 +330,53 @@
       gridZeichnen();
     }
 
+    // Die aktive Stufe ins Bild holen (T-0071). Bis hierher setzte der
+    // Kochmodus nur Klassen: ab der zweiten, dritten Stufe lag sie unter
+    // der Leiste oder unterhalb des Bildschirms, und am Telefon steht der
+    // Wortlaut nur in der Stufenliste — die Leiste blendet ihn dort aus.
+    //
+    // Ziel ist, was man jetzt braucht, und zwar der SICHTBARE Traeger
+    // (Tabelle und Stufenliste stehen beide im DOM, stil.css zeigt eine):
+    //   Stufenliste — der Eintrag der Stufe: Titel, neue Zutaten, Wortlaut.
+    //   Tabelle     — die erste neu dazukommende Zutat. Die Stufenzelle
+    //                 selbst kann ueber die ganze Tabelle reichen
+    //                 ("in Bruehe ziehen"), ihr Anfang zeigte dann das
+    //                 Falsche. Titel und Wortlaut stehen in der Leiste.
+    //                 Ohne neue Zutat bleibt die Zelle.
+    // Ausrichtung, im Browser gemessen: eine Zutatenzeile mit `nearest` —
+    // was schon frei steht, bleibt stehen, der scroll-margin in stil.css
+    // haelt sie aus dem Schatten der Leiste. Eintrag und Zelle dagegen mit
+    // `start`: sie sind oft hoeher als der Platz ueber der Leiste (Omelett
+    // 670 px bei 650 frei), und `nearest` zeigte dann ihr ENDE.
+    function sichtbar(knoten) {
+      return knoten.getClientRects().length > 0;
+    }
+
+    function stufeZeigen() {
+      var id = stufen[aktiv].schritt.id;
+      var traeger = Array.prototype.slice.call(
+        ziel.querySelectorAll('[data-schritt="' + id + '"]'));
+      var neu = Array.prototype.slice.call(ziel.querySelectorAll(".koch-neu"))
+        .filter(function (k) { return k.classList.contains("zutat"); });
+      var kandidaten = traeger.filter(function (k) { return k.tagName === "ARTICLE"; })
+        .concat(neu)
+        .concat(traeger.filter(function (k) { return k.tagName === "TD"; }));
+      var zielKnoten = kandidaten.filter(sichtbar)[0];
+      if (!zielKnoten) return;
+      var ruhig = global.matchMedia &&
+        global.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      zielKnoten.scrollIntoView({
+        block: zielKnoten.classList.contains("zutat") ? "nearest" : "start",
+        behavior: ruhig ? "auto" : "smooth"
+      });
+    }
+
     function gehe(neu) {
       if (neu < 0 || neu >= stufen.length) return;
       aktiv = neu;
       timerSetzen();
       leisteZeichnen();
+      stufeZeigen();
     }
 
     // --- Tastatur ----------------------------------------------------

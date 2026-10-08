@@ -1797,6 +1797,88 @@ pruefe("Manifest aktuell (sonst: node tools/build-manifest.js)", manifestMaengel
     ziel.querySelector(".einkauf-zaehler").getAttribute("aria-live"), "polite");
 })();
 
+// --- 5a5i. Der Kochmodus folgt der Stufe (T-0071) -------------------
+// Bis T-0071 setzte jeder Stufenwechsel nur Klassen; am Telefon lag die
+// aktive Stufe ab Schritt 2-3 unter der Leiste, am Tablet die neue Zutat
+// unterhalb des Bildschirms. Geprueft wird, WELCHER Knoten angesprungen
+// wird — die Attrappe merkt sich das —, und zwar je Ansicht: was CSS
+// verbirgt, stellt `unsichtbar` nach.
+(function () {
+  var K = global.RezeptKochmodus;
+  var still = { vorbereiten: function () {}, abgelaufen: function () {} };
+  var ohneWache = { an: function () {}, aus: function () {} };
+
+  function aufbauen(id, verbergen) {
+    var r = JSON.parse(fs.readFileSync(path.join(rezeptOrdner, id + ".json"), "utf8"));
+    var ziel = DOM.knotenBauen("div");
+    ziel.className = "rezept";
+    R.rezeptRendern(r, ziel);
+    ziel.querySelectorAll("[data-schritt], .zutat, .menge").forEach(function (k) {
+      if (verbergen(k)) k.unsichtbar = true;
+    });
+    return { ziel: ziel, km: K.kochmodusBauen(G.gridModellBauen(r), ziel, still, ohneWache) };
+  }
+
+  // Liefert, was beim Wechsel auf Stufe `i` angesprungen wurde.
+  function sprungBei(a, i) {
+    var alle = a.ziel.querySelectorAll("[data-schritt], .zutat");
+    alle.forEach(function (k) { k.wurdeAngesprungen = false; });
+    a.km.gehe(i);
+    return alle.filter(function (k) { return k.wurdeAngesprungen; });
+  }
+
+  function beschreiben(k) {
+    return k.tagName + (k.dataset.schritt ? ":" + k.dataset.schritt : "") +
+      (k.classList.contains("zutat") ? ":" + k.querySelector(".zutat-name").textContent : "");
+  }
+
+  // Telefon: Tabelle verborgen, die Stufenliste traegt den Wortlaut.
+  var telefon = aufbauen("maultaschen", function (k) { return k.tagName === "TD"; });
+  telefon.km.starten();
+  var falsch = telefon.km.stufen.map(function (s, i) {
+    var t = sprungBei(telefon, i);
+    return t.length === 1 && t[0].tagName === "ARTICLE" && t[0].dataset.schritt === s.schritt.id
+      ? null : "Stufe " + (i + 1) + ": " + t.map(beschreiben).join(", ");
+  }).filter(Boolean);
+  telefon.km.beenden();
+  pruefe("Kochmodus/Telefon: jede Stufe springt zu ihrem Eintrag der Stufenliste",
+    falsch, []);
+
+  // Tablet: Stufenliste verborgen. "in Bruehe ziehen" spannt die ganze
+  // Tabelle; die einzige neue Zutat steht unten — die zaehlt.
+  var tablet = aufbauen("maultaschen", function (k) { return k.tagName === "ARTICLE"; });
+  tablet.km.starten();
+  var letzte = tablet.km.stufen.length - 1;
+  var t = sprungBei(tablet, letzte);
+  tablet.km.beenden();
+  pruefe("Kochmodus/Tablet: die letzte Maultaschen-Stufe springt zur neuen Zutat, nicht zur Zelle",
+    t.map(beschreiben), ["TD:Fleischbrühe"]);
+
+  // Ohne neue Zutat bleibt die Zelle (Omelett "fuellen und falten").
+  var omelett = aufbauen("omelett-mit-pilzen", function (k) { return k.tagName === "ARTICLE"; });
+  omelett.km.starten();
+  var ohneNeue = omelett.km.stufen.filter(function (s) { return s.eigeneZeilen.length === 0; })[0];
+  var o = sprungBei(omelett, ohneNeue.index);
+  omelett.km.beenden();
+  pruefe("Kochmodus/Tablet: eine Stufe ohne neue Zutat springt zu ihrer Zelle",
+    o.map(beschreiben), ["TD:" + ohneNeue.schritt.id]);
+  // Ausrichtung: Zelle und Eintrag am Anfang (sie sind oft hoeher als der
+  // freie Platz), die einzelne Zutatenzeile nur so weit wie noetig.
+  pruefe("Kochmodus: Zelle am Anfang, Zutatenzeile nur so weit wie noetig",
+    [o[0].angesprungenMit.block, t[0].angesprungenMit.block], ["start", "nearest"]);
+
+  // Reduzierte Bewegung: gesprungen wird trotzdem, nur ohne Animation.
+  var echtMM = global.matchMedia;
+  global.matchMedia = function (q) { return { matches: /reduce/.test(q) }; };
+  var ruhig = aufbauen("maultaschen", function (k) { return k.tagName === "TD"; });
+  ruhig.km.starten();
+  var r1 = sprungBei(ruhig, 1);
+  ruhig.km.beenden();
+  global.matchMedia = echtMM;
+  pruefe("Kochmodus: bei reduzierter Bewegung ohne Animation",
+    r1.map(function (k) { return k.angesprungenMit && k.angesprungenMit.behavior; }), ["auto"]);
+})();
+
 // --- 5a5g. Kopplung, die stehen bleibt (T-0066) ----------------------
 // Auf einem Tablet steht die Tabelle (ab 600 px), aber es gibt kein
 // Ueberfahren — die Kopplung Stufe/Zutaten war dort nicht erreichbar und

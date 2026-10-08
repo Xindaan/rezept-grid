@@ -12,18 +12,6 @@ Quelle von T-0071 bis T-0087: Review Oktober 2026, Bericht in
 nachgestellt. "ohne Gate" heisst Einzelstimme — vor dem Umsetzen selbst
 nachstellen.
 
-- **T-0071** **Kochmodus folgt der aktiven Stufe.** `gehe()` setzt nur
-  Klassen und scrollt nie; am Telefon blendet `stil.css:985` die Anweisung
-  in der Leiste aus. Ab Stufe 2-3 liegt die aktive Stufe unter der Leiste
-  oder ausserhalb des Bildes — gemessen bei 375x812, 1024x768 (Tablet quer)
-  und 812x375 (Telefon quer, Leiste dort 46 % der Hoehe). Drei Dimensionen
-  haben das unabhaengig gefunden. Befunde ui-mobil-1, ui-gross-4,
-  zustand-7, ui-mobil-15 (bestaetigt, hoch).
-  Akzeptanz: nach jedem Stufenwechsel stehen aktive Stufe und ihre neuen
-  Zutaten sichtbar oberhalb der Leiste, gemessen in allen fuenf Rezepten
-  in den drei Groessen; Anweisung am Telefon lesbar; reduced-motion
-  beachtet; Test mit Negativprobe.
-
 - **T-0072** **Laufende Uhr ueberlebt den Stufenwechsel, Alarm bis zur
   Quittung, Kochstand uebersteht ein Neuladen.** `gehe()` ->
   `timerSetzen()` -> `countdown.setzen()` verwirft die laufende Uhr
@@ -216,6 +204,32 @@ nachstellen.
   planer-3). Idee: Feld "so spaet wie moeglich" je Stufe.
 
 ## Done
+
+- **T-0071** (2026-10-08) **Kochmodus folgt der aktiven Stufe.** Bis
+  hierher setzte jeder Stufenwechsel nur Klassen (Review ui-mobil-1,
+  ui-gross-4, zustand-7, ui-mobil-15). Neu: `stufeZeigen()` in
+  kochmodus.js holt den SICHTBAREN Traeger ins Bild — am Telefon den
+  Eintrag der Stufenliste (dort steht der Wortlaut), in der Tabelle die
+  erste neu dazukommende Zutatenzeile, ohne neue Zutat die Stufenzelle.
+  Ausrichtung im Browser gemessen und daraufhin geaendert: zuerst ueberall
+  `nearest`; bei Zellen, die hoeher sind als der Platz ueber der Leiste
+  (Omelett 670 px bei 650 frei), zeigte das ihr ENDE. Jetzt Zelle und
+  Eintrag mit `start`, die Zutatenzeile mit `nearest`; scroll-margin in
+  stil.css haelt sie aus dem Schatten der Leiste. Bei reduzierter Bewegung
+  ohne Animation. Telefon quer (max-height 30rem): Leiste kompakter, der
+  Wortlaut bleibt (dort gibt es ihn nur in der Leiste), auf zwei Zeilen
+  gekuerzt — 171 -> 96 px, 46 % -> 26 % der Hoehe.
+  Attrappe: `scrollIntoView` merkt sich die Optionen, `getClientRects`
+  mit Schalter `unsichtbar` stellt nach, was CSS verbirgt. 295 -> 300.
+  **Negativproben einzeln, je in einer Kopie:** Aufruf entfernt, Filter
+  "sichtbar" entfernt, Zelle vor Zutat, Zutat entfernt, Zellen-Rueckfall
+  entfernt, immer Animation, Zutat vor Stufenlisten-Eintrag, immer
+  `nearest` — jede schlaegt an einer eigenen Pruefung an.
+  **Im Browser gemessen** (fuenf Rezepte x 375x812, 1024x768, 812x375,
+  jede Stufe): Zutatenzeile ganz ueber der Leiste, Zelle/Eintrag mit
+  sichtbarem Anfang und, wo sie hineinpasst, ganz — 0 Fehler. Gemessen mit
+  abgeschalteter Animation (Pane verborgen, Animation dort gedrosselt);
+  die Zielwahl ist dieselbe.
 
 - **T-0073** (2026-10-07) **Pruefsuite laesst gueltige Rezepte durch.**
   Zwei Pruefungen hatten Eigenschaften des Bestands als Regel

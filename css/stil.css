@@ -824,6 +824,14 @@ body.kochmodus .zurueck-link { visibility: hidden; }
 /* Die Leiste ist mit dem Zeitbalken hoeher geworden. */
 body.kochmodus { padding-bottom: 12.5rem; }
 
+/* Ziele von stufeZeigen (T-0071): unten so viel Rand, wie die Leiste
+   hoch ist, damit `nearest` das Ziel ueber ihr anhaelt, nicht dahinter. */
+body.kochmodus [data-schritt],
+body.kochmodus .zutat {
+  scroll-margin-top: 1rem;
+  scroll-margin-bottom: 13rem;
+}
+
 /* Der Startknopf waere im laufenden Kochmodus wirkungslos. */
 body.kochmodus .koch-start { visibility: hidden; }
 
@@ -983,6 +991,25 @@ body.kochmodus .zutat.koch-neu { border-bottom-color: var(--akzent); }
   .koch-leiste { gap: .6rem 1rem; padding: .8rem 1rem; }
   .koch-uhr { font-size: 1.5rem; }
   .koch-anweisung { display: none; }
+}
+
+/* Telefon quer (T-0071): 375 px Hoehe, die Leiste nahm 46 % davon. Hier
+   gibt es die Tabelle, der Wortlaut steht nur in der Leiste — also nicht
+   ausblenden, sondern auf zwei Zeilen kuerzen und die Raender sparen. */
+@media (max-height: 30rem) {
+  .koch-leiste { gap: .3rem 1rem; padding: .45rem 1rem; }
+  .koch-uhr { font-size: 1.4rem; }
+  .koch-zeitbalken { margin-top: .3rem; }
+  .koch-anweisung {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+  }
+  body.kochmodus { padding-bottom: 8rem; }
+  body.kochmodus [data-schritt],
+  body.kochmodus .zutat { scroll-margin-bottom: 8.5rem; }
 }
 
 .fuss {

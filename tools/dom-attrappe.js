@@ -117,8 +117,18 @@ function knotenBauen(tagName) {
 
     // Rollt im Browser den Knoten ins Bild. Headless gibt es nichts zu
     // rollen; gemerkt wird nur, DASS es passiert ist.
-    scrollIntoView: function () { n.wurdeAngesprungen = true; },
+    scrollIntoView: function (optionen) {
+      n.wurdeAngesprungen = true;
+      n.angesprungenMit = optionen || null;
+    },
     wurdeAngesprungen: false,
+    angesprungenMit: null,
+    // Ohne Layout weiss die Attrappe nicht, was CSS ausblendet. Sichtbar
+    // ist alles, solange eine Pruefung es nicht mit `unsichtbar = true`
+    // ausdruecklich verbirgt — so laesst sich "Telefon" (Tabelle weg)
+    // und "Tablet" (Stufenliste weg) nachstellen (T-0071).
+    getClientRects: function () { return n.unsichtbar ? [] : [{}]; },
+    unsichtbar: false,
 
     querySelectorAll: function (auswahl) { return suchen(knoten, auswahl); },
     querySelector: function (auswahl) { return suchen(knoten, auswahl)[0] || null; },
