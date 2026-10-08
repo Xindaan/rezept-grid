@@ -1879,6 +1879,194 @@ pruefe("Manifest aktuell (sonst: node tools/build-manifest.js)", manifestMaengel
     r1.map(function (k) { return k.angesprungenMit && k.angesprungenMit.behavior; }), ["auto"]);
 })();
 
+// --- 5a5j. Eine Uhr je Stufe, Alarm bis zur Quittung (T-0072) -------
+// Bis T-0072 setzte jeder Stufenwechsel die einzige Uhr zurueck — bei
+// "Teig ruhen lassen", nach dem man weiterblaettert. Der Alarm klang
+// einmal und war dann still; ein Neuladen verlor Stufe und Uhr.
+(function () {
+  var K = global.RezeptKochmodus;
+
+  // Erst das Uhrwerk allein, mit einstellbarer Wanduhr.
+  var t = 0;
+  var werk = K.uhrwerkBauen([60, 120, null], function () { return t; });
+  werk.umschalten(0);
+  t = 10000;
+  werk.umschalten(1);
+  t = 30000;
+  pruefe("Uhrwerk: eine gestartete Uhr laeuft weiter, waehrend eine andere startet",
+    [werk.uhr(0).stand(), werk.uhr(1).stand(), werk.uhr(2).stand()], [30, 100, null]);
+
+  t = 61000;
+  var meldungen = [werk.pruefen(), werk.pruefen()];
+  t = 61000 + K.WIEDERHOLEN_MS;
+  meldungen.push(werk.pruefen());
+  werk.quittieren(0);
+  t = 200000;
+  meldungen.push(werk.pruefen().filter(function (i) { return i === 0; }));
+  pruefe("Uhrwerk: Alarm beim Ablauf, nicht bei jedem Tick, wieder nach der Frist, still nach Quittung",
+    meldungen, [[0], [], [0], []]);
+  pruefe("Uhrwerk: quittiert heisst zurueck auf die volle Zeit",
+    [werk.uhr(0).stand(), werk.uhr(0).laeuft(), werk.abgelaufen(0)], [60, false, false]);
+
+  // Der verspaetete Tick (Review zustand-11): der Knopf zeigt noch
+  // "Pause", die Wanduhr ist laengst drueber. Der Druck darf nicht neu
+  // starten, er muss melden.
+  t = 0;
+  var spaet = K.uhrwerkBauen([60], function () { return t; });
+  spaet.umschalten(0);
+  t = 100000;
+  pruefe("Uhrwerk: Druck nach unbemerktem Ablauf meldet statt neu zu starten",
+    [spaet.umschalten(0), spaet.abgelaufen(0), spaet.uhr(0).stand()], [[0], true, 0]);
+
+  // Herstellen aus dem Merker prueft die Form (Review zustand-9).
+  var heil = K.uhrwerkBauen([60, 120, null], function () { return t; });
+  var gesichert = werk.sichern();
+  pruefe("Uhrwerk: kaputte Staende werden abgewiesen, heile uebernommen",
+    [heil.herstellen("x"), heil.herstellen([{ rest: "a", endeAt: null, gemeldet: null }, {}, {}]),
+     heil.herstellen(gesichert), heil.uhr(1).stand() === werk.uhr(1).stand()],
+    [false, false, true, true]);
+
+  // Dann der Kochmodus im DOM.
+  var sp = JSON.parse(fs.readFileSync(path.join(rezeptOrdner, "spaetzle.json"), "utf8"));
+  var echtInterval = globalThis.setInterval, echtClear = globalThis.clearInterval;
+  var tick = null;
+  globalThis.setInterval = function (fn) { tick = fn; return 1; };
+  globalThis.clearInterval = function () {};
+  var echteUhr = Date.now, versatz = 0;
+  Date.now = function () { return echteUhr() + versatz; };
+  var gezaehlt = { alarm: 0 };
+  var geber = { vorbereiten: function () {}, abgelaufen: function () { gezaehlt.alarm++; } };
+  var ohneWache = { an: function () {}, aus: function () {} };
+
+  // Ohne Ablage gerendert: rezeptRendern nimmt einen gemerkten Kochstand
+  // sonst selbst auf und baute daneben eine zweite, verborgene Instanz.
+  // Diesen Weg prueft der Fall "rezeptRendern nimmt ... auf" eigens.
+  function neu() {
+    var ziel = DOM.knotenBauen("div");
+    ziel.className = "rezept";
+    var ablage = globalThis.localStorage;
+    delete globalThis.localStorage;
+    try { R.rezeptRendern(sp, ziel); } finally { if (ablage) globalThis.localStorage = ablage; }
+    return K.kochmodusBauen(G.gridModellBauen(sp), ziel, geber, ohneWache);
+  }
+  // Die zuletzt angehaengte Leiste ist die der laufenden Instanz; fruehere
+  // Instanzen dieses Abschnitts (das "Neuladen") lassen ihre stehen.
+  function leiste() {
+    var alle = document.body.querySelectorAll(".koch-leiste");
+    return alle.length ? alle[alle.length - 1] : null;
+  }
+
+  var km = neu();
+  km.starten();
+  km.gehe(1);
+  km.timerUmschalten();
+  km.gehe(2);
+  var knoepfe = leiste().querySelectorAll(".koch-nebenher-knopf");
+  pruefe("Kochmodus: Weiter laesst die Uhr der vorigen Stufe laufen und zeigt sie mit Namen",
+    [km.zustand().laufend, knoepfe.length,
+     knoepfe.length ? knoepfe[0].textContent.indexOf(km.stufen[1].schritt.titel) === 0 : false],
+    [[1], 1, true]);
+  if (knoepfe[0]) knoepfe[0].ausloesen("click");
+  pruefe("Kochmodus: der Knopf der laufenden Uhr springt zu ihrer Stufe",
+    [km.zustand().aktiv, km.zustand().laeuft], [1, true]);
+
+  // Ablauf: sichtbar, wiederholt, bis quittiert.
+  versatz = (km.stufen[1].schritt.dauer_s + 5) * 1000;
+  tick();
+  var meldung = leiste().querySelector(".koch-meldung");
+  var warSichtbar = !meldung.hidden;
+  var nannte = meldung.textContent.indexOf(km.stufen[1].schritt.titel) > -1;
+  tick();
+  var nachZweitemTick = gezaehlt.alarm;
+  versatz += K.WIEDERHOLEN_MS;
+  tick();
+  var nachFrist = gezaehlt.alarm;
+  meldung.querySelector("button").ausloesen("click");
+  versatz += 60000;
+  tick();
+  pruefe("Kochmodus: abgelaufen steht sichtbar mit Stufenname da",
+    [warSichtbar, nannte], [true, true]);
+  pruefe("Kochmodus: Alarm einmal je Frist, nach Quittung still",
+    [nachZweitemTick, nachFrist, gezaehlt.alarm, meldung.hidden], [1, 2, 2, true]);
+
+  // Beenden mit laufender Uhr fragt nach.
+  km.timerUmschalten();
+  var gefragt = 0;
+  global.confirm = function () { gefragt++; return false; };
+  km.beenden();
+  var bliebOffen = km.zustand().offen;
+  global.confirm = function () { gefragt++; return true; };
+  km.beenden();
+  delete global.confirm;
+  pruefe("Kochmodus: Beenden mit laufender Uhr fragt nach und respektiert die Antwort",
+    [gefragt, bliebOffen, km.zustand().offen], [2, true, false]);
+
+  // Der Kochstand ueberlebt ein Neuladen — auch ueber rezeptRendern.
+  globalThis.localStorage = DOM.speicherBauen();
+  versatz = 0;
+  var vorher = neu();
+  vorher.starten();
+  vorher.gehe(2);
+  vorher.timerUmschalten();
+  var restVorher = vorher.zustand().verbleibend;
+  document.body.classList.remove("kochmodus");
+  var nachher = neu();
+  nachher.starten();
+  pruefe("Kochmodus: nach dem Neuladen dieselbe Stufe, die Uhr laeuft weiter",
+    [nachher.zustand().aktiv, nachher.zustand().laufend, nachher.zustand().verbleibend <= restVorher],
+    [2, [2], true]);
+
+  var ziel2 = DOM.knotenBauen("div");
+  ziel2.className = "rezept";
+  var modell2 = R.rezeptRendern(sp, ziel2);
+  pruefe("Kochmodus: rezeptRendern nimmt einen gemerkten Kochstand von selbst auf",
+    modell2.kochmodus() ? modell2.kochmodus().zustand().aktiv : null, 2);
+  if (modell2.kochmodus()) modell2.kochmodus().beenden();
+  var nachBeenden = globalThis.localStorage.getItem(M.PRAEFIX + "koch:spaetzle");
+  var dritter = neu();
+  dritter.starten();
+  pruefe("Kochmodus: Beenden vergisst den Kochstand",
+    [nachBeenden, dritter.zustand().aktiv], [null, 0]);
+  dritter.beenden();
+
+  globalThis.localStorage.setItem(M.PRAEFIX + "koch:spaetzle",
+    JSON.stringify({ stand: Date.now(), daten: { aktiv: "zwei", uhren: "kaputt" } }));
+  var kaputt = neu();
+  var geworfen = null;
+  try { kaputt.starten(); } catch (e) { geworfen = e.message; }
+  pruefe("Kochmodus: ein kaputter Kochstand faellt auf Stufe 1 zurueck, ohne Wurf",
+    [geworfen, kaputt.zustand().aktiv], [null, 0]);
+  kaputt.beenden();
+
+  // Heile Uhren, aber eine Stufe, die es nicht gibt oder keine ganze Zahl
+  // ist: je ein Fall, damit die Pruefung von aktiv nicht im Schatten der
+  // Uhren-Pruefung steht. Geprueft wird auch, dass die Leiste gezeichnet
+  // ist — bei 99 kehrt gehe() frueh zurueck, und die Leiste bliebe leer.
+  var heileUhren = K.uhrwerkBauen(km.stufen.map(function (s) { return s.schritt.dauer_s; })).sichern();
+  var ergebnisse = [99, 1.5, "2"].map(function (wert) {
+    globalThis.localStorage.setItem(M.PRAEFIX + "koch:spaetzle",
+      JSON.stringify({ stand: Date.now(), daten: { aktiv: wert, uhren: heileUhren } }));
+    var probe = neu();
+    var fehler = null;
+    try { probe.starten(); } catch (e) { fehler = e.message; }
+    var ergebnis;
+    try {
+      var titel = leiste() ? leiste().querySelector(".koch-titel").textContent : null;
+      ergebnis = [fehler, probe.zustand().aktiv, titel];
+    } catch (e) { ergebnis = [fehler || e.message]; }
+    try { probe.beenden(); } catch (e) { /* zaehlt oben */ }
+    return ergebnis;
+  });
+  var erwartet = [null, 0, km.stufen[0].schritt.titel];
+  pruefe("Kochmodus: Stufe 99, 1.5 oder \"2\" im Merker faellt auf Stufe 1 zurueck",
+    ergebnisse, [erwartet, erwartet, erwartet]);
+
+  delete globalThis.localStorage;
+  Date.now = echteUhr;
+  globalThis.setInterval = echtInterval;
+  globalThis.clearInterval = echtClear;
+})();
+
 // --- 5a5g. Kopplung, die stehen bleibt (T-0066) ----------------------
 // Auf einem Tablet steht die Tabelle (ab 600 px), aber es gibt kein
 // Ueberfahren — die Kopplung Stufe/Zutaten war dort nicht erreichbar und

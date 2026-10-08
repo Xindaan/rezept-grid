@@ -12,26 +12,6 @@ Quelle von T-0071 bis T-0087: Review Oktober 2026, Bericht in
 nachgestellt. "ohne Gate" heisst Einzelstimme — vor dem Umsetzen selbst
 nachstellen.
 
-- **T-0072** **Laufende Uhr ueberlebt den Stufenwechsel, Alarm bis zur
-  Quittung, Kochstand uebersteht ein Neuladen.** `gehe()` ->
-  `timerSetzen()` -> `countdown.setzen()` verwirft die laufende Uhr
-  (kochmodus.js:333/230) — genau bei "Teig ruhen", wo man weiterblaettert.
-  T-0004 hat das Zuruecksetzen festgelegt, aber vor den parallelen
-  Straengen (T-0030) und vor dem Alarm (T-0063). Der Alarm klingt einmal
-  2x0,25 s, danach bleibt nur eine rote 0:00. Stufe und Uhr gehen beim
-  Neuladen verloren, obwohl der Merker genau fuer "Telefon sperrt und
-  laedt neu" gebaut ist. Dazu: "Beenden" ohne Rueckfrage 6 px neben
-  "Weiter"; ein verspaeteter Tick startet die Uhr von vorn. Befunde
-  ui-mobil-2, zustand-1 (bestaetigt, hoch), ui-mobil-7, zustand-8,
-  ui-mobil-3 (bestaetigt, mittel), zustand-11, zustand-14.
-  **Entschieden (2026-10-02):** eine Uhr je unbeaufsichtigter Stufe, die
-  weiterlaeuft und in der Leiste mit ihrem Stufennamen steht (verworfen:
-  eine einzige Uhr mit Rueckfrage beim Wechsel).
-  Akzeptanz: Weiter/Zurueck waehrend einer laufenden Ruhe-Uhr laesst sie
-  laufen und den Alarm kommen; der Alarm wiederholt sich sichtbar, bis er
-  quittiert ist; Neuladen stellt Stufe und Restzeit aus dem
-  Wanduhr-Anker wieder her.
-
 - **T-0074** **Zeitmass-Aussagen stimmen.** (a) "Achse gekuerzt"
   vergleicht den Zeitanteil (Bezug: Stufen = 100 %) mit dem Breitenanteil
   (Bezug: ganze Tabelle, davon 22 % Zutatenspalten). Damit gilt jede Stufe
@@ -204,6 +184,43 @@ nachstellen.
   planer-3). Idee: Feld "so spaet wie moeglich" je Stufe.
 
 ## Done
+
+- **T-0072** (2026-10-08) **Laufende Uhr ueberlebt den Stufenwechsel,
+  Alarm bis zur Quittung, Kochstand uebersteht ein Neuladen.** (Review
+  ui-mobil-2, zustand-1, ui-mobil-3, ui-mobil-7, zustand-8, zustand-11.)
+  Neues DOM-freies `uhrwerkBauen` in kochmodus.js: eine Uhr je Stufe —
+  entschieden war "je Ruhestufe", jede Stufe ist dasselbe ohne Sonderfall.
+  Eine gestartete Uhr laeuft bei Weiter/Zurueck weiter; laufende Uhren
+  anderer Stufen stehen mit Stufenname als Knopf in der Leiste ("ruhen
+  lassen 30:00", 44 px, Tipp springt zur Stufe). Der Alarm meldet sich
+  beim Ablauf und danach alle 15 s wieder, bis quittiert; sichtbar als
+  Meldung mit Stufenname und Knopf "Quittieren" (bisher nur fuer
+  Screenreader). Ein Druck nach unbemerktem Ablauf (verspaeteter Tick)
+  meldet statt neu zu starten. Stufe und Uhren stehen unter
+  `koch:<id>` im Merker; rezeptRendern nimmt den Stand von selbst wieder
+  auf, die Uhren rechnen aus ihrem Wanduhr-Anker weiter, der erste Tipp
+  schaltet den Ton wieder frei. Die Form des Stands wird geprueft (Stufe
+  99, 1.5, "2" und kaputte Uhren fallen auf Stufe 1). Beenden fragt nach,
+  solange eine Uhr laeuft, loescht den Stand und hat 1rem Abstand zu
+  "Weiter". 300 -> 315.
+  **Negativproben einzeln (14):** Zuruecksetzen bei gehe(), keine
+  Wiederholung, Quittieren ohne Zuruecksetzen, Neustart nach unbemerktem
+  Ablauf, keine Formpruefung, Meldung unsichtbar, kein Knopf fuer andere
+  Uhren, keine Rueckfrage, kein Sichern, keine Wiederaufnahme in
+  rezeptRendern, kein Vergessen, Bereichspruefung und
+  Ganzzahl-Pruefung der Stufe — jede schlaegt an einer eigenen Pruefung
+  an. Dabei zwei Testmaengel behoben: drei Proben stuerzten nach dem FAIL
+  ab statt zu melden, und eine Typpruefung erwies sich als redundant
+  (`Math.floor("2") === "2"` ist schon falsch) — entfernt statt
+  ungeprueft stehen gelassen.
+  **Im Browser gemessen** (375x812, Spaetzle): Knopf der Ruhe-Uhr nach
+  Weiter sichtbar in der Leiste, kein Ueberlauf; Neuladen -> Stufe 2, Uhr
+  laeuft (1799 s); Beenden fragt; Ablauf -> Meldung sichtbar; nach dem
+  Beenden kein Stand mehr. Nebenbefund zu T-0086a: der Browser lieferte
+  zuerst die ALTE kochmodus.js aus dem Cache — genau die Versionsmischung.
+  **Bekannte Grenze, unveraendert:** der Alarm kommt nur, solange die
+  Seite Rechenzeit bekommt (zustand-14); bei gesperrtem Schirm erst beim
+  Entsperren.
 
 - **T-0071** (2026-10-08) **Kochmodus folgt der aktiven Stufe.** Bis
   hierher setzte jeder Stufenwechsel nur Klassen (Review ui-mobil-1,

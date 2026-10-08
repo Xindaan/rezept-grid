@@ -985,7 +985,43 @@ body.kochmodus .zutat.koch-neu { border-bottom-color: var(--akzent); }
   font-weight: 600;
 }
 
-.koch-knopf-aus { color: var(--gedaempft); }
+/* Abstand zu "Weiter" (T-0072): 6 px liessen einen Fehltipp beenden. */
+.koch-knopf-aus { color: var(--gedaempft); margin-left: 1rem; }
+
+/* Abgelaufene Uhr, sichtbar bis zur Quittung (T-0072). Die Farbe traegt
+   nicht allein: der Text sagt, welche Stufe. */
+.koch-meldung {
+  flex: 1 1 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .6rem;
+  padding: .45rem .7rem;
+  border: 2px solid var(--warnung);
+  border-radius: 6px;
+  background: var(--warnung-flaeche);
+  color: var(--tinte);
+  font-weight: 600;
+}
+
+/* Uhren anderer Stufen, die weiterlaufen (T-0072). */
+.koch-nebenher { display: flex; flex-wrap: wrap; gap: .4rem; }
+
+.koch-nebenher-knopf {
+  min-height: 2.75rem;
+  padding: .3rem .7rem;
+  border: 1px solid var(--block-ruhe-rand);
+  border-radius: 999px;
+  background: var(--block-ruhe);
+  color: var(--tinte);
+  font: inherit;
+  font-size: .85rem;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.koch-nebenher-knopf.abgelaufen { border-color: var(--warnung); color: var(--warnung); font-weight: 600; }
+.koch-nebenher-knopf:focus-visible { outline: 2px solid var(--akzent); outline-offset: 1px; }
 
 @media (max-width: 46rem) {
   .koch-leiste { gap: .6rem 1rem; padding: .8rem 1rem; }

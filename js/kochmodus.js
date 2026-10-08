@@ -89,7 +89,110 @@
       // Abgelaufen zaehlt nicht mehr als laufend — die Anzeige schaltet
       // damit von selbst auf "Neu" um, auch wenn der Tick spaet kommt.
       laeuft: function () { return endeAt !== null && stand() > 0; },
-      stand: stand
+      // Abgelaufen heisst: sie lief, und die Wanduhr ist ueber das Ende.
+      // Bleibt so, bis jemand quittiert (setzen) — anders als `laeuft`.
+      abgelaufen: function () { return endeAt !== null && stand() === 0; },
+      stand: stand,
+      // Fuer den Merker (T-0072): der Stand als reine Zahlen, und zurueck.
+      sichern: function () { return { rest: rest, endeAt: endeAt }; },
+      herstellen: function (z) { rest = z.rest; endeAt = z.endeAt; }
+    };
+  }
+
+  // Ein Uhrwerk mit einer Uhr je Stufe (T-0072).
+  //
+  // Bis hierher gab es EINE Uhr, und jeder Stufenwechsel setzte sie
+  // zurueck — ausgerechnet bei "Teig ruhen lassen", nach dem man
+  // weiterblaettert, um nebenher die Fuellung zu mischen. Mit der Uhr war
+  // auch der Alarm weg. Jetzt hat jede Stufe ihre eigene; eine gestartete
+  // laeuft weiter, egal welche Stufe vorn steht. (Entschieden war "je
+  // Ruhestufe"; jede Stufe ist dasselbe ohne Sonderfall und nimmt keiner
+  // etwas weg.)
+  //
+  // Der Alarm meldet sich, bis er quittiert ist: beim Ablauf und danach
+  // alle WIEDERHOLEN_MS wieder. Ein einziger Doppelton geht unter der
+  // Dunstabzugshaube unter (Review ui-mobil-7).
+  //
+  // DOM-frei und mit injizierbarer Uhr, wie countdownBauen.
+  var WIEDERHOLEN_MS = 15000;
+
+  function uhrwerkBauen(dauern, jetzt) {
+    var uhr = jetzt || function () { return Date.now(); };
+    var uhren = dauern.map(function (d) {
+      var c = countdownBauen(uhr);
+      c.setzen(d);
+      return c;
+    });
+    // Wanduhr der letzten Meldung je Uhr; null = nichts gemeldet.
+    var gemeldet = dauern.map(function () { return null; });
+    var alle = dauern.map(function (_, i) { return i; });
+
+    function abgelaufen(i) { return uhren[i].abgelaufen(); }
+
+    // Was jetzt zu melden ist: Uhren, die eben abgelaufen sind oder deren
+    // letzte Meldung WIEDERHOLEN_MS zurueckliegt.
+    function pruefen() {
+      var t = uhr(), faellig = [];
+      alle.forEach(function (i) {
+        if (!abgelaufen(i)) return;
+        if (gemeldet[i] === null || t - gemeldet[i] >= WIEDERHOLEN_MS) {
+          gemeldet[i] = t;
+          faellig.push(i);
+        }
+      });
+      return faellig;
+    }
+
+    function zahlOderNull(x) { return x === null || (typeof x === "number" && isFinite(x)); }
+
+    return {
+      uhr: function (i) { return uhren[i]; },
+      abgelaufen: abgelaufen,
+      gemeldet: function (i) { return gemeldet[i] !== null; },
+      pruefen: pruefen,
+      // Start/Pause der Uhr i. Ist sie in Wahrheit schon abgelaufen — der
+      // Knopf zeigt noch "Pause", weil der Tick im gedrosselten Tab nicht
+      // kam —, wird NICHT neu gestartet; dann ist die Meldung faellig
+      // (Review zustand-11). Rueckgabe wie pruefen().
+      umschalten: function (i) {
+        if (uhren[i].stand() === null) return [];
+        var faellig = pruefen();
+        if (abgelaufen(i)) return faellig;
+        if (uhren[i].laeuft()) uhren[i].pausieren(); else uhren[i].starten();
+        return faellig;
+      },
+      quittieren: function (i) {
+        uhren[i].setzen(dauern[i]);
+        gemeldet[i] = null;
+      },
+      offen: function () { return alle.filter(abgelaufen); },
+      laufend: function () { return alle.filter(function (i) { return uhren[i].laeuft(); }); },
+      // Was eine Anzeige braucht: laufend oder abgelaufen.
+      tickend: function () {
+        return alle.filter(function (i) { return uhren[i].laeuft() || abgelaufen(i); });
+      },
+      sichern: function () {
+        return uhren.map(function (c, i) {
+          var z = c.sichern();
+          return { rest: z.rest, endeAt: z.endeAt, gemeldet: gemeldet[i] };
+        });
+      },
+      // Aus dem Merker. Der Stand kommt aus einer Ablage, die eine aeltere
+      // Fassung oder jemand von Hand beschrieben haben kann (Review
+      // zustand-9): die Form wird geprueft, sonst bleibt alles, wie es ist.
+      herstellen: function (liste) {
+        if (!Array.isArray(liste) || liste.length !== uhren.length) return false;
+        var brauchbar = liste.every(function (z) {
+          return z && zahlOderNull(z.rest) && zahlOderNull(z.endeAt) && zahlOderNull(z.gemeldet);
+        });
+        if (!brauchbar) return false;
+        liste.forEach(function (z, i) {
+          if (dauern[i] === null || dauern[i] === undefined) return;
+          uhren[i].herstellen({ rest: z.rest === null ? dauern[i] : z.rest, endeAt: z.endeAt });
+          gemeldet[i] = z.gemeldet;
+        });
+        return true;
+      }
     };
   }
 
@@ -193,6 +296,8 @@
       kochSchritteBauen: kochSchritteBauen,
       zeitFormatieren: zeitFormatieren,
       countdownBauen: countdownBauen,
+      uhrwerkBauen: uhrwerkBauen,
+      WIEDERHOLEN_MS: WIEDERHOLEN_MS,
       signalgeberBauen: signalgeberBauen,
       wachhalterBauen: wachhalterBauen
     };
@@ -215,53 +320,85 @@
     if (!stufen.length) return null;
 
     var aktiv = 0;
-    var countdown = countdownBauen();
+    var dauern = stufen.map(function (s) { return s.schritt.dauer_s; });
+    var werk = uhrwerkBauen(dauern);
     var ticker = null;
     var leiste = null;
     var felder = {};
+    var nebenherKnoepfe = {};
     var signal = geber || signalgeberBauen();
     var wach = wachhalter || wachhalterBauen();
+
+    // Der Kochstand ueberlebt ein Neuladen (T-0072). merker.js wurde fuer
+    // "das Telefon sperrt und laedt neu" gebaut (T-0064), merkte aber nur
+    // Portionen und Haken — Schritt und laufende Uhren gingen verloren.
+    // Die Uhren tragen ihren Wanduhr-Anker; nach dem Neuladen rechnen sie
+    // daraus weiter, als waere nichts gewesen.
+    var M = global.RezeptMerker || null;
+    var schluessel = modell.rezept ? "koch:" + modell.rezept.id : null;
+
+    function sichern() {
+      if (M && schluessel && leiste) M.schreiben(schluessel, { aktiv: aktiv, uhren: werk.sichern() });
+    }
 
     // --- Timer -------------------------------------------------------
     function tickerStoppen() {
       if (ticker !== null) { clearInterval(ticker); ticker = null; }
     }
 
-    function timerSetzen() {
-      tickerStoppen();
-      countdown.setzen(stufen[aktiv].schritt.dauer_s);
+    // Das Interval treibt nur die Anzeige und die Meldungen. Faellt es aus
+    // oder wird es gedrosselt, rechnet der naechste Tick den Stand wieder
+    // aus der Wanduhr — er holt also auf, statt hinterherzuhinken. Es
+    // laeuft, solange irgendeine Uhr tickt oder ein Alarm offen ist.
+    function tickerPflegen() {
+      if (werk.tickend().length === 0) { tickerStoppen(); return; }
+      if (ticker === null) ticker = setInterval(ticken, 1000);
+    }
+
+    function melden(faellig) {
+      // Ein Ton je Durchgang, auch wenn zwei Uhren zugleich ablaufen.
+      if (faellig.length) signal.abgelaufen();
+    }
+
+    function ticken() {
+      melden(werk.pruefen());
       timerZeichnen();
+      tickerPflegen();
     }
 
     function timerUmschalten() {
-      if (countdown.stand() === null) return;
-      if (countdown.laeuft()) {
-        countdown.pausieren();
-        tickerStoppen();
+      if (werk.uhr(aktiv).stand() === null) return;
+      if (werk.abgelaufen(aktiv) && werk.gemeldet(aktiv)) {
+        werk.quittieren(aktiv);
       } else {
         // Der Knopfdruck ist die Nutzergeste, ohne die kein Browser Ton
         // erlaubt. Danach darf der Alarm auch im Hintergrund kommen.
         signal.vorbereiten();
-        countdown.starten();
-        // Das Interval treibt nur die Anzeige. Faellt es aus oder wird
-        // es gedrosselt, rechnet der naechste Tick den Stand wieder aus
-        // der Wanduhr — er holt also auf, statt hinterherzuhinken.
-        ticker = setInterval(function () {
-          if (!countdown.laeuft()) tickerStoppen();
-          timerZeichnen();
-        }, 1000);
+        melden(werk.umschalten(aktiv));
       }
+      tickerPflegen();
       timerZeichnen();
+      sichern();
+    }
+
+    function alleQuittieren() {
+      werk.offen().forEach(function (i) { werk.quittieren(i); });
+      tickerPflegen();
+      timerZeichnen();
+      sichern();
     }
 
     function timerZeichnen() {
       if (!leiste) return;
-      var verbleibend = countdown.stand();
-      var laeuft = countdown.laeuft();
+      nebenherZeichnen();
+      meldungZeichnen();
+      var c = werk.uhr(aktiv);
+      var verbleibend = c.stand();
+      var laeuft = c.laeuft();
+      var abgelaufen = werk.abgelaufen(aktiv);
       if (verbleibend === null) {
         felder.uhr.textContent = "ohne Zeit";
         felder.uhr.classList.remove("laeuft", "abgelaufen");
-        if (felder.alarm.textContent !== "") felder.alarm.textContent = "";
         felder.timerKnopf.hidden = true;
         felder.balken.hidden = true;
         return;
@@ -275,18 +412,53 @@
       felder.balken.hidden = false;
       felder.balkenFuellung.style.width = (Math.min(1, Math.max(0, anteil)) * 100) + "%";
       felder.uhr.classList.toggle("laeuft", laeuft);
-      felder.uhr.classList.toggle("abgelaufen", verbleibend === 0);
-      // Nur bei Wechsel schreiben, sonst wiederholt der Screenreader die
-      // Ansage bei jedem Tick.
-      var ansage = verbleibend === 0 ? "Zeit abgelaufen" : "";
-      var wechsel = felder.alarm.textContent !== ansage;
-      if (wechsel) felder.alarm.textContent = ansage;
-      // Am selben Wechsel haengt der Alarm (T-0063): genau einmal, wenn
-      // die Zeit ablaeuft. Ein Tick spaeter oder ein verschluckter Tick
-      // aendert daran nichts — die Uhr rechnet aus der Wanduhr, und der
-      // Wechsel passiert beim ersten Blick nach dem Ablauf.
-      if (wechsel && verbleibend === 0) signal.abgelaufen();
-      felder.timerKnopf.textContent = laeuft ? "Pause" : (verbleibend === 0 ? "Neu" : "Start");
+      felder.uhr.classList.toggle("abgelaufen", abgelaufen);
+      felder.timerKnopf.textContent = laeuft ? "Pause" : (abgelaufen ? "Quittieren" : "Start");
+    }
+
+    // Abgelaufene Uhren: sichtbar in der Leiste, bis quittiert — bis
+    // T-0072 stand "Zeit abgelaufen" nur fuer Screenreader da, sichtbar
+    // blieb eine rote 0:00. Die Ansage fuer Hilfsmittel nur bei Wechsel,
+    // sonst wiederholt der Screenreader sie bei jedem Tick.
+    function meldungZeichnen() {
+      var offen = werk.offen();
+      var titel = offen.map(function (i) { return stufen[i].schritt.titel; });
+      var ansage = offen.indexOf(aktiv) > -1 && offen.length === 1
+        ? "Zeit abgelaufen"
+        : (offen.length ? "Zeit abgelaufen: " + titel.join(", ") : "");
+      if (felder.alarm.textContent !== ansage) felder.alarm.textContent = ansage;
+      felder.meldung.hidden = offen.length === 0;
+      var text = offen.length ? "Zeit abgelaufen: " + titel.join(", ") : "";
+      if (felder.meldungText.textContent !== text) felder.meldungText.textContent = text;
+    }
+
+    // Uhren anderer Stufen, die noch laufen oder abgelaufen sind — mit
+    // Stufenname, damit man weiss, wofuer sie zaehlen. Ein Tipp springt
+    // dorthin. Die Knoepfe bleiben dieselben Knoten, solange ihre Uhr
+    // tickt: neu gebaut verloere der Fokus bei jedem Tick seinen Halt.
+    function nebenherZeichnen() {
+      var zeigen = werk.tickend().filter(function (i) { return i !== aktiv; });
+      Object.keys(nebenherKnoepfe).forEach(function (k) {
+        if (zeigen.indexOf(Number(k)) === -1) {
+          nebenherKnoepfe[k].remove();
+          delete nebenherKnoepfe[k];
+        }
+      });
+      zeigen.forEach(function (i) {
+        var knopf = nebenherKnoepfe[i];
+        if (!knopf) {
+          knopf = el("button", "koch-nebenher-knopf");
+          knopf.type = "button";
+          knopf.addEventListener("click", function () { gehe(i); });
+          nebenherKnoepfe[i] = knopf;
+          felder.nebenher.appendChild(knopf);
+        }
+        var text = stufen[i].schritt.titel + " " +
+          (werk.abgelaufen(i) ? "abgelaufen" : zeitFormatieren(werk.uhr(i).stand()));
+        if (knopf.textContent !== text) knopf.textContent = text;
+        knopf.classList.toggle("abgelaufen", werk.abgelaufen(i));
+      });
+      felder.nebenher.hidden = zeigen.length === 0;
     }
 
     // --- Hervorhebung im Grid ----------------------------------------
@@ -374,9 +546,10 @@
     function gehe(neu) {
       if (neu < 0 || neu >= stufen.length) return;
       aktiv = neu;
-      timerSetzen();
+      // Kein Zuruecksetzen der Uhr mehr (T-0072): jede Stufe hat ihre eigene.
       leisteZeichnen();
       stufeZeigen();
+      sichern();
     }
 
     // --- Tastatur ----------------------------------------------------
@@ -414,6 +587,11 @@
       felder.balken.appendChild(felder.balkenFuellung);
       text.appendChild(felder.balken);
 
+      // Uhren anderer Stufen (T-0072). Ausserhalb der Live-Region: sie
+      // aendern sich jede Sekunde.
+      felder.nebenher = el("div", "koch-nebenher");
+      felder.nebenher.hidden = true;
+
       var uhrBox = el("div", "koch-uhr-box");
       felder.uhr = el("span", "koch-uhr");
       // `timer` beschreibt, was das Ding ist. Bewusst OHNE aria-live:
@@ -433,6 +611,16 @@
       felder.alarm.setAttribute("role", "status");
       uhrBox.appendChild(felder.alarm);
 
+      // Sichtbar und bis zur Quittung (T-0072).
+      felder.meldung = el("div", "koch-meldung");
+      felder.meldung.hidden = true;
+      felder.meldungText = el("span", "koch-meldung-text");
+      var quittieren = el("button", "koch-knopf koch-knopf-haupt", "Quittieren");
+      quittieren.type = "button";
+      quittieren.addEventListener("click", alleQuittieren);
+      felder.meldung.appendChild(felder.meldungText);
+      felder.meldung.appendChild(quittieren);
+
       var steuerung = el("div", "koch-steuerung");
       felder.zurueck = el("button", "koch-knopf", "Zurück");
       felder.zurueck.type = "button";
@@ -447,24 +635,53 @@
       steuerung.appendChild(felder.weiter);
       steuerung.appendChild(raus);
 
+      box.appendChild(felder.meldung);
       box.appendChild(text);
+      box.appendChild(felder.nebenher);
       box.appendChild(uhrBox);
       box.appendChild(steuerung);
       return box;
     }
 
+    // Nach dem Neuladen fehlt die Nutzergeste, ohne die der Browser keinen
+    // Ton erlaubt. Der erste Tipp irgendwo schaltet ihn wieder frei.
+    function freischalten() {
+      signal.vorbereiten();
+      document.removeEventListener("pointerdown", freischalten, true);
+    }
+
     function starten() {
       if (leiste) return;
+      var stand = M && schluessel ? M.lesen(schluessel) : null;
+      var start = 0;
+      // Math.floor(x) === x verwirft auch den Text "2" — Math.floor("2")
+      // ist die Zahl 2. Der Bereich zaehlt eigens: gehe(99) kehrt frueh
+      // zurueck, und die Leiste bliebe ungezeichnet.
+      if (stand && Math.floor(stand.aktiv) === stand.aktiv &&
+          stand.aktiv >= 0 && stand.aktiv < stufen.length &&
+          werk.herstellen(stand.uhren)) {
+        start = stand.aktiv;
+        document.addEventListener("pointerdown", freischalten, true);
+      }
       leiste = leisteBauen();
+      nebenherKnoepfe = {};
       document.body.appendChild(leiste);
       document.body.classList.add("kochmodus");
       document.addEventListener("keydown", tastatur);
       wach.an();
-      gehe(0);
+      gehe(start);
+      tickerPflegen();
     }
 
+    // Laeuft noch eine Uhr, fragt Beenden nach (T-0072): der Knopf sitzt
+    // neben "Weiter", ein Fehltipp warf bisher die Ruhezeit weg.
     function beenden() {
+      if (werk.tickend().length && global.confirm &&
+          !global.confirm("Eine Uhr läuft noch. Kochmodus trotzdem beenden?")) return;
       tickerStoppen();
+      if (M && schluessel) M.vergessen(schluessel);
+      werk = uhrwerkBauen(dauern);
+      document.removeEventListener("pointerdown", freischalten, true);
       wach.aus();
       document.removeEventListener("keydown", tastatur);
       document.body.classList.remove("kochmodus");
@@ -485,8 +702,10 @@
       zustand: function () {
         return {
           aktiv: aktiv,
-          laeuft: countdown.laeuft(),
-          verbleibend: countdown.stand(),
+          laeuft: werk.uhr(aktiv).laeuft(),
+          verbleibend: werk.uhr(aktiv).stand(),
+          laufend: werk.laufend(),
+          alarmOffen: werk.offen(),
           offen: !!leiste
         };
       }
@@ -497,6 +716,8 @@
     kochSchritteBauen: kochSchritteBauen,
     zeitFormatieren: zeitFormatieren,
     countdownBauen: countdownBauen,
+    uhrwerkBauen: uhrwerkBauen,
+    WIEDERHOLEN_MS: WIEDERHOLEN_MS,
     signalgeberBauen: signalgeberBauen,
     wachhalterBauen: wachhalterBauen,
     kochmodusBauen: kochmodusBauen

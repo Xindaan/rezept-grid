@@ -1218,6 +1218,11 @@
       });
     }
 
+    // Lief beim letzten Mal der Kochmodus, geht es dort weiter (T-0072):
+    // Stufe und Uhren stehen im Merker, und das Telefon laedt beim
+    // Entsperren gern neu. Beenden loescht den Eintrag.
+    if (M && beiKochstart && M.lesen("koch:" + rezept.id)) beiKochstart();
+
     return modell;
   }
 
